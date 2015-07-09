@@ -1,1 +1,12 @@
 Changes only in Hortonworks github and not in atlas-2.5.0 and hence not covered by CHANGES.txt.
+
+ATLAS-54 - Rename configs in hive hook
+BUG-40636. The values having whitespace like \t etc which is common in hive as a delimiter were getting rejected due to StringUtils.isNotBlank check which has been changed to isNotEmpty now
+ATLAS-32 create HTTP connection in context of invoking user in secure cluster
+ATLAS-31. Fixed Mixed Index creation fails with Date types
+ATLAS-31. Fixed ATLAS build fails with clean repo
+BUG-40009 fixed class comparator
+ATLAS-29 create configuration that inherits existing hadoop config
+BUG-39302 Parameterize schema API query per typeName
+ATLAS-15 remove specific version string as default property value
+ATLAS-19 remove unnecessary docs dir​
