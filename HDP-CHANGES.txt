@@ -1,0 +1,1 @@
+Changes only in Hortonworks github and not in atlas-2.5.0 and hence not covered by CHANGES.txt.
