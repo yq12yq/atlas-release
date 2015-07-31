@@ -109,8 +109,11 @@
         <!-- skips checkstyle and find bugs -->
         <skipCheck>false</skipCheck>
         <skipTests>false</skipTests>
+<<<<<<< HEAD
         <skipDocs>true</skipDocs>
         <skipSite>true</skipSite>
+=======
+>>>>>>> b93fe4a... ATLAS-86 Jenkins build failing as of build #41 (shwethags)
         <projectBaseDir>${project.basedir}</projectBaseDir>
         <titan.storage.backend>berkeleyje</titan.storage.backend>
         <titan.index.backend>elasticsearch</titan.index.backend>
@@ -694,10 +697,9 @@
 
             <dependency>
                 <groupId>org.apache.atlas</groupId>
-                <artifactId>atlas-client</artifactId>
+                <artifactId>atlas-webapp</artifactId>
                 <version>${project.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
+                <type>war</type>
             </dependency>
 
             <!--Scala dependencies-->
@@ -1143,6 +1145,9 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>2.18.1</version>
                 <configuration>
+                    <systemPropertyVariables>
+                        <projectBaseDir>${projectBaseDir}</projectBaseDir>
+                    </systemPropertyVariables>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <argLine>-Djava.awt.headless=true -Dproject.version=${project.version}
                         -Dhadoop.tmp.dir=${project.build.directory}/tmp-hadoop-${user.name}
