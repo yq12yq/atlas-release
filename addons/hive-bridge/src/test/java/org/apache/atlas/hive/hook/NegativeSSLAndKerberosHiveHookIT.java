@@ -61,6 +61,7 @@ public class NegativeSSLAndKerberosHiveHookIT extends BaseSSLAndKerberosTest {
     public void setUp() throws Exception {
         //Set-up hive session
         HiveConf conf = getHiveConf();
+        HiveHook.hiveConf = conf;
         driver = new Driver(conf);
         ss = new SessionState(conf, System.getProperty("user.name"));
         ss = SessionState.start(ss);
