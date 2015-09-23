@@ -66,11 +66,17 @@ public class HiveHook implements ExecuteWithHookContext {
     private static final String MAX_THREADS = CONF_PREFIX + "maxThreads";
     private static final String KEEP_ALIVE_TIME = CONF_PREFIX + "keepAliveTime";
     public static final String CONF_SYNC = CONF_PREFIX + "synchronous";
+    public static final String QUEUE_SIZE = CONF_PREFIX + "queueSize";
 
     private static final int minThreadsDefault = 5;
     private static final int maxThreadsDefault = 5;
     private static final long keepAliveTimeDefault = 10;
+    private static final int queueSizeDefault = 10000;
     private static boolean typesRegistered = false;
+
+    static HiveConf hiveConf;
+
+    private static final boolean sync;
 
     static {
         // anything shared should be initialized here and destroyed in the
@@ -80,14 +86,18 @@ public class HiveHook implements ExecuteWithHookContext {
         // initialize the async facility to process hook calls. We don't
         // want to do this inline since it adds plenty of overhead for the
         // query.
-        HiveConf hiveConf = new HiveConf();
+        hiveConf = new HiveConf();
         int minThreads = hiveConf.getInt(MIN_THREADS, minThreadsDefault);
         int maxThreads = hiveConf.getInt(MAX_THREADS, maxThreadsDefault);
         long keepAliveTime = hiveConf.getLong(KEEP_ALIVE_TIME, keepAliveTimeDefault);
+        int queueSize = hiveConf.getInt(QUEUE_SIZE, queueSizeDefault);
+
 
         executor = new ThreadPoolExecutor(minThreads, maxThreads, keepAliveTime, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(),
+                new LinkedBlockingQueue<Runnable>(queueSize),
                 new ThreadFactoryBuilder().setDaemon(true).setNameFormat("Atlas Logger %d").build());
+
+        sync = hiveConf.get(CONF_SYNC, "false").equals("true");
 
         try {
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -111,17 +121,17 @@ public class HiveHook implements ExecuteWithHookContext {
     }
 
     class HiveEvent {
-        public HiveConf conf;
-
         public Set<ReadEntity> inputs;
         public Set<WriteEntity> outputs;
 
         public String user;
         public UserGroupInformation ugi;
         public HiveOperation operation;
-        public QueryPlan queryPlan;
         public HookContext.HookType hookType;
         public JSONObject jsonPlan;
+        public String queryId;
+        public String queryStr;
+        public Long queryStartTime;
     }
 
     @Override
@@ -133,22 +143,20 @@ public class HiveHook implements ExecuteWithHookContext {
 
         // clone to avoid concurrent access
         final HiveEvent event = new HiveEvent();
-        final HiveConf conf = new HiveConf(hookContext.getConf());
-        boolean debug = conf.get(CONF_SYNC, "false").equals("true");
-
-        event.conf = conf;
         event.inputs = hookContext.getInputs();
         event.outputs = hookContext.getOutputs();
 
         event.user = hookContext.getUserName() == null ? hookContext.getUgi().getUserName() : hookContext.getUserName();
         event.ugi = hookContext.getUgi();
         event.operation = HiveOperation.valueOf(hookContext.getOperationName());
-        event.queryPlan = hookContext.getQueryPlan();
+        event.queryId = hookContext.getQueryPlan().getQueryId();
+        event.queryStr = hookContext.getQueryPlan().getQueryStr();
+        event.queryStartTime = hookContext.getQueryPlan().getQueryStartTime();
+
         event.hookType = hookContext.getHookType();
+        event.jsonPlan = getQueryPlan(hookContext.getConf(), hookContext.getQueryPlan());
 
-        event.jsonPlan = getQueryPlan(event);
-
-        if (debug) {
+        if (sync) {
             fireAndForget(event);
         } else {
             executor.submit(new Runnable() {
@@ -168,10 +176,11 @@ public class HiveHook implements ExecuteWithHookContext {
         assert event.hookType == HookContext.HookType.POST_EXEC_HOOK : "Non-POST_EXEC_HOOK not supported!";
 
         LOG.info("Entered Atlas hook for hook type {} operation {}", event.hookType, event.operation);
-        HiveMetaStoreBridge dgiBridge = new HiveMetaStoreBridge(event.conf, event.user, event.ugi);
+        HiveMetaStoreBridge dgiBridge = new HiveMetaStoreBridge(hiveConf, event.user, event.ugi);
 
         if (!typesRegistered) {
             dgiBridge.registerHiveDataModel();
+
             typesRegistered = true;
         }
 
@@ -229,7 +238,7 @@ public class HiveHook implements ExecuteWithHookContext {
             }
         }
         if (newTable == null) {
-            LOG.warn("Failed to deduct new name for " + event.queryPlan.getQueryStr());
+            LOG.warn("Failed to deduct new name for " + event.queryStr);
             return;
         }
 
@@ -276,13 +285,13 @@ public class HiveHook implements ExecuteWithHookContext {
             LOG.info("Explain statement. Skipping...");
         }
 
-        if (event.queryPlan == null) {
+        if (event.queryId == null) {
             LOG.info("Query plan is missing. Skipping...");
         }
 
-        String queryId = event.queryPlan.getQueryId();
-        String queryStr = normalize(event.queryPlan.getQueryStr());
-        long queryStartTime = event.queryPlan.getQueryStartTime();
+        String queryId = event.queryId;
+        String queryStr = normalize(event.queryStr);
+        long queryStartTime = event.queryStartTime;
 
         LOG.debug("Registering CTAS query: {}", queryStr);
         Referenceable processReferenceable = dgiBridge.getProcessReference(queryStr);
@@ -331,12 +340,12 @@ public class HiveHook implements ExecuteWithHookContext {
     }
 
 
-    private JSONObject getQueryPlan(HiveEvent event) throws Exception {
+    private JSONObject getQueryPlan(HiveConf conf, QueryPlan queryPlan) throws Exception {
         try {
             ExplainTask explain = new ExplainTask();
-            explain.initialize(event.conf, event.queryPlan, null);
-            List<Task<?>> rootTasks = event.queryPlan.getRootTasks();
-            return explain.getJSONPlan(null, null, rootTasks, event.queryPlan.getFetchTask(), true, false, false);
+            explain.initialize(conf, queryPlan, null);
+            List<Task<?>> rootTasks = queryPlan.getRootTasks();
+            return explain.getJSONPlan(null, null, rootTasks, queryPlan.getFetchTask(), true, false, false);
         } catch (Exception e) {
             LOG.warn("Failed to get queryplan", e);
             return new JSONObject();

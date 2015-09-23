@@ -87,6 +87,8 @@ public class SSLHiveHookIT {
     public void setUp() throws Exception {
         //Set-up hive session
         HiveConf conf = getHiveConf();
+        HiveHook.hiveConf = conf;
+
         driver = new Driver(conf);
         ss = new SessionState(conf, System.getProperty("user.name"));
         ss = SessionState.start(ss);
@@ -187,7 +189,9 @@ public class SSLHiveHookIT {
     }
 
     private HiveConf getHiveConf() {
-        return HiveHookIT.createHiveConf(DGI_URL);
+        HiveConf conf = new HiveConf();
+        conf.set(HiveMetaStoreBridge.ATLAS_ENDPOINT, DGI_URL);
+        return conf;
     }
 
     private void runCommand(String cmd) throws Exception {

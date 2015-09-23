@@ -123,6 +123,8 @@ public class BaseSSLAndKerberosTest extends BaseSecurityTest {
     }
 
     protected HiveConf getHiveConf() {
-        return HiveHookIT.createHiveConf(DGI_URL);
+        HiveConf conf = new HiveConf();
+        conf.set(HiveMetaStoreBridge.ATLAS_ENDPOINT, DGI_URL);
+        return conf;
     }
 }
