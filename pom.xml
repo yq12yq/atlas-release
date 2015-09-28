@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>13</version>
+        <version>17</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -107,6 +107,10 @@
 
         <!-- skips checkstyle and find bugs -->
         <skipCheck>false</skipCheck>
+        <skipTests>false</skipTests>
+        <skipDocs>true</skipDocs>
+        <skipSite>true</skipSite>
+        <projectBaseDir>${project.basedir}</projectBaseDir>
         <titan.storage.backend>berkeleyje</titan.storage.backend>
         <titan.index.backend>elasticsearch</titan.index.backend>
     </properties>
@@ -126,7 +130,33 @@
             </properties>
         </profile>
 
+        <profile>
+            <id>jdk7</id>
+            <activation>
+                <jdk>[1.7,1.8)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.enunciate</groupId>
+                        <artifactId>maven-enunciate-plugin</artifactId>
+                        <version>1.29</version>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>dist</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <skipDocs>false</skipDocs>
+            </properties>
+        </profile>
     </profiles>
+
     <modules>
         <module>typesystem</module>
         <module>client</module>
@@ -937,7 +967,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-site-plugin</artifactId>
-                    <version>3.2</version>
+                    <version>3.4</version>
                 </plugin>
 
                 <plugin>
@@ -998,6 +1028,8 @@
                         <scalaVersion>${scala.version}</scalaVersion>
                         <recompileMode>incremental</recompileMode>
                         <useZincServer>true</useZincServer>
+                        <source>1.7</source>
+                        <target>1.7</target>
                         <args>
                             <arg>-unchecked</arg>
                             <arg>-deprecation</arg>
@@ -1271,35 +1303,7 @@
                 <artifactId>javancss-maven-plugin</artifactId>
             </plugin>
 
-            <plugin>
-<<<<<<< HEAD
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.2.1</version>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <executable>python</executable>
-                            <workingDirectory>src/test/python</workingDirectory>
-                            <arguments>
-                                <argument>unitTests.py</argument>
-                            </arguments>
-                            <environmentVariables>
-                                <PYTHONPATH>${python.path.l}</PYTHONPATH>
-                            </environmentVariables>
-                        </configuration>
-                        <id>python-test</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-=======
->>>>>>> e77d3d3... ATLAS-117 Build fails on the latest commit (dossett@gmail.com via shwethags)
+	    <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
                     <filesets>
@@ -1312,6 +1316,40 @@
                         </fileset>
                     </filesets>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-site-plugin</artifactId>
+                <configuration>
+                    <skip>${skipSite}</skip>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <skip>${skipDocs}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>javadoc</id>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <aggregate>true</aggregate>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>aggregate</id>
+                        <inherited>false</inherited>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
