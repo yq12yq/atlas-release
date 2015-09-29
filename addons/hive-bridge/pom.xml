@@ -253,6 +253,10 @@
                             <name>atlas.conf</name>
                             <value>addons/hive-bridge/src/test/resources</value>
                         </systemProperty>
+                        <systemProperty>
+                            <name>log4j.configuration</name>
+                            <value>atlas-log4j.xml</value>
+                        </systemProperty>
                     </systemProperties>
                     <stopKey>atlas-stop</stopKey>
                     <stopPort>41001</stopPort>

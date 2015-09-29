@@ -65,6 +65,7 @@ The following properties in hive-site.xml control the thread pool details:
    * atlas.hook.hive.maxThreads - maximum number of threads. default 5
    * atlas.hook.hive.keepAliveTime - keep alive time in msecs. default 10
    * atlas.hook.hive.synchronous - boolean, true to run the hook synchronously. default false
+   * atlas.hook.hive.queueSize - Size of the queue for the thread pool. default 10000
 
 ---++ Limitations
    * Since database name, table name and column names are case insensitive in hive, the corresponding names in entities are lowercase. So, any search APIs should use lowercase while querying on the entity names
