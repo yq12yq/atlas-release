@@ -107,24 +107,24 @@ object TypesSerialization {
     }
 
     def toJson(typesDef : TypesDef) : String = {
-      implicit val formats = _formats + new MultiplicitySerializer
-      writePretty(typesDef)
+        implicit val formats = _formats + new MultiplicitySerializer
+        writePretty(typesDef)
 
     }
 
     def toJson(enumTypeDefinition: EnumTypeDefinition) : String = {
-      toJson(new TypesDef(enumTypeDefinition))
+        toJson(new TypesDef(enumTypeDefinition))
     }
 
     def toJson(structTypeDefinition: StructTypeDefinition) : String = {
-      toJson(new TypesDef(structTypeDefinition))
+        toJson(new TypesDef(structTypeDefinition))
     }
 
     def toJson(typDef: HierarchicalTypeDefinition[_], isTrait : Boolean) : String = {
-      toJson(new TypesDef(typDef, isTrait))
+        toJson(new TypesDef(typDef, isTrait))
     }
 
-  private def convertAttributeInfoToAttributeDef(aInfo: AttributeInfo) = {
+    private def convertAttributeInfoToAttributeDef(aInfo: AttributeInfo) = {
         new AttributeDefinition(aInfo.name, aInfo.dataType().getName, aInfo.multiplicity,
             aInfo.isComposite, aInfo.isUnique, aInfo.isIndexable, aInfo.reverseAttributeName)
     }
@@ -199,7 +199,7 @@ class MultiplicitySerializer extends CustomSerializer[Multiplicity](format => ( 
 
     )
 }
-    ))
+  ))
 
 trait TypeHelpers {
     def requiredAttr(name: String, dataType: IDataType[_]) =
@@ -236,7 +236,7 @@ trait TypeHelpers {
 
     @throws(classOf[AtlasException])
     def defineClassType(ts: TypeSystem, classDef: HierarchicalTypeDefinition[ClassType]): ClassType = {
-        ts.defineTypes(ImmutableList.of[StructTypeDefinition],
+        ts.defineTypes(ImmutableList.of[EnumTypeDefinition], ImmutableList.of[StructTypeDefinition],
             ImmutableList.of[HierarchicalTypeDefinition[TraitType]],
             ImmutableList.of[HierarchicalTypeDefinition[ClassType]](classDef))
         return ts.getDataType(classOf[ClassType], classDef.typeName)

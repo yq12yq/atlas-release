@@ -29,6 +29,7 @@ import org.apache.atlas.typesystem.Struct;
 import org.apache.atlas.typesystem.types.AttributeDefinition;
 import org.apache.atlas.typesystem.types.ClassType;
 import org.apache.atlas.typesystem.types.DataTypes;
+import org.apache.atlas.typesystem.types.EnumTypeDefinition;
 import org.apache.atlas.typesystem.types.HierarchicalType;
 import org.apache.atlas.typesystem.types.HierarchicalTypeDefinition;
 import org.apache.atlas.typesystem.types.IDataType;
@@ -149,7 +150,7 @@ public abstract class BaseTest {
                 .createTraitTypeDef("SecurityClearance", ImmutableList.<String>of(),
                         TypesUtil.createRequiredAttrDef("level", DataTypes.INT_TYPE));
 
-        ts.defineTypes(ImmutableList.<StructTypeDefinition>of(),
+        ts.defineTypes(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
                 ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(securityClearanceTypeDef),
                 ImmutableList.<HierarchicalTypeDefinition<ClassType>>of(deptTypeDef, personTypeDef, managerTypeDef));
 
