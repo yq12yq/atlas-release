@@ -16,6 +16,7 @@
  */
 package org.apache.atlas.hive.hook;
 
+import org.apache.atlas.hive.bridge.HiveMetaStoreBridge;
 import org.apache.atlas.web.security.BaseSecurityTest;
 import org.apache.atlas.web.service.SecureEmbeddedServer;
 import org.apache.commons.configuration.PropertiesConfiguration;

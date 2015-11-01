@@ -75,6 +75,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <local_url>http://public-repo-1.hortonworks.com/ARTIFACTS/</local_url>
+	<node.version>v0.10.30</node.version>
         <slf4j.version>1.7.7</slf4j.version>
         <jetty.version>9.2.12.v20150709</jetty.version>
         <jersey.version>1.9</jersey.version>
@@ -668,6 +669,14 @@
                 <groupId>org.apache.atlas</groupId>
                 <artifactId>atlas-repository</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.atlas</groupId>
+                <artifactId>atlas-webapp</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
 
             <dependency>

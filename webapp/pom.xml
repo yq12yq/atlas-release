@@ -377,6 +377,17 @@
                     </execution>
                 </executions>
             </plugin>
+	    <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
@@ -401,23 +412,6 @@
                             <addClasspath>true</addClasspath>
                         </manifest>
                     </archive>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.enunciate</groupId>
-                <artifactId>maven-enunciate-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>docs</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <!-- the directory where to put the docs -->
-                    <docsDir>${project.build.directory}/apidocs</docsDir>
-                    <configFile>${basedir}/../src/build/enunciate.xml</configFile>
                 </configuration>
             </plugin>
 
