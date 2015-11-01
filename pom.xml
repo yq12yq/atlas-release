@@ -109,11 +109,8 @@
         <!-- skips checkstyle and find bugs -->
         <skipCheck>false</skipCheck>
         <skipTests>false</skipTests>
-<<<<<<< HEAD
         <skipDocs>true</skipDocs>
         <skipSite>true</skipSite>
-=======
->>>>>>> b93fe4a... ATLAS-86 Jenkins build failing as of build #41 (shwethags)
         <projectBaseDir>${project.basedir}</projectBaseDir>
         <titan.storage.backend>berkeleyje</titan.storage.backend>
         <titan.index.backend>elasticsearch</titan.index.backend>
@@ -672,21 +669,6 @@
                 <groupId>org.apache.atlas</groupId>
                 <artifactId>atlas-repository</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.atlas</groupId>
-                <artifactId>atlas-webapp</artifactId>
-                <version>${project.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.atlas</groupId>
-                <artifactId>atlas-webapp</artifactId>
-                <version>${project.version}</version>
-                <classifier>classes</classifier>
             </dependency>
 
             <dependency>

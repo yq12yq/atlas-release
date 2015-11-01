@@ -121,20 +121,6 @@
             <artifactId>testng</artifactId>
         </dependency>
 
-        <!--&lt;!&ndash; to bring up atlas server for integration tests &ndash;&gt;-->
-
-        <!--<dependency>-->
-            <!--<groupId>org.apache.atlas</groupId>-->
-            <!--<artifactId>atlas-webapp</artifactId>-->
-            <!--<classifier>classes</classifier>-->
-        <!--</dependency>-->
-
-        <!--<dependency>-->
-            <!--<groupId>org.apache.atlas</groupId>-->
-            <!--<artifactId>atlas-webapp</artifactId>-->
-            <!--<type>test-jar</type>-->
-        <!--</dependency>-->
-
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
