@@ -34,8 +34,157 @@
     <packaging>war</packaging>
 
     <properties>
+        <projectBaseDir>${project.basedir}/..</projectBaseDir>
         <debug.jetty.daemon>true</debug.jetty.daemon>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>jdk7</id>
+            <activation>
+                <jdk>[1.7,1.8)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.enunciate</groupId>
+                        <artifactId>maven-enunciate-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>docs</goal>
+                                </goals>
+                                <phase>site</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <!-- the directory where to put the docs -->
+                            <docsDir>${project.build.directory}/apidocs</docsDir>
+                            <configFile>${basedir}/../src/build/enunciate.xml</configFile>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>install-node</id>
+            <activation>
+                <file>
+                    <missing>../dashboard/v2/node</missing>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install node and npm</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <configuration>
+                                    <nodeVersion>${node.version}</nodeVersion>
+                                    <npmVersion>1.4.3</npmVersion>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>install-node_modules</id>
+            <activation>
+                <file>
+                    <missing>../dashboard/v2/node_modules</missing>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>npm install</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>install</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>bower-install</id>
+            <activation>
+                <file>
+                    <missing>target/dist/lib</missing>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install bower</id>
+                                <goals>
+                                    <goal>grunt</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>bower</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>grunt-task</id>
+            <activation>
+                <property>
+                    <name>!disableGrunt</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>npm remaining</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>install --ignore-scripts</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>grunt dist</id>
+                                <goals>
+                                    <goal>grunt</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>build</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>
@@ -51,7 +200,6 @@
         <dependency>
             <groupId>org.apache.atlas</groupId>
             <artifactId>atlas-client</artifactId>
-            <type>test-jar</type>
         </dependency>
 
         <dependency>
@@ -116,13 +264,13 @@
         </dependency>
 
         <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty</artifactId>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty-plus</artifactId>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-webapp</artifactId>
         </dependency>
 
         <dependency>
@@ -171,8 +319,13 @@
         </dependency>
 
         <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jsp-2.1</artifactId>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-jsp</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
         </dependency>
 
         <dependency>
@@ -192,62 +345,39 @@
                     <workingDirectory>../dashboard/v2/</workingDirectory>
                 </configuration>
                 <executions>
-                  <execution>
-                    <id>install node and npm</id>
-                    <goals>
-                      <goal>install-node-and-npm</goal>
-                    </goals>
-                    <configuration>
-                      <nodeVersion>v0.10.30</nodeVersion>
-                      <npmVersion>1.4.3</npmVersion>
-                      <downloadRoot>${local_url}</downloadRoot>
-                    </configuration>
-                  </execution>
-
-                  <execution>
-                    <id>npm install</id>
-                    <goals>
-                      <goal>npm</goal>
-                    </goals>
-                    <configuration>
-                      <arguments>install</arguments>
-                    </configuration>
-                  </execution>
-
-                  <execution>
-                    <id>grunt dist</id>
-                    <goals>
-                      <goal>grunt</goal>
-                    </goals>
-                    <configuration>
-                      <arguments>build</arguments>
-                    </configuration>
-                  </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
                     <execution>
-                        <id>uber-javadocs</id>
-                        <phase>site</phase>
+                        <id>install node and npm</id>
                         <goals>
-                            <goal>javadoc</goal>
-                            <goal>jar</goal>
+                            <goal>install-node-and-npm</goal>
                         </goals>
                         <configuration>
-                            <includeTransitiveDependencySources>false</includeTransitiveDependencySources>
-                            <includeDependencySources>true</includeDependencySources>
-                            <dependencySourceIncludes>
-                                <dependencySourceInclude>org.apache.atlas:*</dependencySourceInclude>
-                            </dependencySourceIncludes>
+                            <nodeVersion>v0.10.30</nodeVersion>
+                            <npmVersion>1.4.3</npmVersion>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>grunt dist</id>
+                        <goals>
+                            <goal>grunt</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>build</arguments>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
+	    <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
@@ -261,24 +391,16 @@
                             <directory>src/main/webapp/WEB-INF</directory>
                             <targetPath>WEB-INF</targetPath>
                         </resource>
+                        <resource>
+                            <directory>${project.build.directory}/test-classes</directory>
+                            <targetPath>WEB-INF/classes</targetPath>
+                        </resource>
                     </webResources>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.enunciate</groupId>
-                <artifactId>maven-enunciate-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>docs</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <!-- the directory where to put the docs -->
-                    <docsDir>${project.build.directory}/apidocs</docsDir>
-                    <configFile>${basedir}/../src/build/enunciate.xml</configFile>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
 
@@ -313,30 +435,24 @@
             </plugin>
 
             <plugin>
-                <groupId>org.mortbay.jetty</groupId>
-                <artifactId>maven-jetty-plugin</artifactId>
-                <version>${jetty.version}</version>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
                 <configuration>
                     <skip>${skipTests}</skip>
                     <!--only skip int tests -->
-                    <connectors>
-                        <!--
-                        <connector implementation="org.mortbay.jetty.security.SslSocketConnector">
-                            <port>21443</port>
-                            <maxIdleTime>60000</maxIdleTime>
-                            <keystore>${project.build.directory}/../../webapp/target/atlas.keystore</keystore>
-                            <keyPassword>atlas-passwd</keyPassword>
-                            <password>atlas-passwd</password>
-                        </connector>
-                        -->
-                        <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
-                            <port>21000</port>
-                            <maxIdleTime>60000</maxIdleTime>
-                        </connector>
-                    </connectors>
-                    <webApp>${project.build.directory}/atlas-webapp-${project.version}</webApp>
-                    <contextPath>/</contextPath>
-                    <useTestClasspath>true</useTestClasspath>
+                    <httpConnector>
+                        <port>21000</port>
+                        <idleTimeout>60000</idleTimeout>
+                    </httpConnector>
+                    <war>${project.build.directory}/atlas-webapp-${project.version}.war</war>
+                    <daemon>true</daemon>
+                    <!--<webAppSourceDirectory>webapp/src/test/webapp</webAppSourceDirectory>-->
+                    <webApp>
+                        <contextPath>/</contextPath>
+                        <descriptor>webapp/src/test/webapp/WEB-INF/web.xml</descriptor>
+                        <!-- ${project.build.directory}/atlas-webapp-${project.version} -->
+                    </webApp>
+                    <useTestScope>true</useTestScope>
                     <systemProperties>
                         <systemProperty>
                             <name>atlas.log.dir</name>
@@ -369,11 +485,8 @@
                         <id>start-jetty</id>
                         <phase>pre-integration-test</phase>
                         <goals>
-                            <goal>run</goal>
+                            <goal>deploy-war</goal>
                         </goals>
-                        <configuration>
-                            <daemon>true</daemon>
-                        </configuration>
                     </execution>
                     <execution>
                         <id>stop-jetty</id>
@@ -383,12 +496,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <inherited>true</inherited>
-                <extensions>true</extensions>
             </plugin>
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
