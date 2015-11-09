@@ -53,8 +53,8 @@ public class TitanGraphProvider implements GraphProvider<TitanGraph> {
 
     private static TitanGraph graphInstance;
 
-    private static Configuration getConfiguration() throws AtlasException {
-        PropertiesConfiguration configProperties = PropertiesUtil.getApplicationProperties();
+    Configuration getConfiguration() throws AtlasException {
+        PropertiesConfiguration configProperties = getApplicationProperties();
 
         Configuration graphConfig = new PropertiesConfiguration();
 
@@ -66,7 +66,7 @@ public class TitanGraphProvider implements GraphProvider<TitanGraph> {
         while (iterator.hasNext()) {
             String key = iterator.next();
             if (key.startsWith(ATLAS_PREFIX)) {
-                String value = (String) configProperties.getProperty(key);
+                Object value = configProperties.getProperty(key);
                 key = key.substring(ATLAS_PREFIX.length());
                 graphConfig.setProperty(key, value);
                 LOG.info("Using graph property {}={}", key, value);
@@ -124,5 +124,17 @@ public class TitanGraphProvider implements GraphProvider<TitanGraph> {
             }
         }
         return graphInstance;
+    }
+
+    /**
+     * Helper method to obtain all application properties which allows the default
+     * static implementation to be overridden.
+     *
+     * @return application properties
+     *
+     * @throws AtlasException if unable to obtain the application properties
+     */
+    PropertiesConfiguration getApplicationProperties() throws AtlasException {
+        return PropertiesUtil.getApplicationProperties();
     }
 }
