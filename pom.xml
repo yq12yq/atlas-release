@@ -466,7 +466,18 @@
             <url>http://repo.typesafe.com/typesafe/releases/</url>
         </repository>
     </repositories>
-
+    <distributionManagement>
+        <repository>
+            <id>${StagingId}</id>
+            <name>${StagingName}</name>
+            <url>${StagingUrl}</url>
+        </repository>
+        <snapshotRepository>
+            <id>${SnapshotsId}</id>
+            <name>${SnapshotsName}</name>
+            <url>${SnapshotsUrl}</url>
+        </snapshotRepository>
+    </distributionManagement>
     <dependencyManagement>
         <dependencies>
             <dependency>
