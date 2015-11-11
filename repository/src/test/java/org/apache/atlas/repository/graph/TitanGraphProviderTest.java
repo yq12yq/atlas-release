@@ -41,7 +41,7 @@ public class TitanGraphProviderTest extends BaseTest {
         Configuration config = provider.getConfiguration();
 
         // assert properties from config file
-        assertEquals("berkeleyje", config.getString("storage.backend"));
+        assertEquals("target/data/berkley", config.getString("storage.directory"));
 
         // assert property which is a comma delimited list
         List hosts = config.getList("storage.hostname");
