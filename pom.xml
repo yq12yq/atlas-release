@@ -1634,7 +1634,7 @@
                         <goals>
                             <goal>javadoc</goal>
                         </goals>
-                        <phase>package</phase>
+                        <phase>install</phase>
                         <configuration>
                             <aggregate>true</aggregate>
                         </configuration>
