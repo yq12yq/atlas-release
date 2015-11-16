@@ -16,10 +16,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
-         xmlns="http://maven.apache.org/POM/4.0.0">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
         <groupId>org.apache</groupId>
@@ -30,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.atlas</groupId>
     <artifactId>apache-atlas</artifactId>
-    <version>0.1-incubating-SNAPSHOT</version>
+    <version>0.5.0.2.3.3.0-3037</version>
     <description>Metadata Management and Data Governance Platform over Hadoop</description>
     <name>apache-atlas</name>
     <packaging>pom</packaging>
@@ -80,7 +77,7 @@
         <jersey.version>1.9</jersey.version>
         <tinkerpop.version>2.6.0</tinkerpop.version>
         <titan.version>0.5.4</titan.version>
-        <hadoop.version>2.6.0</hadoop.version>
+        <hadoop.version>2.7.1.2.3.3.0-3037</hadoop.version>
 
         <!-- scala versions -->
         <scala.version>2.10.4</scala.version>
