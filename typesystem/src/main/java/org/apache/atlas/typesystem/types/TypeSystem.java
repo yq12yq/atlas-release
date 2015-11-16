@@ -22,6 +22,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import org.apache.atlas.AtlasException;
+import org.apache.atlas.TypeExistsException;
 import org.apache.atlas.TypeNotFoundException;
 import org.apache.atlas.classification.InterfaceAudience;
 import org.apache.atlas.typesystem.TypesDef;
@@ -159,7 +160,7 @@ public class TypeSystem {
         String[] mapType = TypeUtils.parseAsMapType(name);
         if (mapType != null) {
             IDataType dT =
-                    defineMapType(getDataType(IDataType.class, mapType[0]), getDataType(IDataType.class, mapType[1]));
+                defineMapType(getDataType(IDataType.class, mapType[0]), getDataType(IDataType.class, mapType[1]));
             return cls.cast(dT);
         }
 
@@ -167,11 +168,11 @@ public class TypeSystem {
     }
 
     public StructType defineStructType(String name, boolean errorIfExists, AttributeDefinition... attrDefs)
-    throws AtlasException {
+        throws AtlasException {
         StructTypeDefinition structDef = new StructTypeDefinition(name, attrDefs);
-        defineTypes(ImmutableList.of(structDef), ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(),
-                ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
-
+        defineTypes(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.of(structDef),
+            ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(),
+            ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
         return getDataType(StructType.class, structDef.typeName);
     }
 
@@ -185,7 +186,7 @@ public class TypeSystem {
      * @throws AtlasException
      */
     public StructType defineQueryResultType(String name, Map<String, IDataType> tempTypes,
-            AttributeDefinition... attrDefs) throws AtlasException {
+        AttributeDefinition... attrDefs) throws AtlasException {
 
         AttributeInfo[] infos = new AttributeInfo[attrDefs.length];
         for (int i = 0; i < attrDefs.length; i++) {
@@ -196,56 +197,50 @@ public class TypeSystem {
     }
 
     public TraitType defineTraitType(HierarchicalTypeDefinition<TraitType> traitDef) throws AtlasException {
-
-        defineTypes(ImmutableList.<StructTypeDefinition>of(), ImmutableList.of(traitDef),
-                ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
-
+        defineTypes(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
+            ImmutableList.of(traitDef), ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
         return getDataType(TraitType.class, traitDef.typeName);
     }
 
     public ClassType defineClassType(HierarchicalTypeDefinition<ClassType> classDef) throws AtlasException {
-
-        defineTypes(ImmutableList.<StructTypeDefinition>of(), ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(),
-                ImmutableList.of(classDef));
-
+        defineTypes(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
+            ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(), ImmutableList.of(classDef));
         return getDataType(ClassType.class, classDef.typeName);
     }
 
     public Map<String, IDataType> defineTraitTypes(HierarchicalTypeDefinition<TraitType>... traitDefs)
-    throws AtlasException {
+        throws AtlasException {
         TransientTypeSystem transientTypes =
-                new TransientTypeSystem(ImmutableList.<StructTypeDefinition>of(), ImmutableList.copyOf(traitDefs),
-                        ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
+            new TransientTypeSystem(ImmutableList.<EnumTypeDefinition>of(),
+                ImmutableList.<StructTypeDefinition>of(), ImmutableList.copyOf(traitDefs),
+                ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
         return transientTypes.defineTypes();
     }
 
     public Map<String, IDataType> defineClassTypes(HierarchicalTypeDefinition<ClassType>... classDefs)
-    throws AtlasException {
-        TransientTypeSystem transientTypes = new TransientTypeSystem(ImmutableList.<StructTypeDefinition>of(),
-                ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(), ImmutableList.copyOf(classDefs));
+        throws AtlasException {
+        TransientTypeSystem transientTypes = new TransientTypeSystem(ImmutableList.<EnumTypeDefinition>of(),
+            ImmutableList.<StructTypeDefinition>of(), ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(),
+            ImmutableList.copyOf(classDefs));
         return transientTypes.defineTypes();
     }
 
     public Map<String, IDataType> defineTypes(TypesDef typesDef) throws AtlasException {
-        Map<String, IDataType> typesAdded = new HashMap<>();
-        for (EnumTypeDefinition enumDef : typesDef.enumTypesAsJavaList()) {
-            typesAdded.put(enumDef.name, defineEnumType(enumDef));
-        }
-
+        ImmutableList<EnumTypeDefinition> enumDefs = ImmutableList.copyOf(typesDef.enumTypesAsJavaList());
         ImmutableList<StructTypeDefinition> structDefs = ImmutableList.copyOf(typesDef.structTypesAsJavaList());
         ImmutableList<HierarchicalTypeDefinition<TraitType>> traitDefs =
-                ImmutableList.copyOf(typesDef.traitTypesAsJavaList());
+            ImmutableList.copyOf(typesDef.traitTypesAsJavaList());
         ImmutableList<HierarchicalTypeDefinition<ClassType>> classDefs =
-                ImmutableList.copyOf(typesDef.classTypesAsJavaList());
+            ImmutableList.copyOf(typesDef.classTypesAsJavaList());
 
-        typesAdded.putAll(defineTypes(structDefs, traitDefs, classDefs));
-        return typesAdded;
+        return defineTypes(enumDefs, structDefs, traitDefs, classDefs);
     }
 
-    public Map<String, IDataType> defineTypes(ImmutableList<StructTypeDefinition> structDefs,
-            ImmutableList<HierarchicalTypeDefinition<TraitType>> traitDefs,
-            ImmutableList<HierarchicalTypeDefinition<ClassType>> classDefs) throws AtlasException {
-        TransientTypeSystem transientTypes = new TransientTypeSystem(structDefs, traitDefs, classDefs);
+    public Map<String, IDataType> defineTypes(ImmutableList<EnumTypeDefinition> enumDefs,
+        ImmutableList<StructTypeDefinition> structDefs,
+        ImmutableList<HierarchicalTypeDefinition<TraitType>> traitDefs,
+        ImmutableList<HierarchicalTypeDefinition<ClassType>> classDefs) throws AtlasException {
+        TransientTypeSystem transientTypes = new TransientTypeSystem(enumDefs, structDefs, traitDefs, classDefs);
         Map<String, IDataType> definedTypes = transientTypes.defineTypes();
         //        LOG.debug("Defined new types " + Arrays.toString(definedTypes.keySet().toArray(new
         // String[definedTypes.size()])));
@@ -307,6 +302,7 @@ public class TypeSystem {
         final ImmutableList<StructTypeDefinition> structDefs;
         final ImmutableList<HierarchicalTypeDefinition<TraitType>> traitDefs;
         final ImmutableList<HierarchicalTypeDefinition<ClassType>> classDefs;
+        private final ImmutableList<EnumTypeDefinition> enumDefs;
         Map<String, StructTypeDefinition> structNameToDefMap = new HashMap<>();
         Map<String, HierarchicalTypeDefinition<TraitType>> traitNameToDefMap = new HashMap<>();
         Map<String, HierarchicalTypeDefinition<ClassType>> classNameToDefMap = new HashMap<>();
@@ -318,10 +314,10 @@ public class TypeSystem {
         List<DataTypes.MapType> recursiveMapTypes;
 
 
-        TransientTypeSystem(ImmutableList<StructTypeDefinition> structDefs,
-                ImmutableList<HierarchicalTypeDefinition<TraitType>> traitDefs,
-                ImmutableList<HierarchicalTypeDefinition<ClassType>> classDefs) {
-
+        TransientTypeSystem(ImmutableList<EnumTypeDefinition> enumDefs, ImmutableList<StructTypeDefinition> structDefs,
+            ImmutableList<HierarchicalTypeDefinition<TraitType>> traitDefs,
+            ImmutableList<HierarchicalTypeDefinition<ClassType>> classDefs) {
+            this.enumDefs = enumDefs;
             this.structDefs = structDefs;
             this.traitDefs = traitDefs;
             this.classDefs = classDefs;
@@ -345,13 +341,25 @@ public class TypeSystem {
          * - setup shallow Type instances to facilitate recursive type graphs
          */
         private void step1() throws AtlasException {
+            for (EnumTypeDefinition eDef : enumDefs) {
+                assert eDef.name != null;
+                if (types.containsKey(eDef.name)) {
+                    throw new AtlasException(String.format("Redefinition of type %s not supported", eDef.name));
+                }
+
+                EnumType eT = new EnumType(this, eDef.name, eDef.enumValues);
+                TypeSystem.this.types.put(eDef.name, eT);
+                typeCategoriesToTypeNamesMap.put(DataTypes.TypeCategory.ENUM, eDef.name);
+                transientTypes.add(eDef.name);
+            }
+
             for (StructTypeDefinition sDef : structDefs) {
                 assert sDef.typeName != null;
                 if (dataType(sDef.typeName) != null) {
-                    throw new AtlasException(String.format("Cannot redefine type %s", sDef.typeName));
+                    throw new TypeExistsException(String.format("Cannot redefine type %s", sDef.typeName));
                 }
                 TypeSystem.this.types
-                        .put(sDef.typeName, new StructType(this, sDef.typeName, sDef.attributeDefinitions.length));
+                    .put(sDef.typeName, new StructType(this, sDef.typeName, sDef.attributeDefinitions.length));
                 structNameToDefMap.put(sDef.typeName, sDef);
                 transientTypes.add(sDef.typeName);
             }
@@ -359,11 +367,11 @@ public class TypeSystem {
             for (HierarchicalTypeDefinition<TraitType> traitDef : traitDefs) {
                 assert traitDef.typeName != null;
                 if (types.containsKey(traitDef.typeName)) {
-                    throw new AtlasException(String.format("Cannot redefine type %s", traitDef.typeName));
+                    throw new TypeExistsException(String.format("Cannot redefine type %s", traitDef.typeName));
                 }
 
                 TypeSystem.this.types.put(traitDef.typeName, new TraitType(this, traitDef.typeName, traitDef.superTypes,
-                                traitDef.attributeDefinitions.length));
+                    traitDef.attributeDefinitions.length));
                 traitNameToDefMap.put(traitDef.typeName, traitDef);
                 transientTypes.add(traitDef.typeName);
             }
@@ -371,39 +379,39 @@ public class TypeSystem {
             for (HierarchicalTypeDefinition<ClassType> classDef : classDefs) {
                 assert classDef.typeName != null;
                 if (types.containsKey(classDef.typeName)) {
-                    throw new AtlasException(String.format("Cannot redefine type %s", classDef.typeName));
+                    throw new TypeExistsException(String.format("Cannot redefine type %s", classDef.typeName));
                 }
 
                 TypeSystem.this.types.put(classDef.typeName, new ClassType(this, classDef.typeName, classDef.superTypes,
-                                classDef.attributeDefinitions.length));
+                    classDef.attributeDefinitions.length));
                 classNameToDefMap.put(classDef.typeName, classDef);
                 transientTypes.add(classDef.typeName);
             }
         }
 
         private <U extends HierarchicalType> void validateSuperTypes(Class<U> cls, HierarchicalTypeDefinition<U> def)
-        throws AtlasException {
+            throws AtlasException {
             Set<String> s = new HashSet<>();
             ImmutableList<String> superTypes = def.superTypes;
             for (String superTypeName : superTypes) {
 
                 if (s.contains(superTypeName)) {
                     throw new AtlasException(
-                            String.format("Type %s extends superType %s multiple times", def.typeName, superTypeName));
+                        String.format("Type %s extends superType %s multiple times", def.typeName, superTypeName));
                 }
 
                 IDataType dT = dataType(superTypeName);
 
                 if (dT == null) {
                     throw new AtlasException(
-                            String.format("Unknown superType %s in definition of type %s", superTypeName,
-                                    def.typeName));
+                        String.format("Unknown superType %s in definition of type %s", superTypeName,
+                            def.typeName));
                 }
 
                 if (!cls.isAssignableFrom(dT.getClass())) {
                     throw new AtlasException(
-                            String.format("SuperType %s must be a %s, in definition of type %s", superTypeName,
-                                    cls.getName(), def.typeName));
+                        String.format("SuperType %s must be a %s, in definition of type %s", superTypeName,
+                            cls.getName(), def.typeName));
                 }
                 s.add(superTypeName);
             }
@@ -449,10 +457,10 @@ public class TypeSystem {
             }
 
             if (info.multiplicity.upper > 1 && !(info.dataType().getTypeCategory() == DataTypes.TypeCategory.MAP
-                    || info.dataType().getTypeCategory() == DataTypes.TypeCategory.ARRAY)) {
+                || info.dataType().getTypeCategory() == DataTypes.TypeCategory.ARRAY)) {
                 throw new AtlasException(
-                        String.format("A multiplicty of more than one requires a collection type for attribute '%s'",
-                                info.name));
+                    String.format("A multiplicty of more than one requires a collection type for attribute '%s'",
+                        info.name));
             }
 
             return info;
@@ -470,7 +478,7 @@ public class TypeSystem {
         }
 
         private <U extends HierarchicalType> U constructHierarchicalType(Class<U> cls,
-                HierarchicalTypeDefinition<U> def) throws AtlasException {
+            HierarchicalTypeDefinition<U> def) throws AtlasException {
             AttributeInfo[] infos = new AttributeInfo[def.attributeDefinitions.length];
             for (int i = 0; i < def.attributeDefinitions.length; i++) {
                 infos[i] = constructAttributeInfo(def.attributeDefinitions[i]);
@@ -478,7 +486,7 @@ public class TypeSystem {
 
             try {
                 Constructor<U> cons = cls.getDeclaredConstructor(TypeSystem.class, String.class, ImmutableList.class,
-                        AttributeInfo[].class);
+                    AttributeInfo[].class);
                 U type = cons.newInstance(TypeSystem.this, def.typeName, def.superTypes, infos);
                 TypeSystem.this.types.put(def.typeName, type);
                 return type;
@@ -508,7 +516,7 @@ public class TypeSystem {
 
             for (StructTypeDefinition structDef : structDefs) {
                 constructStructureType(structDef);
-                typeCategoriesToTypeNamesMap.put(DataTypes.TypeCategory.CLASS, structDef.typeName);
+                typeCategoriesToTypeNamesMap.put(DataTypes.TypeCategory.STRUCT, structDef.typeName);
             }
 
             for (TraitType traitType : traitTypes) {
@@ -573,7 +581,7 @@ public class TypeSystem {
 
         @Override
         public StructType defineStructType(String name, boolean errorIfExists, AttributeDefinition... attrDefs)
-        throws AtlasException {
+            throws AtlasException {
             throw new AtlasException("Internal Error: define type called on TrasientTypeSystem");
         }
 
@@ -588,9 +596,10 @@ public class TypeSystem {
         }
 
         @Override
-        public Map<String, IDataType> defineTypes(ImmutableList<StructTypeDefinition> structDefs,
-                ImmutableList<HierarchicalTypeDefinition<TraitType>> traitDefs,
-                ImmutableList<HierarchicalTypeDefinition<ClassType>> classDefs) throws AtlasException {
+        public Map<String, IDataType> defineTypes(ImmutableList<EnumTypeDefinition> enumDefs,
+            ImmutableList<StructTypeDefinition> structDefs,
+            ImmutableList<HierarchicalTypeDefinition<TraitType>> traitDefs,
+            ImmutableList<HierarchicalTypeDefinition<ClassType>> classDefs) throws AtlasException {
             throw new AtlasException("Internal Error: define type called on TrasientTypeSystem");
         }
 
@@ -612,11 +621,11 @@ public class TypeSystem {
 
         private IdType() {
             AttributeDefinition idAttr =
-                    new AttributeDefinition(ID_ATTRNAME, DataTypes.STRING_TYPE.getName(), Multiplicity.REQUIRED, false,
-                            null);
+                new AttributeDefinition(ID_ATTRNAME, DataTypes.STRING_TYPE.getName(), Multiplicity.REQUIRED, false,
+                    null);
             AttributeDefinition typNmAttr =
-                    new AttributeDefinition(TYPENAME_ATTRNAME, DataTypes.STRING_TYPE.getName(), Multiplicity.REQUIRED,
-                            false, null);
+                new AttributeDefinition(TYPENAME_ATTRNAME, DataTypes.STRING_TYPE.getName(), Multiplicity.REQUIRED,
+                    false, null);
             try {
                 AttributeInfo[] infos = new AttributeInfo[2];
                 infos[0] = new AttributeInfo(TypeSystem.this, idAttr, null);

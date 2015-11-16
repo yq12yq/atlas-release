@@ -31,6 +31,7 @@ import org.apache.atlas.typesystem.json.TypesSerialization$;
 import org.apache.atlas.typesystem.types.AttributeDefinition;
 import org.apache.atlas.typesystem.types.ClassType;
 import org.apache.atlas.typesystem.types.DataTypes;
+import org.apache.atlas.typesystem.types.EnumTypeDefinition;
 import org.apache.atlas.typesystem.types.HierarchicalTypeDefinition;
 import org.apache.atlas.typesystem.types.Multiplicity;
 import org.apache.atlas.typesystem.types.StructTypeDefinition;
@@ -67,7 +68,7 @@ public class InstanceE2ETest extends BaseTest {
                         TypesUtil.createRequiredAttrDef("level", DataTypes.INT_TYPE));
         typeDefinitions.add(fetlTypeDefinition);
 
-        typeSystem.defineTypes(ImmutableList.<StructTypeDefinition>of(), ImmutableList.of(fetlTypeDefinition),
+        typeSystem.defineTypes(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(), ImmutableList.of(fetlTypeDefinition),
                 ImmutableList.of(databaseTypeDefinition, tableTypeDefinition));
 
         return typeDefinitions;
