@@ -1411,7 +1411,7 @@
                     <forkMode>always</forkMode>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <argLine>-Djava.awt.headless=true -Dproject.version=${project.version}
-                        -Dhadoop.tmp.dir=${project.build.directory}/tmp-hadoop-${user.name}
+                        -Dhadoop.tmp.dir="${project.build.directory}/tmp-hadoop-${user.name}"
                         -Xmx1024m -XX:MaxPermSize=512m -Dlog4j.configuration=atlas-log4j.xml
                         -Djava.net.preferIPv4Stack=true
                     </argLine>
@@ -1438,7 +1438,7 @@
                     </systemPropertyVariables>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <argLine>-Djava.awt.headless=true -Dproject.version=${project.version}
-                        -Dhadoop.tmp.dir=${project.build.directory}/tmp-hadoop-${user.name}
+                        -Dhadoop.tmp.dir="${project.build.directory}/tmp-hadoop-${user.name}"
                         -Xmx1024m -XX:MaxPermSize=512m -Dlog4j.configuration=atlas-log4j.xml
                     </argLine>
                     <parallel>none</parallel>
