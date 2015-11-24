@@ -68,8 +68,8 @@ public class HiveHook implements ExecuteWithHookContext {
     public static final String CONF_SYNC = CONF_PREFIX + "synchronous";
     public static final String QUEUE_SIZE = CONF_PREFIX + "queueSize";
 
-    private static final int minThreadsDefault = 5;
-    private static final int maxThreadsDefault = 5;
+    private static final int minThreadsDefault = 1;
+    private static final int maxThreadsDefault = 1;
     private static final long keepAliveTimeDefault = 10;
     private static final int queueSizeDefault = 10000;
     private static boolean typesRegistered = false;
