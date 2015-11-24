@@ -390,6 +390,7 @@ public class HBaseStoreManager extends DistributedStoreManager implements KeyCol
                 .orderedScan(true).unorderedScan(true).batchMutation(true)
                 .multiQuery(true).distributed(true).keyOrdered(true).storeTTL(true)
                 .timestamps(true).preferredTimestamps(PREFERRED_TIMESTAMPS)
+                .locking(true)
                 .keyConsistent(c);
 
         try {

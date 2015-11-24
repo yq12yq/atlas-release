@@ -107,7 +107,12 @@ public class HBaseKeyColumnValueStore implements KeyColumnValueStore {
                             StaticBuffer column,
                             StaticBuffer expectedValue,
                             StoreTransaction txh) throws BackendException {
-        throw new UnsupportedOperationException();
+
+        /** Commenting this out since we just want to simulate that Hbase Store has locking enabled whereas in reality it doesnt.
+          *  Atlas doesnt need locking at this point since we dont support entity updates or deletes which could potentially operate on the same set of vertices
+          * and the hook consumer threads are all single threaded
+          */
+         //throw new UnsupportedOperationException();
     }
 
     @Override
