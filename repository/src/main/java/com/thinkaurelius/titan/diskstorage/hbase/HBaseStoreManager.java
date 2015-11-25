@@ -805,12 +805,7 @@ public class HBaseStoreManager extends DistributedStoreManager implements KeyCol
 
                     adm.addColumn(tableName, cdesc);
 
-                    try {
-                        logger.debug("Added HBase ColumnFamily {}, waiting for 1 sec. to propogate.", columnFamily);
-                        Thread.sleep(1000L);
-                    } catch (InterruptedException ie) {
-                        throw new TemporaryBackendException(ie);
-                    }
+                    logger.debug("Added HBase ColumnFamily {}", columnFamily);
 
                     adm.enableTable(tableName);
                 } catch (TableNotFoundException ee) {
