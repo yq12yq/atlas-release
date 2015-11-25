@@ -15,11 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 'use strict';
 
-angular.module('dgc.search').controller('SearchController', ['$scope', '$location', '$http', '$state', '$stateParams', 'lodash', 'SearchResource', 'NotificationService',
-    function($scope, $location, $http, $state, $stateParams, _, SearchResource, NotificationService) {
+angular.module('dgc.search').controller('SearchController', ['$scope', '$location', '$http', '$state', '$stateParams', 'lodash', 'SearchResource', 'DetailsResource', 'NotificationService',
+    function($scope, $location, $http, $state, $stateParams, _, SearchResource, DetailsResource, NotificationService) {
 
         $scope.results = [];
         $scope.resultCount = 0;
@@ -28,6 +27,13 @@ angular.module('dgc.search').controller('SearchController', ['$scope', '$locatio
         $scope.itemsPerPage = 10;
         $scope.filteredResults = [];
         $scope.resultRows = [];
+        $scope.resultType = '';
+        $scope.isObject = angular.isObject;
+        $scope.isString = angular.isString;
+        $scope.isArray = angular.isArray;
+        $scope.isNumber = angular.isNumber;
+        $scope.mapAttr = ['name', 'guid', 'typeName', 'owner', 'description', 'createTime', '$traits$', '$id$', 'comment', 'dataType'];
+
         $scope.setPage = function(pageNo) {
             $scope.currentPage = pageNo;
         };
@@ -36,38 +42,75 @@ angular.module('dgc.search').controller('SearchController', ['$scope', '$locatio
             NotificationService.reset();
             $scope.limit = 4;
             $scope.searchMessage = 'load-gif';
-
             $scope.$parent.query = query;
             SearchResource.search({
                 query: query
             }, function searchSuccess(response) {
+
                 $scope.resultCount = response.count;
                 $scope.results = response.results;
-                $scope.resultRows = $scope.results.rows;
+                $scope.resultRows = ($scope.results && $scope.results.rows) ? $scope.results.rows : $scope.results;
+
                 $scope.totalItems = $scope.resultCount;
                 $scope.transformedResults = {};
                 $scope.dataTransitioned = false;
-                if (response.results.dataType && response.results.dataType.typeName.indexOf('__') === 0) {
-                    $scope.dataTransitioned = true;
-                    var attrDef = response.results.dataType.attributeDefinitions;
-                    angular.forEach(attrDef, function(value) {
-                        if (value.dataTypeName === '__IdType') {
-                            $scope.searchKey = value.name;
-                        }
-                    });
-                    $scope.transformedResults = $scope.filterResults();
+
+                if ($scope.results) {
+                    if (response.dataType) {
+                        $scope.resultType = response.dataType.typeName;
+                    } else if(response.results.dataType) {
+                        $scope.resultType = response.results.dataType.typeName; 
+                    } else if (typeof response.dataType === 'undefined') {
+                        $scope.resultType = "full text";
+                    } 
+                    $scope.searchMessage = $scope.resultCount + ' results matching your search query ' + $scope.query + ' were found';
                 } else {
+                    $scope.searchMessage = '0 results matching your search query ' + $scope.query + ' were found';
+                }
+                response.dataType = (response.results && response.results.dataType) ? response.results.dataType : response.dataType ;
+                if (response.dataType && response.dataType.typeName && response.dataType.typeName.toLowerCase().indexOf('table') == -1) {
+                    $scope.dataTransitioned = true;
+                    var attrDef = response.dataType.attributeDefinitions;
+                    if (attrDef.length === 1) {
+                        $scope.searchKey = attrDef[0].name;
+                    } else {
+                        angular.forEach(attrDef, function(value) {
+                            if (value.dataTypeName === '__IdType') {
+                                $scope.searchKey = value.name;
+                            }
+                            console.log("searchKey " + $scope.searchKey);
+                        });
+                        if ($scope.searchKey === undefined || $scope.searchKey === '') {
+                            $scope.searchKey = '';
+                            console.log("searchKey " + $scope.searchKey);
+                        }
+                    }
+                    $scope.transformedResults = $scope.filterResults();
+                    $scope.transformedProperties = $scope.filterProperties();
+                    console.log($scope.transformedProperties);
+
+                } else if (typeof response.dataType === 'undefined') {
+                    $scope.dataTransitioned = true;
+                    $scope.searchKey = '';
+                    $scope.transformedResults = $scope.filterResults();
+                    $scope.transformedProperties = $scope.filterProperties();
+                    console.log($scope.transformedProperties);
+                } else if (response.dataType.typeName && response.dataType.typeName.toLowerCase().indexOf('table') !== -1) {
+                    $scope.searchKey = "Table";
+                    $scope.transformedResults = $scope.resultRows;
+                } else if (response.results.dataType && response.results.dataType.typeName && response.results.dataType.typeName.toLowerCase().indexOf('table') !== -1) {
+                    $scope.searchKey = "Table"; 
                     $scope.transformedResults = $scope.resultRows;
                 }
-                if ($scope.results.rows)
-                    $scope.searchMessage = $scope.resultCount + ' results matching your search query ' + $scope.query + ' were found';
-                else
-                    $scope.searchMessage = '0 results matching your search query ' + $scope.query + ' were found';
 
                 $scope.$watch('currentPage + itemsPerPage', function() {
                     var begin = (($scope.currentPage - 1) * $scope.itemsPerPage),
                         end = begin + $scope.itemsPerPage;
-                    if ($scope.transformedResults) $scope.filteredResults = $scope.transformedResults.slice(begin, end);
+                    if ($scope.transformedResults) {
+                        $scope.filteredResults = $scope.transformedResults.slice(begin, end);
+                    }
+                    console.log("Filter Result");
+                    console.log($scope.filteredResults);
                     $scope.pageCount = function() {
                         return Math.ceil($scope.resultCount / $scope.itemsPerPage);
                     };
@@ -88,14 +131,85 @@ angular.module('dgc.search').controller('SearchController', ['$scope', '$locatio
 
         $scope.filterResults = function() {
             var res = [];
-            angular.forEach($scope.resultRows, function(value) {
-                res.push(value[$scope.searchKey]);
-            });
+            if ($scope.searchKey !== '') {
+                angular.forEach($scope.resultRows, function(value) {
+                    res.push(value[$scope.searchKey]);
+                });
+            } else {
+                angular.forEach($scope.resultRows, function(value) {
+                    var objVal = {},
+                        curVal = value;
+                    if (curVal.name) {
+                        objVal.name = curVal.name;
+                        delete curVal.name;
+                    }
+                    angular.forEach(curVal, function(vl, ky) {
+                        if($scope.mapAttr.indexOf(ky) !== -1 || ky.indexOf('_col_') != -1){ 
+                            if (ky === '$id$') {
+                                objVal.id = curVal[ky].id;
+                            } else if (ky === '$traits$') {
+                                objVal[ky] = vl;
+                                objVal.Tools = objVal.id;
+                            } else if (ky.indexOf('$') === -1) {
+                                objVal[ky] = vl;
+                            }
+                        }
+                    });
+
+                    res.push(objVal);
+                });
+            }
             return res;
         };
+
+        $scope.filterProperties = function() {
+            var results = $scope.transformedResults,
+                pro = [];
+            if (results && results.length > 0) {
+                var result = results[0];
+                if (typeof result === 'object') {
+                    angular.forEach(result, function(value, key) {
+                        if (key.indexOf('$typeName$') === -1) {
+                            pro.push(key);
+                        }
+                    });
+                } else {
+                    pro.push($scope.searchKey);
+                }
+            }
+            return pro;
+        };
+
         $scope.doToggle = function($event, el) {
             this.isCollapsed = !el;
         };
+        $scope.openAddTagHome = function(traitId) {
+            $state.go('addTagHome', {
+                id: traitId
+            });
+        };
+        $scope.isTag = function(typename) {
+
+            if (typename.indexOf("__tempQueryResultStruct") > -1 || $scope.searchKey === '') {
+                return true;
+            } else {
+                return false;
+            }
+        };
+        $scope.getResourceDataHome = function(event, id) {
+            DetailsResource.get({
+                id: id
+            }, function(data) {
+                if ($scope.filteredResults !== null && Object.keys($scope.filteredResults).length > 0) {
+                    angular.forEach($scope.filteredResults, function(obj, trait) {
+                        if ((obj.$id$ && obj.$id$.id.indexOf(id) > -1) || (obj.id && obj.id.indexOf(id) > -1)) {
+                            $scope.filteredResults[trait].$traits$ = data.traits;
+                        }
+                    });
+                }
+            });
+        };
+        $scope.$on('refreshResourceData', $scope.getResourceDataHome);
         $scope.filterSearchResults = function(items) {
             var res = {};
             var count = 0;
