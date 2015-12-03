@@ -20,11 +20,16 @@ package org.apache.atlas.repository.graph;
 
 import com.thinkaurelius.titan.core.PropertyKey;
 import com.thinkaurelius.titan.core.TitanGraph;
+import com.thinkaurelius.titan.core.util.TitanCleanup;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.repository.BaseTest;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.junit.Test;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeTest;
 
 import java.util.List;
 
@@ -35,10 +40,53 @@ import static org.junit.Assert.assertEquals;
  */
 public class TitanGraphProviderTest extends BaseTest {
 
+    private Configuration configuration;
+    private TitanGraph graph;
+
+    @BeforeTest
+    public void setUp() throws AtlasException {
+        //First get Instance
+        graph = TitanGraphProvider.getGraphInstance();
+        configuration = ApplicationProperties.getSubsetConfiguration(ApplicationProperties.get(), TitanGraphProvider.GRAPH_PREFIX);
+    }
+
+    @AfterClass
+    public void tearDown() throws Exception {
+        try {
+            graph.shutdown();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            TitanCleanup.clear(graph);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @org.testng.annotations.Test
+    public void testValidate() throws AtlasException {
+        try {
+            TitanGraphProvider.validateIndexBackend(configuration);
+        } catch(Exception e){
+            Assert.fail("Unexpected exception ", e);
+        }
+
+        //Change backend
+        configuration.setProperty(TitanGraphProvider.INDEX_BACKEND_CONF, TitanGraphProvider.INDEX_BACKEND_LUCENE);
+        try {
+            TitanGraphProvider.validateIndexBackend(configuration);
+            Assert.fail("Expected exception");
+        } catch(Exception e){
+            Assert.assertEquals(e.getMessage(), "Configured Index Backend lucene differs from earlier configured Index Backend elasticsearch. Aborting!");
+        }
+    }
+
     @Test
     public void testGetConfiguration() throws Exception {
-        TestTitanGraphProvider provider = new TestTitanGraphProvider();
-        Configuration config = provider.getConfiguration();
+        Configuration config = ApplicationProperties.getSubsetConfiguration(ApplicationProperties.get(), TitanGraphProvider.GRAPH_PREFIX);
+        config.setProperty("storage.hostname", "host1,host2,host3");
 
         // assert properties from config file
         assertEquals("target/data/berkley", config.getString("storage.directory"));
@@ -50,16 +98,5 @@ public class TitanGraphProviderTest extends BaseTest {
         assertEquals("host1", hosts.get(0));
         assertEquals("host2", hosts.get(1));
         assertEquals("host3", hosts.get(2));
-    }
-
-    private static class TestTitanGraphProvider extends TitanGraphProvider {
-        private Configuration configuration;
-
-        @Override
-        PropertiesConfiguration getApplicationProperties() throws AtlasException {
-            PropertiesConfiguration config = super.getApplicationProperties();
-            config.setProperty("atlas.graph.storage.hostname", "host1,host2,host3");
-            return config;
-        }
     }
 }
