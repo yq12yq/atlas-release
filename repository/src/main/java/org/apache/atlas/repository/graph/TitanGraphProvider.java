@@ -22,22 +22,26 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Provides;
 import com.thinkaurelius.titan.core.TitanFactory;
 import com.thinkaurelius.titan.core.TitanGraph;
+import com.thinkaurelius.titan.core.TitanTransaction;
+import com.thinkaurelius.titan.core.schema.TitanManagement;
+import com.thinkaurelius.titan.diskstorage.Backend;
 import com.thinkaurelius.titan.diskstorage.StandardIndexProvider;
+import com.thinkaurelius.titan.diskstorage.indexing.IndexInformation;
 import com.thinkaurelius.titan.diskstorage.solr.Solr5Index;
+import com.thinkaurelius.titan.graphdb.configuration.GraphDatabaseConfiguration;
+import com.thinkaurelius.titan.graphdb.database.StandardTitanGraph;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
-import org.apache.atlas.PropertiesUtil;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
-import java.util.Iterator;
-import java.util.Properties;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Default implementation for Graph Provider that doles out Titan Graph.
@@ -49,31 +53,19 @@ public class TitanGraphProvider implements GraphProvider<TitanGraph> {
     /**
      * Constant for the configuration property that indicates the prefix.
      */
-    private static final String ATLAS_PREFIX = "atlas.graph.";
+    public static final String GRAPH_PREFIX = "atlas.graph";
+
+    public static final String INDEX_BACKEND_CONF = "index.search.backend";
+
+    public static final String INDEX_BACKEND_LUCENE = "lucene";
+
+    public static final String INDEX_BACKEND_ES = "elasticsearch";
 
     private static volatile TitanGraph graphInstance;
 
-    Configuration getConfiguration() throws AtlasException {
-        PropertiesConfiguration configProperties = getApplicationProperties();
-
-        Configuration graphConfig = new PropertiesConfiguration();
-
-        Properties sysProperties = System.getProperties();
-        LOG.info("System properties: ");
-        LOG.info(sysProperties.toString());
-
-        final Iterator<String> iterator = configProperties.getKeys();
-        while (iterator.hasNext()) {
-            String key = iterator.next();
-            if (key.startsWith(ATLAS_PREFIX)) {
-                Object value = configProperties.getProperty(key);
-                key = key.substring(ATLAS_PREFIX.length());
-                graphConfig.setProperty(key, value);
-                LOG.info("Using graph property {}={}", key, value);
-            }
-        }
-
-        return graphConfig;
+    public static Configuration getConfiguration() throws AtlasException {
+        Configuration configProperties = ApplicationProperties.get();
+        return ApplicationProperties.getSubsetConfiguration(configProperties, GRAPH_PREFIX);
     }
 
     static {
@@ -105,10 +97,10 @@ public class TitanGraphProvider implements GraphProvider<TitanGraph> {
         }
     }
 
-    public TitanGraph getGraphInstance() {
-        if(graphInstance == null) {
+    public static TitanGraph getGraphInstance() {
+        if (graphInstance == null) {
             synchronized (TitanGraphProvider.class) {
-                if(graphInstance == null) {
+                if (graphInstance == null) {
                     Configuration config;
                     try {
                         config = getConfiguration();
@@ -117,22 +109,30 @@ public class TitanGraphProvider implements GraphProvider<TitanGraph> {
                     }
 
                     graphInstance = TitanFactory.open(config);
+                    validateIndexBackend(config);
                 }
             }
         }
         return graphInstance;
     }
 
-    /**
-     * Helper method to obtain all application properties which allows the default
-     * static implementation to be overridden.
-     *
-     * @return application properties
-     *
-     * @throws AtlasException if unable to obtain the application properties
-     */
-    PropertiesConfiguration getApplicationProperties() throws AtlasException {
-        return PropertiesUtil.getApplicationProperties();
+    public static void clear() {
+        synchronized (TitanGraphProvider.class) {
+            graphInstance.shutdown();
+            graphInstance = null;
+        }
+    }
+
+    static void validateIndexBackend(Configuration config) {
+        String configuredIndexBackend = config.getString(INDEX_BACKEND_CONF);
+
+        TitanManagement managementSystem = graphInstance.getManagementSystem();
+
+        String currentIndexBackend = managementSystem.get(INDEX_BACKEND_CONF);
+        if(!configuredIndexBackend.equals(currentIndexBackend)) {
+            throw new RuntimeException("Configured Index Backend " + configuredIndexBackend + " differs from earlier configured Index Backend " + currentIndexBackend + ". Aborting!");
+        }
+        managementSystem.commit();
     }
 
     @Override
