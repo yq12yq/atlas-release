@@ -72,7 +72,12 @@ public class QuickStart {
         }
 
         Configuration configuration = ApplicationProperties.get();
-        return configuration.getString(ATLAS_REST_ADDRESS, "http://localhost:21000/");
+        String baseUrl = configuration.getString(ATLAS_REST_ADDRESS);
+        if (baseUrl == null) {
+            System.err.println("Usage: quick_start.py <atlas end point>");
+            System.exit(-1);
+        }
+        return baseUrl;
     }
 
     private static final String DATABASE_TYPE = "DB";
