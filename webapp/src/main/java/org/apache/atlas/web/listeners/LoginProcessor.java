@@ -66,7 +66,6 @@ public class LoginProcessor {
 
     protected void doServiceLogin(Configuration hadoopConfig, PropertiesConfiguration configuration) {
         UserGroupInformation.setConfiguration(hadoopConfig);
-
         UserGroupInformation ugi = null;
         UserGroupInformation.AuthenticationMethod authenticationMethod =
                 SecurityUtil.getAuthenticationMethod(hadoopConfig);
@@ -155,5 +154,23 @@ public class LoginProcessor {
             // ignore - false is default setting
         }
         return isHadoopCluster;
+    }
+
+    public static void reloginExpiringKeytabUser() throws IOException {
+        if(!UserGroupInformation.isSecurityEnabled()){
+            return;
+        }
+        try {
+            UserGroupInformation ugi = UserGroupInformation.getLoginUser();
+            //checkTGT calls ugi.relogin only after checking if it is close to tgt expiry
+            //hadoop relogin is actually done only every x minutes (x=10 in hadoop 1.x)
+            if (ugi.isFromKeytab()) {
+                ugi.checkTGTAndReloginFromKeytab();
+            }
+        } catch (IOException e) {
+            final String msg = "Error doing relogin using keytab " + e.getMessage();
+            LOG.error(msg, e);
+            throw e;
+        }
     }
 }
