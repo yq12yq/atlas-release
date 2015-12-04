@@ -19,9 +19,9 @@
 package org.apache.atlas.web.filters;
 
 import com.google.inject.Singleton;
-import org.apache.atlas.PropertiesUtil;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.security.SecurityProperties;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.Configuration;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.authentication.server.AuthenticationFilter;
 import org.apache.hadoop.security.authentication.server.KerberosAuthenticationHandler;
@@ -48,9 +48,9 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
 
     @Override
     protected Properties getConfiguration(String configPrefix, FilterConfig filterConfig) throws ServletException {
-        PropertiesConfiguration configuration;
+        Configuration configuration;
         try {
-            configuration = PropertiesUtil.getApplicationProperties();
+            configuration = ApplicationProperties.get();
         } catch (Exception e) {
             throw new ServletException(e);
         }
