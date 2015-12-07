@@ -21,6 +21,7 @@ package org.apache.atlas.web.filters;
 import com.google.inject.Singleton;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.security.SecurityProperties;
+import org.apache.atlas.web.listeners.LoginProcessor;
 import org.apache.commons.configuration.Configuration;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.authentication.server.AuthenticationFilter;
@@ -94,6 +95,12 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
                 throw new RuntimeException("Could not resolve Kerberos principal name: " + ex.toString(), ex);
             }
             config.put(KerberosAuthenticationHandler.PRINCIPAL, principal);
+        }
+
+        try {
+            LoginProcessor.reloginExpiringKeytabUser();
+        } catch (IOException e) {
+            throw new ServletException("Unable to renew Kerberos Credentials", e);
         }
 
         LOG.info("AuthenticationFilterConfig: {}", config);
