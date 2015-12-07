@@ -1,8 +1,9 @@
 Changes only in Hortonworks github and not in atlas-2.5.0 and hence not covered by CHANGES.txt.
+ATLAS-361 Add validation when index backends are switched in ATLAS configuration
 ATLAS-355 Kerberized cluster: client.properties does not have correct values for the properties
 ATLAS-351 Solr as indexing backend is not picked up by titan when storage backend is set to hbase
-ATLAS-350 - Document jaas config details for atlas
-ATLAS-344 - Document HBase permissions for secure cluster
+ATLAS-350 Document jaas config details for atlas
+ATLAS-344 Document HBase permissions for secure cluster
 ATLAS-279 UI not displaying results for certain successful "select" search queries
 ATLAS-335 Kerberized cluster: Atlas fails to come up with hbase as backend
 ATLAS-334 Update documentation to reflect copying required atlas file on solr installation
@@ -21,11 +22,12 @@ ATLAS-195 Document Hbase configs
 ATLAS-102 Issue with SolrIndex
 ATLAS-91 Add solr configuration and documentation
 ATLAS-37 atlas repository, webapp, hive-bridge tests fails with Hbase and Solr as Titan storage backend
+ATLAS-92 import-hive.sh failed to find HiveMetaStoreBridge
 ATLAS-179 Atlas hook causes mem leak and hive server 2 crashes
 ATLAS-36 Need separate persisted properties for HTTP and HTTPS ports
 ATLAS-118 rename atlas log4j configuration files to avoid config collisions with other projects
 ATLAS-81 atlas debian packaing fails in maven build
-ATLAS-54 - Rename configs in hive hook
+ATLAS-54 Rename configs in hive hook
 ATLAS-45 Entity submit fails
 ATLAS-32 create HTTP connection in context of invoking user in secure cluster
 ATLAS-31. Fixed Mixed Index creation fails with Date types
