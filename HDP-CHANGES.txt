@@ -1,12 +1,37 @@
 Changes only in Hortonworks github and not in atlas-2.5.0 and hence not covered by CHANGES.txt.
-
+ATLAS-355 Kerberized cluster: client.properties does not have correct values for the properties
+ATLAS-351 Solr as indexing backend is not picked up by titan when storage backend is set to hbase
+ATLAS-350 - Document jaas config details for atlas
+ATLAS-344 - Document HBase permissions for secure cluster
+ATLAS-279 UI not displaying results for certain successful "select" search queries
+ATLAS-335 Kerberized cluster: Atlas fails to come up with hbase as backend
+ATLAS-334 Update documentation to reflect copying required atlas file on solr installation
+ATLAS-352 Fix performance issues with type and entity creation with Hbase as storage backend
+ATLAS-238 atlas_start.py- the Atlas server won’t restart after improper shutdown
+ATLAS-198 Atlas UI Requires Internet Access
+ATLAS-128 DSL - Add support for comparisions on list type
+ATLAS-168 Atlas UI - Max column in hive 4
+ATLAS-114 Upgrade hbase client to 1.1.2
+ATLAS-86 Jenkins build failing as of build #41
+ATLAS-67 Validate with secure zookeeper server for titan interaction with hbase and solr
+ATLAS-180 Cleanup atlas doc packaging
+ATLAS-117 Build fails on the latest commit
+ATLAS-196 Fix solr documentation
+ATLAS-195 Document Hbase configs
+ATLAS-102 Issue with SolrIndex
+ATLAS-91 Add solr configuration and documentation
+ATLAS-37 atlas repository, webapp, hive-bridge tests fails with Hbase and Solr as Titan storage backend
+ATLAS-179 Atlas hook causes mem leak and hive server 2 crashes
+ATLAS-36 Need separate persisted properties for HTTP and HTTPS ports
+ATLAS-118 rename atlas log4j configuration files to avoid config collisions with other projects
+ATLAS-81 atlas debian packaing fails in maven build
 ATLAS-54 - Rename configs in hive hook
-BUG-40636. The values having whitespace like \t etc which is common in hive as a delimiter were getting rejected due to StringUtils.isNotBlank check which has been changed to isNotEmpty now
+ATLAS-45 Entity submit fails
 ATLAS-32 create HTTP connection in context of invoking user in secure cluster
 ATLAS-31. Fixed Mixed Index creation fails with Date types
-ATLAS-31. Fixed ATLAS build fails with clean repo
-BUG-40009 fixed class comparator
+ATLAS-31 Fixed ATLAS build fails with clean repo
+ATLAS-33 Atlas restart fails
 ATLAS-29 create configuration that inherits existing hadoop config
-BUG-39302 Parameterize schema API query per typeName
+ATLAS-17 Parameterize schema API query per typeName
 ATLAS-15 remove specific version string as default property value
 ATLAS-19 remove unnecessary docs dir​
