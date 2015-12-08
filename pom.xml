@@ -408,6 +408,7 @@
     <modules>
         <module>common</module>
         <module>typesystem</module>
+        <module>server-api</module>
         <module>notification</module>
         <module>client</module>
         <module>titan</module>
@@ -939,6 +940,12 @@
             <dependency>
                 <groupId>org.apache.atlas</groupId>
                 <artifactId>atlas-titan</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.atlas</groupId>
+                <artifactId>atlas-server-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
