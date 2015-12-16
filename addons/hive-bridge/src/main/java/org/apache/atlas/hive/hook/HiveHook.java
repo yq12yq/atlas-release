@@ -112,7 +112,7 @@ public class HiveHook implements ExecuteWithHookContext {
 
     static {
         try {
-            atlasProperties = ApplicationProperties.get(ApplicationProperties.CLIENT_PROPERTIES);
+            atlasProperties = ApplicationProperties.get();
 
             // initialize the async facility to process hook calls. We don't
             // want to do this inline since it adds plenty of overhead for the query.

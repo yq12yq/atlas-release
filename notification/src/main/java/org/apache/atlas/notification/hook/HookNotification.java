@@ -39,28 +39,22 @@ public class HookNotification implements JsonDeserializer<HookNotification.HookN
     @Override
     public HookNotificationMessage deserialize(JsonElement json, Type typeOfT,
                                                JsonDeserializationContext context) throws JsonParseException {
-        if (json.isJsonArray()) {
-            JSONArray jsonArray = context.deserialize(json, JSONArray.class);
-            return new EntityCreateRequest(jsonArray);
-        } else {
-            HookNotificationType type =
-                    context.deserialize(((JsonObject) json).get("type"), HookNotificationType.class);
-            switch (type) {
-                case ENTITY_CREATE:
-                    return context.deserialize(json, EntityCreateRequest.class);
+        HookNotificationType type = context.deserialize(((JsonObject) json).get("type"), HookNotificationType.class);
+        switch (type) {
+            case ENTITY_CREATE:
+                return context.deserialize(json, EntityCreateRequest.class);
 
-                case ENTITY_FULL_UPDATE:
-                    return context.deserialize(json, EntityUpdateRequest.class);
+            case ENTITY_FULL_UPDATE:
+                return context.deserialize(json, EntityUpdateRequest.class);
 
-                case ENTITY_PARTIAL_UPDATE:
-                    return context.deserialize(json, EntityPartialUpdateRequest.class);
+            case ENTITY_PARTIAL_UPDATE:
+                return context.deserialize(json, EntityPartialUpdateRequest.class);
 
-                case TYPE_CREATE:
-                case TYPE_UPDATE:
-                    return context.deserialize(json, TypeRequest.class);
-            }
-            throw new IllegalStateException("Unhandled type " + type);
+            case TYPE_CREATE:
+            case TYPE_UPDATE:
+                return context.deserialize(json, TypeRequest.class);
         }
+        throw new IllegalStateException("Unhandled type " + type);
     }
 
     public enum HookNotificationType {
@@ -102,8 +96,12 @@ public class HookNotification implements JsonDeserializer<HookNotification.HookN
         private EntityCreateRequest() { }
 
         public EntityCreateRequest(Referenceable... entities) {
+            this(Arrays.asList(entities));
+        }
+
+        public EntityCreateRequest(List<Referenceable> entities) {
             super(HookNotificationType.ENTITY_CREATE);
-            this.entities = Arrays.asList(entities);
+            this.entities = entities;
         }
 
         protected EntityCreateRequest(HookNotificationType type, List<Referenceable> entities) {

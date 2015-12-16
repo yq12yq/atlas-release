@@ -20,32 +20,11 @@ package org.apache.atlas.notification.hook;
 
 import org.apache.atlas.notification.AbstractNotificationConsumer;
 import org.apache.atlas.typesystem.Referenceable;
-import org.apache.atlas.typesystem.json.InstanceSerialization;
-import org.codehaus.jettison.json.JSONArray;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 
 public class HookNotificationTest {
-
-    @Test
-    public void testMessageBackwardCompatibility() throws Exception {
-        JSONArray jsonArray = new JSONArray();
-        Referenceable entity = new Referenceable("sometype");
-        entity.set("name", "somename");
-        String entityJson = InstanceSerialization.toJson(entity, true);
-        jsonArray.put(entityJson);
-
-        HookNotification.HookNotificationMessage notification = AbstractNotificationConsumer.GSON.fromJson(
-                jsonArray.toString(), HookNotification.HookNotificationMessage.class);
-        assertNotNull(notification);
-        assertEquals(notification.getType(), HookNotification.HookNotificationType.ENTITY_CREATE);
-        HookNotification.EntityCreateRequest createRequest = (HookNotification.EntityCreateRequest) notification;
-        assertEquals(createRequest.getEntities().size(), 1);
-        assertEquals(createRequest.getEntities().get(0).getTypeName(), entity.getTypeName());
-    }
-
     @Test
     public void testNewMessageSerDe() throws Exception {
         Referenceable entity1 = new Referenceable("sometype");

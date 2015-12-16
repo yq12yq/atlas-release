@@ -33,8 +33,8 @@ import org.apache.atlas.hive.model.HiveDataModelGenerator;
 import org.apache.atlas.hive.model.HiveDataTypes;
 import org.apache.atlas.notification.NotificationInterface;
 import org.apache.atlas.notification.NotificationModule;
+import org.apache.atlas.notification.hook.HookNotification;
 import org.apache.atlas.typesystem.Referenceable;
-import org.apache.atlas.typesystem.json.InstanceSerialization;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.falcon.atlas.Util.EventUtil;
@@ -52,12 +52,10 @@ import org.apache.falcon.entity.v0.process.Output;
 import org.apache.falcon.entity.v0.process.Process;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.codehaus.jettison.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -185,33 +183,21 @@ public class FalconHook extends FalconEventPublisher {
         return null;
     }
 
-    private void notifyEntity(Collection<Referenceable> entities) {
-        if (entities == null || entities.size() == 0) {
-            return;
-        }
-        JSONArray entitiesArray = new JSONArray();
-        for (Referenceable entity : entities) {
-            String entityJson = InstanceSerialization.toJson(entity, true);
-            entitiesArray.put(entityJson);
-        }
-        notifyEntity(entitiesArray);
-    }
-
-
     /**
      * Notify atlas of the entity through message. The entity can be a complex entity with reference to other entities.
      * De-duping of entities is done on server side depending on the unique attribute on the
      *
      * @param entities entitiies to add
      */
-    private void notifyEntity(JSONArray entities) {
+    private void notifyEntity(List<Referenceable> entities) {
         int maxRetries = atlasProperties.getInt(HOOK_NUM_RETRIES, 3);
         String message = entities.toString();
 
         int numRetries = 0;
         while (true) {
             try {
-                notifInterface.send(NotificationInterface.NotificationType.HOOK, message);
+                notifInterface.send(NotificationInterface.NotificationType.HOOK,
+                        new HookNotification.EntityCreateRequest(entities));
                 return;
             } catch (Exception e) {
                 numRetries++;
@@ -220,6 +206,7 @@ public class FalconHook extends FalconEventPublisher {
                 } else {
                     LOG.error("Failed to notify atlas for entity {} after {} retries. Quitting", message,
                             maxRetries, e);
+                    break;
                 }
             }
         }

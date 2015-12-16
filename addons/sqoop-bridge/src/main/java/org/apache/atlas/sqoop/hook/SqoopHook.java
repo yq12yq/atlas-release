@@ -31,17 +31,16 @@ import org.apache.atlas.hive.model.HiveDataModelGenerator;
 import org.apache.atlas.hive.model.HiveDataTypes;
 import org.apache.atlas.notification.NotificationInterface;
 import org.apache.atlas.notification.NotificationModule;
+import org.apache.atlas.notification.hook.HookNotification;
 import org.apache.atlas.sqoop.model.SqoopDataModelGenerator;
 import org.apache.atlas.sqoop.model.SqoopDataTypes;
 import org.apache.atlas.typesystem.Referenceable;
-import org.apache.atlas.typesystem.json.InstanceSerialization;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.sqoop.SqoopJobDataPublisher;
 import org.apache.sqoop.util.ImportException;
-import org.codehaus.jettison.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,30 +173,19 @@ public class SqoopHook extends SqoopJobDataPublisher {
         Injector injector = Guice.createInjector(new NotificationModule());
         notifInterface = injector.getInstance(NotificationInterface.class);
 
-        Configuration atlasProperties = ApplicationProperties.get(ApplicationProperties.CLIENT_PROPERTIES);
+        Configuration atlasProperties = ApplicationProperties.get();
         AtlasClient atlasClient = new AtlasClient(atlasProperties.getString(ATLAS_REST_ADDRESS, DEFAULT_DGI_URL),
                 UserGroupInformation.getCurrentUser(), UserGroupInformation.getCurrentUser().getShortUserName());
         String clusterName = atlasProperties.getString(ATLAS_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
         registerDataModels(atlasClient, atlasProperties);
 
         Referenceable dbStoreRef = createDBStoreInstance(clusterName, data);
-        String entityName = String.format("%s.%s.%s", clusterName, data.getHiveDB(), data.getHiveTable());
         Referenceable dbRef = createHiveDatabaseInstance(clusterName, data.getHiveDB());
         Referenceable hiveTableRef = createHiveTableInstance(clusterName, dbRef,
                 data.getHiveTable(), data.getHiveDB());
         Referenceable procRef = createSqoopProcessInstance(dbStoreRef, hiveTableRef, data);
 
-        JSONArray entitiesArray = new JSONArray();
-        String entityJson = InstanceSerialization.toJson(dbStoreRef, true);
-        entitiesArray.put(entityJson);
-        entityJson = InstanceSerialization.toJson(dbRef, true);
-        entitiesArray.put(entityJson);
-        entityJson = InstanceSerialization.toJson(hiveTableRef, true);
-        entitiesArray.put(entityJson);
-        entityJson = InstanceSerialization.toJson(procRef, true);
-        entitiesArray.put(entityJson);
-
-        notifyEntity(atlasProperties, entitiesArray);
+        notifyEntity(atlasProperties, dbStoreRef, dbRef, hiveTableRef, procRef);
     }
 
     /**
@@ -205,22 +193,23 @@ public class SqoopHook extends SqoopJobDataPublisher {
      * De-duping of entities is done on server side depending on the unique attribute on the
      * @param entities - Entity references to publish.
      */
-    private void notifyEntity(Configuration atlasProperties, JSONArray entities) {
+    private void notifyEntity(Configuration atlasProperties, Referenceable... entities) {
         int maxRetries = atlasProperties.getInt(HOOK_NUM_RETRIES, 3);
-        String message = entities.toString();
 
         int numRetries = 0;
         while (true) {
             try {
-                notifInterface.send(NotificationInterface.NotificationType.HOOK, message);
+                notifInterface.send(NotificationInterface.NotificationType.HOOK,
+                        new HookNotification.EntityCreateRequest(entities));
                 return;
             } catch(Exception e) {
                 numRetries++;
                 if(numRetries < maxRetries) {
-                    LOG.debug("Failed to notify atlas for entity {}. Retrying", message, e);
+                    LOG.debug("Failed to notify atlas for entity {}. Retrying", entities, e);
                 } else {
-                    LOG.error("Failed to notify atlas for entity {} after {} retries. Quitting", message,
+                    LOG.error("Failed to notify atlas for entity {} after {} retries. Quitting", entities,
                             maxRetries, e);
+                    break;
                 }
             }
         }

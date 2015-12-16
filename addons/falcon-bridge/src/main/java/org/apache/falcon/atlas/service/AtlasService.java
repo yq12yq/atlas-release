@@ -27,9 +27,9 @@ import org.apache.falcon.entity.store.ConfigurationStore;
 import org.apache.falcon.entity.v0.Entity;
 import org.apache.falcon.entity.v0.EntityType;
 import org.apache.falcon.entity.v0.process.Process;
-import org.apache.falcon.security.CurrentUser;
 import org.apache.falcon.service.ConfigurationChangeListener;
 import org.apache.falcon.service.FalconService;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,10 +101,11 @@ public class AtlasService implements FalconService, ConfigurationChangeListener 
 
     private void addProcessEntity(Process entity, FalconEvent.OPERATION operation) throws FalconException {
         LOG.info("Adding process entity to Atlas: {}", entity.getName());
-        FalconEvent event = new FalconEvent(CurrentUser.getUser(), EventUtil.getUgi(), operation,
-                System.currentTimeMillis(), entity);
 
         try {
+            String user = entity.getACL() != null ? entity.getACL().getOwner() :
+                    UserGroupInformation.getLoginUser().getShortUserName();
+            FalconEvent event = new FalconEvent(user, EventUtil.getUgi(), operation, System.currentTimeMillis(), entity);
             FalconEventPublisher.Data data = new FalconEventPublisher.Data(event);
             publisher.publish(data);
         } catch (Exception ex) {
