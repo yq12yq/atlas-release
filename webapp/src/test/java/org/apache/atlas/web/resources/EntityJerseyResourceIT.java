@@ -19,10 +19,15 @@
 package org.apache.atlas.web.resources;
 
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasServiceException;
+import org.apache.atlas.notification.NotificationConsumer;
+import org.apache.atlas.notification.NotificationInterface;
+import org.apache.atlas.notification.NotificationModule;
+import org.apache.atlas.notification.entity.EntityNotification;
 import org.apache.atlas.typesystem.IStruct;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.Struct;
@@ -43,11 +48,14 @@ import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang.RandomStringUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.AfterClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Guice;
 import org.testng.annotations.Test;
 
 import javax.ws.rs.HttpMethod;
@@ -58,9 +66,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
+
 /**
  * Integration tests for Entity Jersey Resource.
  */
+@Guice(modules = NotificationModule.class)
 public class EntityJerseyResourceIT extends BaseResourceIT {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntityJerseyResourceIT.class);
@@ -74,11 +87,32 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
     private Id tableId;
     private String traitName;
 
+    @Inject
+    private NotificationInterface notificationInterface;
+    private EntityNotificationConsumer notificationConsumer;
+
     @BeforeClass
     public void setUp() throws Exception {
         super.setUp();
 
         createTypeDefinitions();
+
+        List<NotificationConsumer<EntityNotification>> consumers =
+                notificationInterface.createConsumers(NotificationInterface.NotificationType.ENTITIES, 1);
+
+        NotificationConsumer<EntityNotification> consumer = consumers.iterator().next();
+        notificationConsumer = new EntityNotificationConsumer(consumer);
+        notificationConsumer.start();
+    }
+
+    @AfterClass
+    public void tearDown() {
+        notificationConsumer.stop();
+    }
+
+    @BeforeMethod
+    public void setupTest() {
+        notificationConsumer.reset();
     }
 
     @Test
@@ -95,6 +129,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
     }
 
     @Test
+    //API should accept single entity (or jsonarray of entities)
     public void testSubmitSingleEntity() throws Exception {
         Referenceable databaseInstance = new Referenceable(DATABASE_TYPE);
         databaseInstance.set("name", randomString());
@@ -112,6 +147,48 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         JSONObject response = new JSONObject(responseAsString);
         Assert.assertNotNull(response.get(AtlasClient.REQUEST_ID));
         Assert.assertNotNull(response.get(AtlasClient.GUID));
+    }
+
+    @Test
+    public void testEntityDeduping() throws Exception {
+        final Referenceable db = new Referenceable(DATABASE_TYPE);
+        final String dbName = "db" + randomString();
+        db.set("name", dbName);
+        db.set("description", randomString());
+
+        serviceClient.createEntity(db).getString(0);
+
+        waitForNotification(notificationConsumer, MAX_WAIT_TIME);
+        EntityNotification notification = notificationConsumer.getLastEntityNotification();
+        assertNotNull(notification);
+        assertEquals(notification.getEntity().get("name"), dbName);
+
+        JSONArray results =
+                serviceClient.searchByDSL(String.format("%s where name='%s'", DATABASE_TYPE, dbName));
+        assertEquals(results.length(), 1);
+
+        //create entity again shouldn't create another instance with same unique attribute value
+        notificationConsumer.reset();
+        serviceClient.createEntity(db);
+        try {
+            waitForNotification(notificationConsumer, MAX_WAIT_TIME);
+            fail("Expected time out exception");
+        } catch (Exception e) {
+            //expected timeout
+        }
+
+        results = serviceClient.searchByDSL(String.format("%s where name='%s'", DATABASE_TYPE, dbName));
+        assertEquals(results.length(), 1);
+
+        //Test the same across references
+        Referenceable table = new Referenceable(HIVE_TABLE_TYPE);
+        final String tableName = randomString();
+        table.set("name", tableName);
+        table.set("db", db);
+
+        serviceClient.createEntity(table);
+        results = serviceClient.searchByDSL(String.format("%s where name='%s'", DATABASE_TYPE, dbName));
+        assertEquals(results.length(), 1);
     }
 
     @Test
