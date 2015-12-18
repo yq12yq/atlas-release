@@ -35,7 +35,7 @@ public class SqoopHookIT {
     public static final Logger LOG = org.slf4j.LoggerFactory.getLogger(SqoopHookIT.class);
     private static final String CLUSTER_NAME = "primary";
     public static final String DEFAULT_DB = "default";
-
+    private static final int MAX_WAIT_TIME = 2000;
     private AtlasClient dgiCLient;
 
     @BeforeClass
@@ -54,12 +54,10 @@ public class SqoopHookIT {
         Thread.sleep(1000);
         String storeName  = SqoopHook.getSqoopDBStoreName(d);
         assertDBStoreIsRegistered(storeName);
-        String name = SqoopHook.getSqoopProcessName(d);
+        String name = SqoopHook.getSqoopProcessName(d, CLUSTER_NAME);
         assertSqoopProcessIsRegistered(name);
         assertHiveTableIsRegistered(DEFAULT_DB, "hiveTable");
-
     }
-
 
     private String assertDBStoreIsRegistered(String storeName) throws Exception {
         LOG.debug("Searching for db store {}",  storeName);
@@ -80,13 +78,13 @@ public class SqoopHookIT {
     private String assertSqoopProcessIsRegistered(String processName) throws Exception {
         LOG.debug("Searching for sqoop process {}",  processName);
         String query = String.format(
-                "%s as t where name = '%s' " + " select t",
-                SqoopDataTypes.SQOOP_PROCESS.getName(), processName.toLowerCase());
+                "%s as t where name = '%s' select t",
+                SqoopDataTypes.SQOOP_PROCESS.getName(), processName);
         return assertEntityIsRegistered(query);
     }
 
     private String assertEntityIsRegistered(final String query) throws Exception {
-        waitFor(20000, new Predicate() {
+        waitFor(MAX_WAIT_TIME, new Predicate() {
             @Override
             public boolean evaluate() throws Exception {
                 JSONArray results = dgiCLient.search(query);

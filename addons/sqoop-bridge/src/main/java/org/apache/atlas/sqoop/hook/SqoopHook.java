@@ -44,7 +44,7 @@ import org.apache.sqoop.util.ImportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URLEncoder;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -65,6 +65,10 @@ public class SqoopHook extends SqoopJobDataPublisher {
 
     @Inject
     private static NotificationInterface notifInterface;
+
+    static {
+        org.apache.hadoop.conf.Configuration.addDefaultResource("sqoop-site.xml");
+    }
 
     private synchronized void registerDataModels(AtlasClient client, Configuration atlasConf) throws Exception {
         // Make sure hive model exists
@@ -108,7 +112,7 @@ public class SqoopHook extends SqoopJobDataPublisher {
         return tableRef;
     }
 
-    private Referenceable createDBStoreInstance(String clusterName, SqoopJobDataPublisher.Data data)
+    private Referenceable createDBStoreInstance(SqoopJobDataPublisher.Data data)
             throws ImportException {
 
         Referenceable storeRef = new Referenceable(SqoopDataTypes.SQOOP_DBDATASTORE.getName());
@@ -128,21 +132,19 @@ public class SqoopHook extends SqoopJobDataPublisher {
         storeRef.set(SqoopDataModelGenerator.SOURCE, source);
         storeRef.set(SqoopDataModelGenerator.DESCRIPTION, "");
         storeRef.set(SqoopDataModelGenerator.OWNER, data.getUser());
-        storeRef.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME,
-                String.format("%s@%s", name.toLowerCase(), clusterName));
         return storeRef;
     }
 
     private Referenceable createSqoopProcessInstance(Referenceable dbStoreRef, Referenceable hiveTableRef,
-                                                     SqoopJobDataPublisher.Data data) {
+                                                     SqoopJobDataPublisher.Data data, String clusterName) {
         Referenceable procRef = new Referenceable(SqoopDataTypes.SQOOP_PROCESS.getName());
-        procRef.set(SqoopDataModelGenerator.NAME, getSqoopProcessName(data));
+        procRef.set(SqoopDataModelGenerator.NAME, getSqoopProcessName(data, clusterName));
         procRef.set(SqoopDataModelGenerator.OPERATION, data.getOperation());
         procRef.set(SqoopDataModelGenerator.INPUTS, dbStoreRef);
         procRef.set(SqoopDataModelGenerator.OUTPUTS, hiveTableRef);
         procRef.set(SqoopDataModelGenerator.USER, data.getUser());
-        procRef.set(SqoopDataModelGenerator.START_TIME, data.getStartTime());
-        procRef.set(SqoopDataModelGenerator.END_TIME, data.getEndTime());
+        procRef.set(SqoopDataModelGenerator.START_TIME, new Date(data.getStartTime()));
+        procRef.set(SqoopDataModelGenerator.END_TIME, new Date(data.getEndTime()));
 
         Map<String, String> sqoopOptionsMap = new HashMap<>();
         Properties options = data.getOptions();
@@ -154,20 +156,30 @@ public class SqoopHook extends SqoopJobDataPublisher {
         return procRef;
     }
 
-    static String getSqoopProcessName(SqoopJobDataPublisher.Data data) {
-        String url = URLEncoder.encode(data.getUrl().replaceAll(":", "_")
-                .replaceAll("-", "_").replaceAll("-", "_").replaceAll("/", ""));
-        return String.format("sqoop_%s_%s_%d", data.getStoreType(), url.toLowerCase(), data.getEndTime());
+    static String getSqoopProcessName(Data data, String clusterName) {
+        StringBuilder name = new StringBuilder(String.format("sqoop import --connect %s", data.getUrl()));
+        if (StringUtils.isNotEmpty(data.getStoreTable())) {
+            name.append(" --table ").append(data.getStoreTable());
+        }
+        if (StringUtils.isNotEmpty(data.getStoreQuery())) {
+            name.append(" --query ").append(data.getStoreQuery());
+        }
+        name.append(String.format(" --hive-import --hive-database %s --hive-table %s --hive-cluster %s",
+                data.getHiveDB().toLowerCase(), data.getHiveTable().toLowerCase(), clusterName));
+        return name.toString();
     }
 
     static String getSqoopDBStoreName(SqoopJobDataPublisher.Data data)  {
-        String source = data.getStoreTable() != null ? data.getStoreTable() : data.getStoreQuery();
-        String url = URLEncoder.encode(data.getUrl().replaceAll(":", "_")
-                .replaceAll("-", "_").replaceAll("/", ""));
-        String name = String.format("%s_%s_%s_%d",
-                data.getStoreType(), url.toLowerCase(), source.toLowerCase(),data.getEndTime());
-        return name;
+        StringBuilder name = new StringBuilder(String.format("%s --url %s", data.getStoreType(), data.getUrl()));
+        if (StringUtils.isNotEmpty(data.getStoreTable())) {
+            name.append(" --table ").append(data.getStoreTable());
+        }
+        if (StringUtils.isNotEmpty(data.getStoreQuery())) {
+            name.append(" --query ").append(data.getStoreQuery());
+        }
+        return name.toString();
     }
+
     @Override
     public void publish(SqoopJobDataPublisher.Data data) throws Exception {
         Injector injector = Guice.createInjector(new NotificationModule());
@@ -176,14 +188,15 @@ public class SqoopHook extends SqoopJobDataPublisher {
         Configuration atlasProperties = ApplicationProperties.get();
         AtlasClient atlasClient = new AtlasClient(atlasProperties.getString(ATLAS_REST_ADDRESS, DEFAULT_DGI_URL),
                 UserGroupInformation.getCurrentUser(), UserGroupInformation.getCurrentUser().getShortUserName());
-        String clusterName = atlasProperties.getString(ATLAS_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
+        org.apache.hadoop.conf.Configuration sqoopConf = new org.apache.hadoop.conf.Configuration();
+        String clusterName = sqoopConf.get(ATLAS_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
         registerDataModels(atlasClient, atlasProperties);
 
-        Referenceable dbStoreRef = createDBStoreInstance(clusterName, data);
+        Referenceable dbStoreRef = createDBStoreInstance(data);
         Referenceable dbRef = createHiveDatabaseInstance(clusterName, data.getHiveDB());
         Referenceable hiveTableRef = createHiveTableInstance(clusterName, dbRef,
                 data.getHiveTable(), data.getHiveDB());
-        Referenceable procRef = createSqoopProcessInstance(dbStoreRef, hiveTableRef, data);
+        Referenceable procRef = createSqoopProcessInstance(dbStoreRef, hiveTableRef, data, clusterName);
 
         notifyEntity(atlasProperties, dbStoreRef, dbRef, hiveTableRef, procRef);
     }
