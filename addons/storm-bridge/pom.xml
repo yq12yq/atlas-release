@@ -223,7 +223,7 @@
                     <skip>${skipTests}</skip>
                     <!--only skip int tests -->
                     <httpConnector>
-                        <port>21000</port>
+                        <port>31000</port>
                         <idleTimeout>60000</idleTimeout>
                     </httpConnector>
                     <war>../../webapp/target/atlas-webapp-${project.version}.war</war>
@@ -242,9 +242,13 @@
                             <name>atlas.log.dir</name>
                             <value>${project.build.directory}/logs</value>
                         </systemProperty>
+                        <systemProperty>
+                            <name>atlas.data</name>
+                            <value>${project.build.directory}/data</value>
+                        </systemProperty>
                     </systemProperties>
                     <stopKey>atlas-stop</stopKey>
-                    <stopPort>21001</stopPort>
+                    <stopPort>31001</stopPort>
                 </configuration>
                 <executions>
                     <execution>

@@ -28,6 +28,7 @@ import org.apache.atlas.AtlasClient;
 import org.apache.atlas.hook.AtlasHook;
 import org.apache.atlas.storm.model.StormDataTypes;
 import org.apache.atlas.typesystem.Referenceable;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
 import java.io.Serializable;
@@ -49,6 +50,9 @@ public class StormAtlasHook extends AtlasHook implements ISubmitterHook {
 
     private static final String CONF_PREFIX = "atlas.hook.storm.";
     private static final String HOOK_NUM_RETRIES = CONF_PREFIX + "numRetries";
+    // will be used for owner if Storm topology does not contain the owner instance
+    // possible if Storm is running in unsecure mode.
+    public static final String ANONYMOUS_OWNER = "anonymous";
 
     @Override
     protected String getNumberOfRetriesPropertyKey() {
@@ -93,7 +97,11 @@ public class StormAtlasHook extends AtlasHook implements ISubmitterHook {
                 StormDataTypes.STORM_TOPOLOGY.getName());
         topologyReferenceable.set("id", topologyInfo.get_id());
         topologyReferenceable.set("name", topologyInfo.get_name());
-        topologyReferenceable.set("owner", topologyInfo.get_owner());
+        String owner = topologyInfo.get_owner();
+        if (StringUtils.isEmpty(owner)) {
+            owner = ANONYMOUS_OWNER;
+        }
+        topologyReferenceable.set("owner", owner);
         topologyReferenceable.set("startTime", System.currentTimeMillis());
         topologyReferenceable.set(CLUSTER_NAME, getClusterName());
 

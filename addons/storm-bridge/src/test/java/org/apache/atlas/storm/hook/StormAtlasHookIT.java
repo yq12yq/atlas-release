@@ -20,12 +20,14 @@ package org.apache.atlas.storm.hook;
 
 import backtype.storm.ILocalCluster;
 import backtype.storm.generated.StormTopology;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.storm.model.StormDataModel;
 import org.apache.atlas.storm.model.StormDataTypes;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.TypesDef;
 import org.apache.atlas.typesystem.json.TypesSerialization;
+import org.apache.commons.configuration.Configuration;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
@@ -56,7 +58,8 @@ public class StormAtlasHookIT {
         stormCluster = StormTestUtil.createLocalStormCluster();
         LOG.info("Created a storm local cluster");
 
-        atlasClient = new AtlasClient(ATLAS_URL);
+        Configuration configuration = ApplicationProperties.get();
+        atlasClient = new AtlasClient(configuration.getString("atlas.rest.address", ATLAS_URL));
     }
 
     @AfterClass
@@ -106,6 +109,6 @@ public class StormAtlasHookIT {
         JSONArray results = atlasClient.search(query);
         JSONObject row = results.getJSONObject(0);
 
-        return row.has("__guid") ? row.getString("__guid") : null;
+        return row.has("$id$") ? row.getJSONObject("$id$").getString("id"): null;
     }
 }

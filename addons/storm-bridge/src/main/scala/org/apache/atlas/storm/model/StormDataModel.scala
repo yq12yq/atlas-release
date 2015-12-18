@@ -44,7 +44,6 @@ object StormDataModel extends App {
          */
         _class(StormDataTypes.STORM_TOPOLOGY.getName, List("Process")) {
             "id" ~ (string, required, indexed, unique)
-            "name" ~ (string, required, indexed, unique)
             "description" ~ (string, optional, indexed)
             "owner" ~ (string, required, indexed)
             "startTime" ~ long
@@ -74,9 +73,10 @@ object StormDataModel extends App {
         }
 
         // Data Processor and hence both inputs and outputs (inherited from Spout)
-        _class(StormDataTypes.STORM_BOLT.getName, List(StormDataTypes.STORM_SPOUT.getName)) {
+        _class(StormDataTypes.STORM_BOLT.getName, List(StormDataTypes.STORM_NODE.getName)) {
             // "inputs" ~ (array(StormDataTypes.STORM_NODE.getName), collection, composite)
             "inputs" ~ (array(string), collection)
+            "outputs" ~ (array(string), collection, optional)
         }
 
         // Kafka Data Set
@@ -113,6 +113,13 @@ object StormDataModel extends App {
             "owner" ~ (string, required, indexed)
         }
 
+        _trait("DataProcessor") {
+
+        }
+
+        _trait("DataProducer") {
+
+        }
         // Hive table data set already exists in atlas.
     }
 
