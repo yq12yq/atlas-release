@@ -136,9 +136,9 @@ public class SqoopHook extends SqoopJobDataPublisher {
     }
 
     private Referenceable createSqoopProcessInstance(Referenceable dbStoreRef, Referenceable hiveTableRef,
-                                                     SqoopJobDataPublisher.Data data) {
+                                                     SqoopJobDataPublisher.Data data, String clusterName) {
         Referenceable procRef = new Referenceable(SqoopDataTypes.SQOOP_PROCESS.getName());
-        procRef.set(SqoopDataModelGenerator.NAME, getSqoopProcessName(data));
+        procRef.set(SqoopDataModelGenerator.NAME, getSqoopProcessName(data, clusterName));
         procRef.set(SqoopDataModelGenerator.OPERATION, data.getOperation());
         procRef.set(SqoopDataModelGenerator.INPUTS, dbStoreRef);
         procRef.set(SqoopDataModelGenerator.OUTPUTS, hiveTableRef);
@@ -156,16 +156,16 @@ public class SqoopHook extends SqoopJobDataPublisher {
         return procRef;
     }
 
-    static String getSqoopProcessName(SqoopJobDataPublisher.Data data) {
-        StringBuilder name = new StringBuilder(String.format("sqoop import --connect %s ", data.getUrl()));
+    static String getSqoopProcessName(Data data, String clusterName) {
+        StringBuilder name = new StringBuilder(String.format("sqoop import --connect %s", data.getUrl()));
         if (StringUtils.isNotEmpty(data.getStoreTable())) {
             name.append(" --table ").append(data.getStoreTable());
         }
         if (StringUtils.isNotEmpty(data.getStoreQuery())) {
             name.append(" --query ").append(data.getStoreQuery());
         }
-        name.append(String.format(" --hive-import --hive-database %s --hive-table %s ", data.getHiveDB(),
-                data.getHiveTable()));
+        name.append(String.format(" --hive-import --hive-database %s --hive-table %s --hive-cluster %s",
+                data.getHiveDB().toLowerCase(), data.getHiveTable().toLowerCase(), clusterName));
         return name.toString();
     }
 
@@ -196,7 +196,7 @@ public class SqoopHook extends SqoopJobDataPublisher {
         Referenceable dbRef = createHiveDatabaseInstance(clusterName, data.getHiveDB());
         Referenceable hiveTableRef = createHiveTableInstance(clusterName, dbRef,
                 data.getHiveTable(), data.getHiveDB());
-        Referenceable procRef = createSqoopProcessInstance(dbStoreRef, hiveTableRef, data);
+        Referenceable procRef = createSqoopProcessInstance(dbStoreRef, hiveTableRef, data, clusterName);
 
         notifyEntity(atlasProperties, dbStoreRef, dbRef, hiveTableRef, procRef);
     }
