@@ -1,5 +1,8 @@
 Changes only in Hortonworks github and not in atlas-2.5.0 and hence not covered by CHANGES.txt.
 
+ATLAS-181 Integrate storm topology metadata into Atlas
+ATLAS-182 Add data model for Storm topology elements
+ATLAS-183 Add a Hook in Storm to post the topology metadata
 ATLAS-379 Create sqoop and falcon metadata addons
 ATLAS-58 Make hive hook reliable (shwethags)
 ATLAS-54 Rename configs in hive hook (shwethags)
