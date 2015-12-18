@@ -25,6 +25,7 @@ Available bridges are:
    * [[Bridge-Hive][Hive Bridge]]
    * [[Bridge-Sqoop][Sqoop Bridge]]
    * [[Bridge-Falcon][Falcon Bridge]]
+   * [[StormAtlasHook][Storm Bridge]]
 
 
 ---++ Notification

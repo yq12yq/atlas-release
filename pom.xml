@@ -420,6 +420,7 @@
         <module>addons/hive-bridge</module>
         <module>addons/falcon-bridge</module>
         <module>addons/sqoop-bridge</module>
+        <module>addons/storm-bridge</module>
         <module>distro</module>
     </modules>
 
