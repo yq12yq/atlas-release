@@ -190,6 +190,11 @@
                                     <version>${project.version}</version>
                                 </artifactItem>
                                 <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>hive-bridge</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                                <artifactItem>
                                     <groupId>org.json4s</groupId>
                                     <artifactId>json4s-native_2.10</artifactId>
                                     <version>${json.version}</version>

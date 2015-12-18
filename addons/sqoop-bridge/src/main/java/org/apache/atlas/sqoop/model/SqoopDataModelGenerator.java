@@ -21,7 +21,6 @@ package org.apache.atlas.sqoop.model;
 import com.google.common.collect.ImmutableList;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasException;
-import org.apache.atlas.hive.model.HiveDataTypes;
 import org.apache.atlas.typesystem.TypesDef;
 import org.apache.atlas.typesystem.json.TypesSerialization;
 import org.apache.atlas.typesystem.types.AttributeDefinition;
@@ -29,7 +28,6 @@ import org.apache.atlas.typesystem.types.ClassType;
 import org.apache.atlas.typesystem.types.DataTypes;
 import org.apache.atlas.typesystem.types.EnumType;
 import org.apache.atlas.typesystem.types.EnumTypeDefinition;
-import org.apache.atlas.typesystem.types.EnumValue;
 import org.apache.atlas.typesystem.types.HierarchicalTypeDefinition;
 import org.apache.atlas.typesystem.types.Multiplicity;
 import org.apache.atlas.typesystem.types.StructTypeDefinition;
@@ -143,8 +141,8 @@ public class SqoopDataModelGenerator {
                 new AttributeDefinition(OPERATION,
                         DataTypes.STRING_TYPE.getName(), Multiplicity.REQUIRED, false, null),
                 new AttributeDefinition(CMD_LINE_OPTS, STRING_MAP_TYPE.getName(), Multiplicity.REQUIRED, false, null),
-                new AttributeDefinition(START_TIME, DataTypes.LONG_TYPE.getName(), Multiplicity.REQUIRED, false, null),
-                new AttributeDefinition(END_TIME, DataTypes.LONG_TYPE.getName(), Multiplicity.REQUIRED, false, null),
+                new AttributeDefinition(START_TIME, DataTypes.DATE_TYPE.getName(), Multiplicity.REQUIRED, false, null),
+                new AttributeDefinition(END_TIME, DataTypes.DATE_TYPE.getName(), Multiplicity.REQUIRED, false, null),
                 new AttributeDefinition(USER,
                         DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
         };
