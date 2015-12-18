@@ -22,6 +22,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasClient;
 import org.apache.atlas.notification.NotificationInterface;
 import org.apache.atlas.notification.NotificationModule;
 import org.apache.atlas.notification.hook.HookNotification;
@@ -43,10 +44,14 @@ import java.util.List;
 public abstract class AtlasHook {
 
     private static final Logger LOG = LoggerFactory.getLogger(AtlasHook.class);
-
+    private static final String DEFAULT_ATLAS_URL = "http://localhost:21000/";
     protected static final String CLUSTER_NAME = "clusterName";
     protected static final String CURRENT_CLUSTER_NAME_KEY = "atlas.cluster.name";
     protected static final String DEFAULT_CLUSTER_NAME = "primary";
+
+    public static final String ATLAS_ENDPOINT = "atlas.rest.address";
+
+    protected final AtlasClient atlasClient;
 
     /**
      * Hadoop Cluster name for this instance, typically used for namespace.
@@ -73,6 +78,8 @@ public abstract class AtlasHook {
 
     public AtlasHook() {
         clusterName = atlasProperties.getString(CURRENT_CLUSTER_NAME_KEY, DEFAULT_CLUSTER_NAME);
+        atlasClient = new AtlasClient(atlasProperties.getString(ATLAS_ENDPOINT, DEFAULT_ATLAS_URL));
+        //TODO - take care of passing in - ugi, doAsUser for secure cluster
     }
 
     protected String getClusterName() {
@@ -123,14 +130,5 @@ public abstract class AtlasHook {
                 }
             }
         }
-    }
-
-    public static String getEntityQualifiedName(String... args) {
-        StringBuilder buffer = new StringBuilder();
-        for (String arg : args) {
-            buffer.append(arg.toLowerCase()).append(".");
-        }
-
-        return buffer.deleteCharAt(buffer.length()).toString();
     }
 }

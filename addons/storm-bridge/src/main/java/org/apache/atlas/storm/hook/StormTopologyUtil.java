@@ -23,6 +23,7 @@ import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.Grouping;
 import backtype.storm.generated.StormTopology;
 import com.google.common.base.Joiner;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -150,10 +151,11 @@ public final class StormTopologyUtil {
                 }
                 Object fieldVal = field.get(instance);
                 if (fieldVal == null) {
-                    output.put(key, null);
+                    continue;
                 } else if (fieldVal.getClass().isPrimitive() ||
                         isWrapperType(fieldVal.getClass())) {
-                    output.put(key, toString(fieldVal, true));
+                    if (toString(fieldVal, false).isEmpty()) continue;
+                    output.put(key, toString(fieldVal, false));
                 } else if (isMapType(fieldVal.getClass())) {
                     //TODO: check if it makes more sense to just stick to json
                     // like structure instead of a flatten output.
@@ -163,16 +165,21 @@ public final class StormTopologyUtil {
                         Object mapVal = ((Map.Entry) entry).getValue();
 
                         String keyStr = getString(mapKey, false);
-                        String valStr = getString(mapVal, true);
-                        output.put(String.format("%s.%s", key, keyStr), valStr);
+                        String valStr = getString(mapVal, false);
+                        if ((valStr == null) || (valStr.isEmpty())) {
+                            continue;
+                        } else {
+                            output.put(String.format("%s.%s", key, keyStr), valStr);
+                        }
                     }
                 } else if (isCollectionType(fieldVal.getClass())) {
                     //TODO check if it makes more sense to just stick to
                     // json like structure instead of a flatten output.
                     Collection collection = (Collection) fieldVal;
+                    if (collection.size()==0) continue;
                     String outStr = "";
                     for (Object o : collection) {
-                        outStr += getString(o, true) + ",";
+                        outStr += getString(o, false) + ",";
                     }
                     if (outStr.length() > 0) {
                         outStr = outStr.substring(0, outStr.length() - 1);

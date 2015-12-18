@@ -81,7 +81,6 @@ object StormDataModel extends App {
 
         // Kafka Data Set
         _class(StormDataTypes.KAFKA_TOPIC.getName, List("DataSet")) {
-            "name" ~ (string, required, unique, indexed)
             "topic" ~ (string, required, unique, indexed)
             "uri" ~ (string, required)
             "owner" ~ (string, required, indexed)
@@ -89,7 +88,6 @@ object StormDataModel extends App {
 
         // JMS Data Set
         _class(StormDataTypes.JMS_TOPIC.getName, List("DataSet")) {
-            "name" ~ (string, required, unique, indexed)
             "topic" ~ (string, required, unique, indexed)
             "uri" ~ (string, required)
             "owner" ~ (string, required, indexed)
@@ -97,7 +95,6 @@ object StormDataModel extends App {
 
         // HBase Data Set
         _class(StormDataTypes.HBASE_TABLE.getName, List("DataSet")) {
-            "name" ~ (string, required, unique, indexed)
             "tableName" ~ (string, required, unique, indexed)
             "uri" ~ (string, required)
             "owner" ~ (string, required, indexed)
@@ -107,9 +104,8 @@ object StormDataModel extends App {
         // todo: replace this with a generic data model for HDFS data sets
         // todo: should only be used in light of storm
         _class(StormDataTypes.HDFS_DATA_SET.getName, List("DataSet")) {
-            "name" ~ (string, required, unique, indexed)
             // fully qualified path to file or dir
-            "pathURI" ~ (string, required)
+            "pathURI" ~ (string, required, unique, indexed)
             "owner" ~ (string, required, indexed)
         }
 

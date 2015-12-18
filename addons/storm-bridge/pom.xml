@@ -64,6 +64,11 @@
             <artifactId>atlas-notification</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.atlas</groupId>
+            <artifactId>hive-bridge</artifactId>
+        </dependency>
+
         <!-- apache storm core dependencies -->
         <dependency>
             <groupId>org.apache.storm</groupId>
@@ -167,6 +172,11 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>${project.groupId}</groupId>
+                                    <artifactId>hive-bridge</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
                                     <artifactId>atlas-notification</artifactId>
                                     <version>${project.version}</version>
                                 </artifactItem>
@@ -196,8 +206,23 @@
                                     <version>${scala.version}</version>
                                 </artifactItem>
                                 <artifactItem>
+                                    <groupId>com.google.inject</groupId>
+                                    <artifactId>guice</artifactId>
+                                    <version>${guice.version}</version>
+                                </artifactItem>
+                                <artifactItem>
                                     <groupId>com.google.inject.extensions</groupId>
                                     <artifactId>guice-multibindings</artifactId>
+                                    <version>${guice.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.google.inject.extensions</groupId>
+                                    <artifactId>guice-servlet</artifactId>
+                                    <version>${guice.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.google.inject.extensions</groupId>
+                                    <artifactId>guice-throwingproviders</artifactId>
                                     <version>${guice.version}</version>
                                 </artifactItem>
                                 <artifactItem>
@@ -210,6 +235,62 @@
                                     <artifactId>kafka-clients</artifactId>
                                     <version>${kafka.version}</version>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>aopalliance</groupId>
+                                    <artifactId>aopalliance</artifactId>
+                                    <version>${aopalliance.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>commons-configuration</groupId>
+                                    <artifactId>commons-configuration</artifactId>
+                                    <version>${commons-conf.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>commons-logging</groupId>
+                                    <artifactId>commons-logging</artifactId>
+                                    <version>${commons-logging.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>javax.inject</groupId>
+                                    <artifactId>javax.inject</artifactId>
+                                    <version>${javax-inject.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.codehaus.jettison</groupId>
+                                    <artifactId>jettison</artifactId>
+                                    <version>${jettison.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.codehaus.jettison</groupId>
+                                    <artifactId>jettison</artifactId>
+                                    <version>${jettison.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.json4s</groupId>
+                                    <artifactId>json4s-ast_2.10</artifactId>
+                                    <version>${json.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.json4s</groupId>
+                                    <artifactId>json4s-core_2.10</artifactId>
+                                    <version>${json.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.json4s</groupId>
+                                    <artifactId>json4s-native_2.10</artifactId>
+                                    <version>${json.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.json4s</groupId>
+                                    <artifactId>json4s-native_2.10</artifactId>
+                                    <version>${json.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.thoughtworks.paranamer</groupId>
+                                    <artifactId>paranamer</artifactId>
+                                    <version>${paranamer.version}</version>
+                                </artifactItem>
+
                             </artifactItems>
                         </configuration>
                     </execution>

@@ -153,6 +153,7 @@ public class StormAtlasHookTest {
 
         // add storm types to type system
         typeSystem.defineTypes(stormTypesDef);
+        StormAtlasHook.setTypesRegistered(true);
 
         // verify types are registered
         for (StormDataTypes stormDataType : StormDataTypes.values()) {

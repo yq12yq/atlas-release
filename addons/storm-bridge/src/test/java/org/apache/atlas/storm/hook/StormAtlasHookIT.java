@@ -78,7 +78,7 @@ public class StormAtlasHookIT {
         String stormTypesAsJSON = TypesSerialization.toJson(stormTypesDef);
         LOG.info("stormTypesAsJSON = {}", stormTypesAsJSON);
 
-        atlasClient.createType(stormTypesAsJSON);
+        new StormAtlasHook().registerDataModel();
 
         // verify types are registered
         for (StormDataTypes stormDataType : StormDataTypes.values()) {
