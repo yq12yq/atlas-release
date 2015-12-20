@@ -1,11 +1,7 @@
 Apache Atlas Release Notes
 ==========================
 
---trunk - unreleased
-INCOMPATIBLE CHANGES:
-
 ALL CHANGES:
-
 
 --Release 0.6-incubating
 INCOMPATIBLE CHANGES:
@@ -14,6 +10,7 @@ ATLAS-54 Rename configs in hive hook (shwethags)
 ATLAS-3 Mixed Index creation fails with Date types (sumasai via shwethags)
 
 ALL CHANGES:
+ATLAS-402 UI : Validation of Associating a Tag (darshankumar89 via sumasai)
 ATLAS-394 Fix BaseResourceIT.waitForNotification (shwethags via sumasai)
 ATLAS-385 Support for Lineage for entities with SuperType as DataSet (anilsg via sumasai)
 ATLAS-342 Atlas is sending an ENTITY_CREATE event to the ATLAS_ENTITIES topic even if the entity exists already (shwethags)
