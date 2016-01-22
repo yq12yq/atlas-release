@@ -57,4 +57,9 @@
         <name>fs.pfile.impl</name>
         <value>org.apache.hadoop.fs.ProxyLocalFileSystem</value>
     </property>
+
+    <property>
+        <name>hive.in.test</name>
+        <value>true</value>
+    </property>
 </configuration>
