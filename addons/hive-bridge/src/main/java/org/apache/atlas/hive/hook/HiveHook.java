@@ -41,7 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -54,6 +56,8 @@ import java.util.concurrent.TimeUnit;
 public class HiveHook implements ExecuteWithHookContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(HiveHook.class);
+
+    private static final Map<String, HiveOperation> OPERATION_MAP = new HashMap<>();
 
     // wait time determines how long we wait before we exit the jvm on
     // shutdown. Pending requests after that will not be sent.
@@ -117,6 +121,7 @@ public class HiveHook implements ExecuteWithHookContext {
             LOG.info("Attempting to send msg while shutdown in progress.");
         }
 
+        setupOperationMap();
         LOG.info("Created Atlas Hook");
     }
 
@@ -134,6 +139,13 @@ public class HiveHook implements ExecuteWithHookContext {
         public Long queryStartTime;
     }
 
+    private static void setupOperationMap() {
+        //Populate OPERATION_MAP - string to HiveOperation mapping
+        for (HiveOperation hiveOperation : HiveOperation.values()) {
+            OPERATION_MAP.put(hiveOperation.getOperationName(), hiveOperation);
+        }
+    }
+
     @Override
     public void run(final HookContext hookContext) throws Exception {
         if (executor == null) {
@@ -148,7 +160,7 @@ public class HiveHook implements ExecuteWithHookContext {
 
         event.user = hookContext.getUserName() == null ? hookContext.getUgi().getUserName() : hookContext.getUserName();
         event.ugi = hookContext.getUgi();
-        event.operation = HiveOperation.valueOf(hookContext.getOperationName());
+        event.operation = OPERATION_MAP.get(hookContext.getOperationName());
         event.queryId = hookContext.getQueryPlan().getQueryId();
         event.queryStr = hookContext.getQueryPlan().getQueryStr();
         event.queryStartTime = hookContext.getQueryPlan().getQueryStartTime();

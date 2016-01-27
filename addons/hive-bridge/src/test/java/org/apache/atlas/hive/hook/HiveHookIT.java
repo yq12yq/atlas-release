@@ -30,6 +30,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.ql.Driver;
+import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
@@ -40,6 +41,8 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.Map;
+
+import static org.testng.Assert.assertEquals;
 
 public class HiveHookIT {
     public static final Logger LOG = org.slf4j.LoggerFactory.getLogger(HiveHookIT.class);
@@ -64,8 +67,10 @@ public class HiveHookIT {
     }
 
     private void runCommand(String cmd) throws Exception {
+        LOG.debug("Running command '{}'", cmd);
         ss.setCommandType(null);
-        driver.run(cmd);
+        CommandProcessorResponse response = driver.run(cmd);
+        assertEquals(response.getResponseCode(), 0);
     }
 
     @Test
@@ -364,5 +369,12 @@ public class HiveHookIT {
         vertices = response.getJSONObject("values").getJSONObject("vertices");
         Assert.assertTrue(vertices.has(table1Id));
         Assert.assertTrue(vertices.has(table2Id));
+    }
+
+    //For ATLAS-448
+    @Test (priority = 1)
+    public void testNoopOperation() throws Exception {
+        runCommand("show compactions");
+        runCommand("show transactions");
     }
 }

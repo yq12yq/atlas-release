@@ -1,4 +1,5 @@
 Changes only in Hortonworks github and not in atlas-2.5.0 and hence not covered by CHANGES.txt.
+ATLAS-448 Hive IllegalArgumentException with Atlas hook enabled on SHOW TRANSACTIONS AND SHOW COMPACTIONS
 ATLAS-16 jersey jaxb exception
 ATLAS-373 Renew TGT from KeyTab for ATLAS service principal
 ATLAS-361 Add validation when index backends are switched in ATLAS configuration
