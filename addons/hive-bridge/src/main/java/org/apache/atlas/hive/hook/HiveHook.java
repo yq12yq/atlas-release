@@ -343,7 +343,7 @@ public class HiveHook implements ExecuteWithHookContext {
     private JSONObject getQueryPlan(HiveConf conf, QueryPlan queryPlan) throws Exception {
         try {
             ExplainTask explain = new ExplainTask();
-            explain.initialize(conf, queryPlan, null);
+            explain.initialize(conf, queryPlan, null, null);
             List<Task<?>> rootTasks = queryPlan.getRootTasks();
             return explain.getJSONPlan(null, null, rootTasks, queryPlan.getFetchTask(), true, false, false);
         } catch (Exception e) {
