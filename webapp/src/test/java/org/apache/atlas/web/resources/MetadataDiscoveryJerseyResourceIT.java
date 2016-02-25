@@ -32,7 +32,6 @@ import org.apache.atlas.typesystem.types.EnumTypeDefinition;
 import org.apache.atlas.typesystem.types.HierarchicalTypeDefinition;
 import org.apache.atlas.typesystem.types.StructTypeDefinition;
 import org.apache.atlas.typesystem.types.TraitType;
-import org.apache.atlas.typesystem.types.TypeUtils;
 import org.apache.atlas.typesystem.types.utils.TypesUtil;
 import org.apache.atlas.web.util.Servlets;
 import org.codehaus.jettison.json.JSONArray;
@@ -76,11 +75,9 @@ public class MetadataDiscoveryJerseyResourceIT extends BaseResourceIT {
         Assert.assertEquals(response.getString("query"), dslQuery);
         Assert.assertEquals(response.getString("queryType"), "dsl");
 
-        JSONObject results = response.getJSONObject(AtlasClient.RESULTS);
+        JSONArray results = response.getJSONArray(AtlasClient.RESULTS);
         Assert.assertNotNull(results);
-
-        JSONArray rows = results.getJSONArray(AtlasClient.ROWS);
-        Assert.assertEquals(rows.length(), 1);
+        Assert.assertEquals(results.length(), 1);
 
         int numRows = response.getInt(AtlasClient.COUNT);
         Assert.assertEquals(numRows, 1);
@@ -178,8 +175,7 @@ public class MetadataDiscoveryJerseyResourceIT extends BaseResourceIT {
         HierarchicalTypeDefinition<TraitType> financeTrait =
                 TypesUtil.createTraitTypeDef("Finance", ImmutableList.<String>of());
 
-        TypesDef typesDef = TypeUtils
-                .getTypesDef(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
+        TypesDef typesDef = TypesUtil.getTypesDef(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
                         ImmutableList
                                 .of(classificationTraitDefinition, piiTrait, phiTrait, pciTrait, soxTrait, secTrait,
                                         financeTrait), ImmutableList.of(dslTestTypeDefinition));

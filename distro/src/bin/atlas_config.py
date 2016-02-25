@@ -16,29 +16,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import getpass
-
 import os
 import re
 import platform
 import subprocess
 from threading import Thread
+from signal import SIGTERM
 import sys
 import time
 import errno
+from re import split
 
 LIB = "lib"
 CONF = "conf"
 LOG="logs"
 WEBAPP="server" + os.sep + "webapp"
 DATA="data"
-ENV_KEYS = ["JAVA_HOME", "METADATA_OPTS", "METADATA_LOG_DIR", "METADATA_PID_DIR", "METADATA_CONF", "METADATACPPATH", "METADATA_DATA_DIR", "METADATA_HOME_DIR", "METADATA_EXPANDED_WEBAPP_DIR", "HBASE_CONF_DIR"]
-METADATA_CONF = "METADATA_CONF"
-METADATA_LOG = "METADATA_LOG_DIR"
-METADATA_PID = "METADATA_PID_DIR"
-METADATA_WEBAPP = "METADATA_EXPANDED_WEBAPP_DIR"
-METADATA_OPTS = "METADATA_OPTS"
-METADATA_DATA = "METADATA_DATA_DIR"
-METADATA_HOME = "METADATA_HOME_DIR"
+ENV_KEYS = ["JAVA_HOME", "ATLAS_OPTS", "ATLAS_LOG_DIR", "ATLAS_PID_DIR", "ATLAS_CONF", "ATLASCPPATH", "ATLAS_DATA_DIR", "ATLAS_HOME_DIR", "ATLAS_EXPANDED_WEBAPP_DIR", "HBASE_CONF_DIR"]
+ATLAS_CONF = "ATLAS_CONF"
+ATLAS_LOG = "ATLAS_LOG_DIR"
+ATLAS_PID = "ATLAS_PID_DIR"
+ATLAS_WEBAPP = "ATLAS_EXPANDED_WEBAPP_DIR"
+ATLAS_OPTS = "ATLAS_OPTS"
+ATLAS_DATA = "ATLAS_DATA_DIR"
+ATLAS_HOME = "ATLAS_HOME_DIR"
 HBASE_CONF_DIR = "HBASE_CONF_DIR"
 IS_WINDOWS = platform.system() == "Windows"
 ON_POSIX = 'posix' in sys.builtin_module_names
@@ -50,16 +51,16 @@ def scriptDir():
     """
     return os.path.dirname(os.path.realpath(__file__))
 
-def metadataDir():
+def atlasDir():
     home = os.path.dirname(scriptDir())
-    return os.environ.get(METADATA_HOME, home)
+    return os.environ.get(ATLAS_HOME, home)
 
 def libDir(dir) :
     return os.path.join(dir, LIB)
 
 def confDir(dir):
     localconf = os.path.join(dir, CONF)
-    return os.environ.get(METADATA_CONF, localconf)
+    return os.environ.get(ATLAS_CONF, localconf)
 
 def hbaseConfDir(atlasConfDir):
     parentDir = os.path.dirname(atlasConfDir)
@@ -67,19 +68,19 @@ def hbaseConfDir(atlasConfDir):
 
 def logDir(dir):
     localLog = os.path.join(dir, LOG)
-    return os.environ.get(METADATA_LOG, localLog)
+    return os.environ.get(ATLAS_LOG, localLog)
 
 def pidFile(dir):
     localPid = os.path.join(dir, LOG)
-    return os.path.join(os.environ.get(METADATA_PID, localPid), 'atlas.pid')
+    return os.path.join(os.environ.get(ATLAS_PID, localPid), 'atlas.pid')
 
 def dataDir(dir):
     data = os.path.join(dir, DATA)
-    return os.environ.get(METADATA_DATA, data)
+    return os.environ.get(ATLAS_DATA, data)
 
 def webAppDir(dir):
     webapp = os.path.join(dir, WEBAPP)
-    return os.environ.get(METADATA_WEBAPP, webapp)
+    return os.environ.get(ATLAS_WEBAPP, webapp)
 
 def expandWebApp(dir):
     webappDir = webAppDir(dir)
@@ -92,8 +93,11 @@ def expandWebApp(dir):
             if e.errno != errno.EEXIST:
                 raise e
             pass
+        atlasWarPath = os.path.join(atlasDir(), "server", "webapp", "atlas.war")
+        if (isCygwin()):
+            atlasWarPath = convertCygwinPath(atlasWarPath)
         os.chdir(webAppMetadataDir)
-        jar(os.path.join(metadataDir(), "server", "webapp", "atlas.war"))
+        jar(atlasWarPath)
 
 def dirMustExist(dirname):
     if not os.path.exists(dirname):
@@ -122,6 +126,9 @@ def java(classname, args, classpath, jvm_opts_list, logdir=None):
     else:
         prg = which("java")
 
+    if prg is None:
+        raise EnvironmentError('The java binary could not be found in your path or JAVA_HOME')
+
     commandline = [prg]
     commandline.extend(jvm_opts_list)
     commandline.append("-classpath")
@@ -136,6 +143,9 @@ def jar(path):
         prg = os.path.join(java_home, "bin", "jar")
     else:
         prg = which("jar")
+
+    if prg is None:
+        raise EnvironmentError('The jar binary could not be found in your path or JAVA_HOME')
 
     commandline = [prg]
     commandline.append("-xf")
@@ -169,7 +179,7 @@ def runProcess(commandline, logdir=None):
     """
     global finished
     debug ("Executing : %s" % commandline)
-    timestr = time.strftime("metadata.%Y%m%d-%H%M%S")
+    timestr = time.strftime("atlas.%Y%m%d-%H%M%S")
     stdoutFile = None
     stderrFile = None
     if logdir:
@@ -283,8 +293,8 @@ def read(pipe, line):
     else:
         return line, False
 
-def writePid(metadata_pid_file, process):
-    f = open(metadata_pid_file, 'w')
+def writePid(atlas_pid_file, process):
+    f = open(atlas_pid_file, 'w')
     f.write(str(process.pid))
     f.close()
 
@@ -330,3 +340,19 @@ def grep(file, value):
         if re.match(value, line):	
            return line
     return None
+
+def isCygwin():
+    return platform.system().startswith("CYGWIN")
+
+# Convert the specified cygwin-style pathname to Windows format,
+# using the cygpath utility.  By default, path is assumed
+# to be a file system pathname.  If isClasspath is True,
+# then path is treated as a Java classpath string.
+def convertCygwinPath(path, isClasspath=False):
+    if (isClasspath):
+        cygpathArgs = ["cygpath", "-w", "-p", path]
+    else:
+        cygpathArgs = ["cygpath", "-w", path]
+    windowsPath = subprocess.Popen(cygpathArgs, stdout=subprocess.PIPE).communicate()[0]
+    windowsPath = windowsPath.strip()
+    return windowsPath

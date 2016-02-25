@@ -55,8 +55,8 @@ public class ObjectGraphWalker {
     throws AtlasException {
         this.typeSystem = typeSystem;
         this.nodeProcessor = nodeProcessor;
-        queue = new LinkedList<IReferenceableInstance>();
-        processedIds = new HashSet<Id>();
+        queue = new LinkedList<>();
+        processedIds = new HashSet<>();
         if (start != null) {
             visitReferenceableInstance(start);
         }
@@ -91,7 +91,7 @@ public class ObjectGraphWalker {
                 visitCollection(elemType, val);
             } else if (dT.getTypeCategory() == DataTypes.TypeCategory.MAP) {
                 IDataType keyType = ((DataTypes.MapType) dT).getKeyType();
-                IDataType valueType = ((DataTypes.MapType) dT).getKeyType();
+                IDataType valueType = ((DataTypes.MapType) dT).getValueType();
                 visitMap(keyType, valueType, val);
             } else if (dT.getTypeCategory() == DataTypes.TypeCategory.STRUCT
                     || dT.getTypeCategory() == DataTypes.TypeCategory.TRAIT) {
@@ -194,7 +194,7 @@ public class ObjectGraphWalker {
         }
     }
 
-    public static interface NodeProcessor {
+    public interface NodeProcessor {
 
         void processNode(Node nd) throws AtlasException;
     }
@@ -213,6 +213,12 @@ public class ObjectGraphWalker {
             this.attributeName = attributeName;
             this.aInfo = aInfo;
             this.value = value;
+        }
+
+        @Override
+        public String toString(){
+            StringBuilder string = new StringBuilder().append(instance).append(aInfo).append(value);
+            return string.toString();
         }
     }
 }

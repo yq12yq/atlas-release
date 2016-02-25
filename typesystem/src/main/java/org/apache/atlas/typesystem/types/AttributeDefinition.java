@@ -18,13 +18,14 @@
 
 package org.apache.atlas.typesystem.types;
 
-import org.apache.atlas.ParamChecker;
+import org.apache.atlas.utils.ParamChecker;
 
 public final class AttributeDefinition {
 
     public final String name;
     public final String dataTypeName;
     public final Multiplicity multiplicity;
+    //A composite is the one whose lifecycle is dependent on the enclosing type and is not just a reference
     public final boolean isComposite;
     public final boolean isUnique;
     public final boolean isIndexable;

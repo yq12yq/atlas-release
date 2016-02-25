@@ -27,6 +27,7 @@ import java.util.Map;
 public class AttributeInfo {
     public final String name;
     public final Multiplicity multiplicity;
+    //A composite is the one whose lifecycle is dependent on the enclosing type and is not just a reference
     public final boolean isComposite;
     public final boolean isUnique;
     public final boolean isIndexable;
@@ -68,6 +69,43 @@ public class AttributeInfo {
                 ", isIndexable=" + isIndexable +
                 ", reverseAttributeName='" + reverseAttributeName + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AttributeInfo that = (AttributeInfo) o;
+
+        if (isComposite != that.isComposite) {
+            return false;
+        }
+        if (isUnique != that.isUnique) {
+            return false;
+        }
+        if (isIndexable != that.isIndexable) {
+            return false;
+        }
+        if (!dataType.getName().equals(that.dataType.getName())) {
+            return false;
+        }
+        if (!multiplicity.equals(that.multiplicity)) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        if (reverseAttributeName != null ? !reverseAttributeName.equals(that.reverseAttributeName) :
+                that.reverseAttributeName != null) {
+            return false;
+        }
+
+        return true;
     }
 
     public String toJson() throws JSONException {

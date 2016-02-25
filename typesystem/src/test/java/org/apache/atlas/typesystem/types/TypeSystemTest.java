@@ -51,39 +51,39 @@ public class TypeSystemTest extends BaseTest {
     @Test
     public void testGetTypeNames() throws Exception {
         getTypeSystem().defineEnumType("enum_test", new EnumValue("0", 0), new EnumValue("1", 1), new EnumValue("2", 2),
-            new EnumValue("3", 3));
+                new EnumValue("3", 3));
         Assert.assertTrue(getTypeSystem().getTypeNames().contains("enum_test"));
     }
 
     @Test
     public void testIsRegistered() throws Exception {
         getTypeSystem().defineEnumType("enum_test", new EnumValue("0", 0), new EnumValue("1", 1), new EnumValue("2", 2),
-            new EnumValue("3", 3));
+                new EnumValue("3", 3));
         Assert.assertTrue(getTypeSystem().isRegistered("enum_test"));
     }
 
     @Test
     public void testGetTraitsNames() throws Exception {
         HierarchicalTypeDefinition<TraitType> classificationTraitDefinition = TypesUtil
-            .createTraitTypeDef("Classification", ImmutableList.<String>of(),
-                TypesUtil.createRequiredAttrDef("tag", DataTypes.STRING_TYPE));
+                .createTraitTypeDef("Classification", ImmutableList.<String>of(),
+                        TypesUtil.createRequiredAttrDef("tag", DataTypes.STRING_TYPE));
         HierarchicalTypeDefinition<TraitType> piiTrait =
-            TypesUtil.createTraitTypeDef("PII", ImmutableList.<String>of());
+                TypesUtil.createTraitTypeDef("PII", ImmutableList.<String>of());
         HierarchicalTypeDefinition<TraitType> phiTrait =
-            TypesUtil.createTraitTypeDef("PHI", ImmutableList.<String>of());
+                TypesUtil.createTraitTypeDef("PHI", ImmutableList.<String>of());
         HierarchicalTypeDefinition<TraitType> pciTrait =
-            TypesUtil.createTraitTypeDef("PCI", ImmutableList.<String>of());
+                TypesUtil.createTraitTypeDef("PCI", ImmutableList.<String>of());
         HierarchicalTypeDefinition<TraitType> soxTrait =
-            TypesUtil.createTraitTypeDef("SOX", ImmutableList.<String>of());
+                TypesUtil.createTraitTypeDef("SOX", ImmutableList.<String>of());
         HierarchicalTypeDefinition<TraitType> secTrait =
-            TypesUtil.createTraitTypeDef("SEC", ImmutableList.<String>of());
+                TypesUtil.createTraitTypeDef("SEC", ImmutableList.<String>of());
         HierarchicalTypeDefinition<TraitType> financeTrait =
-            TypesUtil.createTraitTypeDef("Finance", ImmutableList.<String>of());
+                TypesUtil.createTraitTypeDef("Finance", ImmutableList.<String>of());
 
         getTypeSystem().defineTypes(ImmutableList.<EnumTypeDefinition>of(),
-            ImmutableList.<StructTypeDefinition>of(),
-            ImmutableList.of(classificationTraitDefinition, piiTrait, phiTrait, pciTrait, soxTrait, secTrait,
-                financeTrait), ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
+                ImmutableList.<StructTypeDefinition>of(),
+                ImmutableList.of(classificationTraitDefinition, piiTrait, phiTrait, pciTrait, soxTrait, secTrait,
+                        financeTrait), ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
 
         final ImmutableList<String> traitsNames = getTypeSystem().getTypeNamesByCategory(DataTypes.TypeCategory.TRAIT);
         Assert.assertEquals(traitsNames.size(), 7);
@@ -102,23 +102,23 @@ public class TypeSystemTest extends BaseTest {
 
         String enumType = random();
         EnumTypeDefinition orgLevelEnum =
-            new EnumTypeDefinition(enumType, new EnumValue(random(), 1), new EnumValue(random(), 2));
+                new EnumTypeDefinition(enumType, new EnumValue(random(), 1), new EnumValue(random(), 2));
 
         String structName = random();
         String attrType = random();
         StructTypeDefinition structType =
-            createStructTypeDef(structName, createRequiredAttrDef(attrType, DataTypes.STRING_TYPE));
+                createStructTypeDef(structName, createRequiredAttrDef(attrType, DataTypes.STRING_TYPE));
 
         String className = random();
         HierarchicalTypeDefinition<ClassType> classType = createClassTypeDef(className, ImmutableList.<String>of(),
-            createRequiredAttrDef(attrType, DataTypes.STRING_TYPE));
+                createRequiredAttrDef(attrType, DataTypes.STRING_TYPE));
 
         String traitName = random();
         HierarchicalTypeDefinition<TraitType> traitType = createTraitTypeDef(traitName, ImmutableList.<String>of(),
-            createRequiredAttrDef(attrType, DataTypes.INT_TYPE));
+                createRequiredAttrDef(attrType, DataTypes.INT_TYPE));
 
         ts.defineTypes(ImmutableList.of(orgLevelEnum), ImmutableList.of(structType),
-            ImmutableList.of(traitType), ImmutableList.of(classType));
+                ImmutableList.of(traitType), ImmutableList.of(classType));
     }
 
     @Test
@@ -129,8 +129,8 @@ public class TypeSystemTest extends BaseTest {
 
         TypeSystem ts = getTypeSystem();
         ts.defineTypes(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
-            ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(),
-            ImmutableList.of(a, b, c));
+                ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(),
+                ImmutableList.of(a, b, c));
         ClassType ac = ts.getDataType(ClassType.class, "a");
         ClassType bc = ts.getDataType(ClassType.class, "B");
         ClassType cc = ts.getDataType(ClassType.class, "C");
@@ -149,24 +149,24 @@ public class TypeSystemTest extends BaseTest {
         StructTypeDefinition struct_B = createStructTypeDef("struct_B", createRequiredAttrDef("s_B", DataTypes.STRING_TYPE));
 
         HierarchicalTypeDefinition<TraitType> trait_A = createTraitTypeDef("trait_A", null,
-            createRequiredAttrDef("t_A", DataTypes.STRING_TYPE));
+                createRequiredAttrDef("t_A", DataTypes.STRING_TYPE));
         HierarchicalTypeDefinition<TraitType> trait_B = createTraitTypeDef("trait_B", ImmutableList.<String>of("trait_A"),
-            createRequiredAttrDef("t_B", DataTypes.STRING_TYPE));
+                createRequiredAttrDef("t_B", DataTypes.STRING_TYPE));
         HierarchicalTypeDefinition<TraitType> trait_C = createTraitTypeDef("trait_C", ImmutableList.<String>of("trait_A"),
-            createRequiredAttrDef("t_C", DataTypes.STRING_TYPE));
+                createRequiredAttrDef("t_C", DataTypes.STRING_TYPE));
         HierarchicalTypeDefinition<TraitType> trait_D = createTraitTypeDef("trait_D", ImmutableList.<String>of("trait_B", "trait_C"),
-            createRequiredAttrDef("t_D", DataTypes.STRING_TYPE));
+                createRequiredAttrDef("t_D", DataTypes.STRING_TYPE));
 
         HierarchicalTypeDefinition<ClassType> class_A = createClassTypeDef("class_A", null,
-            createRequiredAttrDef("c_A", DataTypes.STRING_TYPE));
+                createRequiredAttrDef("c_A", DataTypes.STRING_TYPE));
         HierarchicalTypeDefinition<ClassType> class_B = createClassTypeDef("class_B", ImmutableList.<String>of("class_A"),
-            createRequiredAttrDef("c_B", DataTypes.STRING_TYPE));
+                createRequiredAttrDef("c_B", DataTypes.STRING_TYPE));
         HierarchicalTypeDefinition<ClassType> class_C = createClassTypeDef("class_C", ImmutableList.<String>of("class_B"),
-            createRequiredAttrDef("c_C", DataTypes.STRING_TYPE));
+                createRequiredAttrDef("c_C", DataTypes.STRING_TYPE));
 
         ts.defineTypes(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.of(struct_A, struct_B),
-            ImmutableList.of(trait_A, trait_B, trait_C, trait_D),
-            ImmutableList.of(class_A, class_B, class_C));
+                ImmutableList.of(trait_A, trait_B, trait_C, trait_D),
+                ImmutableList.of(class_A, class_B, class_C));
 
         final ImmutableList<String> structNames = ts.getTypeNamesByCategory(DataTypes.TypeCategory.STRUCT);
         final ImmutableList<String> traitNames = ts.getTypeNamesByCategory(DataTypes.TypeCategory.TRAIT);

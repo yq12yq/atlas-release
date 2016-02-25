@@ -19,7 +19,6 @@ package org.apache.atlas.security;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
-import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -62,7 +61,7 @@ public class SecureClientUtils {
 
     public static URLConnectionClientHandler getClientConnectionHandler(DefaultClientConfig config,
             org.apache.commons.configuration.Configuration clientConfig, final String doAsUser,
-                                                                        final UserGroupInformation ugi) {
+            final UserGroupInformation ugi) {
         config.getProperties().put(URLConnectionClientHandler.PROPERTY_HTTP_URL_CONNECTION_SET_METHOD_WORKAROUND, true);
         Configuration conf = new Configuration();
         conf.addResource(conf.get(SSLFactory.SSL_CLIENT_CONF_KEY, SecurityProperties.SSL_CLIENT_PROPERTIES));
@@ -177,7 +176,7 @@ public class SecureClientUtils {
         try {
             if (confLocation == null) {
                 String persistDir = null;
-                URL resource = ApplicationProperties.class.getResource("/");
+                URL resource = SecureClientUtils.class.getResource("/");
                 if (resource != null) {
                     persistDir = resource.toURI().getPath();
                 }

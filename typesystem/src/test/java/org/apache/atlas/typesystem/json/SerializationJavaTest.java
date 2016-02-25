@@ -64,25 +64,25 @@ public class SerializationJavaTest extends BaseTest {
         TypeSystem ts = getTypeSystem();
 
         HierarchicalTypeDefinition<ClassType> deptTypeDef = createClassTypeDef("Department", ImmutableList.<String>of(),
-            createRequiredAttrDef("name", DataTypes.STRING_TYPE),
-            new AttributeDefinition("employees", String.format("array<%s>", "Person"), Multiplicity.COLLECTION,
-                true, "department"));
+                createRequiredAttrDef("name", DataTypes.STRING_TYPE),
+                new AttributeDefinition("employees", String.format("array<%s>", "Person"), Multiplicity.COLLECTION,
+                        true, "department"));
         HierarchicalTypeDefinition<ClassType> personTypeDef = createClassTypeDef("Person", ImmutableList.<String>of(),
-            createRequiredAttrDef("name", DataTypes.STRING_TYPE),
-            new AttributeDefinition("department", "Department", Multiplicity.REQUIRED, false, "employees"),
-            new AttributeDefinition("manager", "Manager", Multiplicity.OPTIONAL, false, "subordinates"));
+                createRequiredAttrDef("name", DataTypes.STRING_TYPE),
+                new AttributeDefinition("department", "Department", Multiplicity.REQUIRED, false, "employees"),
+                new AttributeDefinition("manager", "Manager", Multiplicity.OPTIONAL, false, "subordinates"));
         HierarchicalTypeDefinition<ClassType> managerTypeDef =
-            createClassTypeDef("Manager", ImmutableList.<String>of("Person"),
-                new AttributeDefinition("subordinates", String.format("array<%s>", "Person"),
-                    Multiplicity.COLLECTION, false, "manager"));
+                createClassTypeDef("Manager", ImmutableList.<String>of("Person"),
+                        new AttributeDefinition("subordinates", String.format("array<%s>", "Person"),
+                                Multiplicity.COLLECTION, false, "manager"));
 
         HierarchicalTypeDefinition<TraitType> securityClearanceTypeDef =
-            createTraitTypeDef("SecurityClearance", ImmutableList.<String>of(),
-                createRequiredAttrDef("level", DataTypes.INT_TYPE));
+                createTraitTypeDef("SecurityClearance", ImmutableList.<String>of(),
+                        createRequiredAttrDef("level", DataTypes.INT_TYPE));
 
         ts.defineTypes(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
-            ImmutableList.of(securityClearanceTypeDef),
-            ImmutableList.of(deptTypeDef, personTypeDef, managerTypeDef));
+                ImmutableList.of(securityClearanceTypeDef),
+                ImmutableList.of(deptTypeDef, personTypeDef, managerTypeDef));
 
         Referenceable hrDept = new Referenceable("Department");
         Referenceable john = new Referenceable("Person");
@@ -108,29 +108,29 @@ public class SerializationJavaTest extends BaseTest {
         String hrDeptStr = hrDept2.toString();
 
         Assert.assertEquals(hrDeptStr, "{\n" +
-            "\tid : (type: Department, id: <unassigned>)\n" +
-            "\tname : \thr\n" +
-            "\temployees : \t[{\n" +
-            "\tid : (type: Person, id: <unassigned>)\n" +
-            "\tname : \tJohn\n" +
-            "\tdepartment : (type: Department, id: <unassigned>)\n" +
-            "\tmanager : (type: Manager, id: <unassigned>)\n" +
-            "}, {\n" +
-            "\tid : (type: Manager, id: <unassigned>)\n" +
-            "\tsubordinates : \t[{\n" +
-            "\tid : (type: Person, id: <unassigned>)\n" +
-            "\tname : \tJohn\n" +
-            "\tdepartment : (type: Department, id: <unassigned>)\n" +
-            "\tmanager : (type: Manager, id: <unassigned>)\n" +
-            "}]\n" +
-            "\tname : \tJane\n" +
-            "\tdepartment : (type: Department, id: <unassigned>)\n" +
-            "\tmanager : <null>\n" +
-            "\n" +
-            "\tSecurityClearance : \t{\n" +
-            "\t\tlevel : \t\t1\n" +
-            "\t}}]\n" +
-            "}");
+                "\tid : (type: Department, id: <unassigned>)\n" +
+                "\tname : \thr\n" +
+                "\temployees : \t[{\n" +
+                "\tid : (type: Person, id: <unassigned>)\n" +
+                "\tname : \tJohn\n" +
+                "\tdepartment : (type: Department, id: <unassigned>)\n" +
+                "\tmanager : (type: Manager, id: <unassigned>)\n" +
+                "}, {\n" +
+                "\tid : (type: Manager, id: <unassigned>)\n" +
+                "\tsubordinates : \t[{\n" +
+                "\tid : (type: Person, id: <unassigned>)\n" +
+                "\tname : \tJohn\n" +
+                "\tdepartment : (type: Department, id: <unassigned>)\n" +
+                "\tmanager : (type: Manager, id: <unassigned>)\n" +
+                "}]\n" +
+                "\tname : \tJane\n" +
+                "\tdepartment : (type: Department, id: <unassigned>)\n" +
+                "\tmanager : <null>\n" +
+                "\n" +
+                "\tSecurityClearance : \t{\n" +
+                "\t\tlevel : \t\t1\n" +
+                "\t}}]\n" +
+                "}");
 
         String jsonStr = Serialization$.MODULE$.toJson(hrDept2);
         //System.out.println(jsonStr);
@@ -145,12 +145,12 @@ public class SerializationJavaTest extends BaseTest {
 
         TypeSystem ts = getTypeSystem();
         HierarchicalTypeDefinition<TraitType> securityClearanceTypeDef =
-            createTraitTypeDef("SecurityClearance2", ImmutableList.<String>of(),
-                createRequiredAttrDef("level", DataTypes.INT_TYPE));
+                createTraitTypeDef("SecurityClearance2", ImmutableList.<String>of(),
+                        createRequiredAttrDef("level", DataTypes.INT_TYPE));
 
         ts.defineTypes(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
-            ImmutableList.of(securityClearanceTypeDef),
-            ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
+                ImmutableList.of(securityClearanceTypeDef),
+                ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
 
 
         Struct s = new Struct("SecurityClearance2");

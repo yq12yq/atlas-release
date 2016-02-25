@@ -43,7 +43,14 @@ allows integration with the whole enterprise data ecosystem.
    * [[Search][Search]]
    * [[security][Security]]
    * [[Configuration][Configuration]]
-
+   * Notification
+      * [[Notification-Entity][Entity Notification]]
+   * Bridges
+      * [[Bridge-Hive][Hive Bridge]]
+      * [[Bridge-Sqoop][Sqoop Bridge]]
+      * [[Bridge-Falcon][Falcon Bridge]]
+      * [[StormAtlasHook][Storm Bridge]]
+   * [[HighAvailability][Fault Tolerance And High Availability Options]]
 
 ---++ API Documentation
 
@@ -52,4 +59,4 @@ allows integration with the whole enterprise data ecosystem.
 #LicenseInfo
 ---+ Licensing Information
 
-Metadata (Atlas) is distributed under [[http://www.apache.org/licenses/LICENSE-2.0][Apache License 2.0]].
+Atlas is distributed under [[http://www.apache.org/licenses/LICENSE-2.0][Apache License 2.0]].

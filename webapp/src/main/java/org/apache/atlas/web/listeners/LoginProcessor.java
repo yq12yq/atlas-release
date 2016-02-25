@@ -37,25 +37,20 @@ import java.net.UnknownHostException;
 public class LoginProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(LoginProcessor.class);
-    public static final String METADATA_AUTHENTICATION_PREFIX = "atlas.authentication.";
-    public static final String AUTHENTICATION_METHOD = METADATA_AUTHENTICATION_PREFIX + "method";
-    public static final String AUTHENTICATION_PRINCIPAL = METADATA_AUTHENTICATION_PREFIX + "principal";
-    public static final String AUTHENTICATION_KEYTAB = METADATA_AUTHENTICATION_PREFIX + "keytab";
+    public static final String ATLAS_AUTHENTICATION_PREFIX = "atlas.authentication.";
+    public static final String AUTHENTICATION_METHOD = ATLAS_AUTHENTICATION_PREFIX + "method";
+    public static final String AUTHENTICATION_PRINCIPAL = ATLAS_AUTHENTICATION_PREFIX + "principal";
+    public static final String AUTHENTICATION_KEYTAB = ATLAS_AUTHENTICATION_PREFIX + "keytab";
 
     /**
      * Perform a SIMPLE login based on established OS identity or a kerberos based login using the configured
-     * principal and keytab (via application.properties).
+     * principal and keytab (via atlas-application.properties).
      */
     public void login() {
         // first, let's see if we're running in a hadoop cluster and have the env configured
         boolean isHadoopCluster = isHadoopCluster();
         Configuration hadoopConfig = isHadoopCluster ? getHadoopConfiguration() : new Configuration(false);
-        org.apache.commons.configuration.Configuration configuration = null;
-        try {
-            configuration = getPropertiesConfiguration();
-        } catch (ConfigurationException e) {
-            LOG.warn("Error reading application configuration", e);
-        }
+        org.apache.commons.configuration.Configuration configuration = getApplicationConfiguration();
         if (!isHadoopCluster) {
             // need to read the configured authentication choice and create the UGI configuration
             setupHadoopConfiguration(hadoopConfig, configuration);
@@ -63,8 +58,10 @@ public class LoginProcessor {
         doServiceLogin(hadoopConfig, configuration);
     }
 
-    protected void doServiceLogin(Configuration hadoopConfig, org.apache.commons.configuration.Configuration configuration) {
+    protected void doServiceLogin(Configuration hadoopConfig,
+            org.apache.commons.configuration.Configuration configuration) {
         UserGroupInformation.setConfiguration(hadoopConfig);
+
         UserGroupInformation ugi = null;
         UserGroupInformation.AuthenticationMethod authenticationMethod =
                 SecurityUtil.getAuthenticationMethod(hadoopConfig);
@@ -96,8 +93,8 @@ public class LoginProcessor {
         return bindAddress;
     }
 
-    protected void setupHadoopConfiguration(Configuration hadoopConfig,
-                                            org.apache.commons.configuration.Configuration configuration) {
+    protected void setupHadoopConfiguration(Configuration hadoopConfig, org.apache.commons.configuration.Configuration
+            configuration) {
         String authMethod;
         authMethod = configuration != null ? configuration.getString(AUTHENTICATION_METHOD) : null;
         // getString may return null, and would like to log the nature of the default setting
@@ -134,12 +131,13 @@ public class LoginProcessor {
      * @return the metadata configuration.
      * @throws ConfigurationException
      */
-    protected org.apache.commons.configuration.Configuration getPropertiesConfiguration() throws ConfigurationException {
+    protected org.apache.commons.configuration.Configuration getApplicationConfiguration() {
         try {
             return ApplicationProperties.get();
         } catch (AtlasException e) {
-            throw new ConfigurationException(e);
+            LOG.warn("Error reading application configuration", e);
         }
+        return null;
     }
 
     /**
@@ -154,23 +152,5 @@ public class LoginProcessor {
             // ignore - false is default setting
         }
         return isHadoopCluster;
-    }
-
-    public static void reloginExpiringKeytabUser() throws IOException {
-        if(!UserGroupInformation.isSecurityEnabled()){
-            return;
-        }
-        try {
-            UserGroupInformation ugi = UserGroupInformation.getLoginUser();
-            //checkTGT calls ugi.relogin only after checking if it is close to tgt expiry
-            //hadoop relogin is actually done only every x minutes (x=10 in hadoop 1.x)
-            if (ugi.isFromKeytab()) {
-                ugi.checkTGTAndReloginFromKeytab();
-            }
-        } catch (IOException e) {
-            final String msg = "Error doing relogin using keytab " + e.getMessage();
-            LOG.error(msg, e);
-            throw e;
-        }
     }
 }

@@ -27,9 +27,11 @@ import org.apache.atlas.typesystem.ITypedReferenceableInstance;
 import org.apache.atlas.typesystem.ITypedStruct;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.Struct;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.atlas.typesystem.TypesDef;
+import org.apache.atlas.typesystem.types.utils.TypesUtil;
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -42,7 +44,7 @@ import static org.apache.atlas.typesystem.types.utils.TypesUtil.createRequiredAt
 
 public class EnumTest extends BaseTest {
 
-    @Before
+    @BeforeMethod
     public void setup() throws Exception {
         super.setup();
     }
@@ -59,7 +61,47 @@ public class EnumTest extends BaseTest {
 
         ts.defineEnumType("LockLevel", new EnumValue("DB", 1), new EnumValue("TABLE", 2),
                 new EnumValue("PARTITION", 3));
+    }
 
+    @Test
+    public void testTypeUpdate() throws Exception {
+        TypeSystem ts = getTypeSystem();
+        EnumTypeDefinition etd = new EnumTypeDefinition(newName(), new EnumValue("A", 1));
+        TypesDef typesDef = getTypesDef(etd);
+        ts.defineTypes(typesDef);
+
+        //Allow adding new enum
+        etd = new EnumTypeDefinition(etd.name, new EnumValue("A", 1), new EnumValue("B", 2));
+        typesDef = getTypesDef(etd);
+        ts.updateTypes(typesDef);
+
+        //Don't allow deleting enum
+        etd = new EnumTypeDefinition(etd.name, new EnumValue("A", 1));
+        typesDef = getTypesDef(etd);
+        try {
+            ts.updateTypes(typesDef);
+            Assert.fail("Expected TypeUpdateException");
+        } catch (TypeUpdateException e) {
+            //assert that type is not updated when validation fails
+            EnumType enumType = ts.getDataType(EnumType.class, etd.name);
+            Assert.assertEquals(enumType.values().size(), 2);
+        }
+
+        //Don't allow changing ordinal of existing enum value
+        etd = new EnumTypeDefinition(etd.name, new EnumValue("A", 2));
+        typesDef = getTypesDef(etd);
+        try {
+            ts.updateTypes(typesDef);
+            Assert.fail("Expected TypeUpdateException");
+        } catch (TypeUpdateException e) {
+            //expected
+        }
+    }
+
+    private TypesDef getTypesDef(EnumTypeDefinition enumTypeDefinition) {
+        return TypesUtil.getTypesDef(ImmutableList.of(enumTypeDefinition), ImmutableList.<StructTypeDefinition>of(),
+                ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(),
+                ImmutableList.<HierarchicalTypeDefinition<ClassType>>of());
     }
 
     protected void fillStruct(Struct s) throws AtlasException {
@@ -162,7 +204,7 @@ public class EnumTest extends BaseTest {
                 "\tl : \t" + TEST_DATE + "\n" +
                 "\tm : \t[1, 1]\n" +
                 "\tn : \t[1.1, 1.1]\n" +
-                "\to : \t{b=2.0, a=1.0}\n" +
+                "\to : \t{a=1.0, b=2.0}\n" +
                 "\tenum4 : \tPARTITION\n" +
                 "}");
     }
@@ -194,7 +236,7 @@ public class EnumTest extends BaseTest {
                 "\tl : \t" + TEST_DATE + "\n" +
                 "\tm : \t[1, 1]\n" +
                 "\tn : \t[1.1, 1.1]\n" +
-                "\to : \t{b=2.0, a=1.0}\n" +
+                "\to : \t{a=1.0, b=2.0}\n" +
                 "\tenum4 : \tPARTITION\n" +
                 "}");
     }

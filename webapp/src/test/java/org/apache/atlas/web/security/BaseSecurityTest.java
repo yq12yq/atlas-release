@@ -16,9 +16,10 @@
  */
 package org.apache.atlas.web.security;
 
+import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.web.TestUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.lang.RandomStringUtils;
 import org.apache.hadoop.minikdc.MiniKdc;
 import org.apache.hadoop.security.ssl.SSLFactory;
 import org.apache.hadoop.security.ssl.SSLHostnameVerifier;
@@ -35,10 +36,7 @@ import java.nio.file.Files;
 import java.util.Locale;
 import java.util.Properties;
 
-import static org.apache.atlas.security.SecurityProperties.CERT_STORES_CREDENTIAL_PROVIDER_PATH;
-import static org.apache.atlas.security.SecurityProperties.KEYSTORE_FILE_KEY;
-import static org.apache.atlas.security.SecurityProperties.TLS_ENABLED;
-import static org.apache.atlas.security.SecurityProperties.TRUSTSTORE_FILE_KEY;
+import static org.apache.atlas.security.SecurityProperties.*;
 
 /**
  *
@@ -52,11 +50,12 @@ public class BaseSecurityTest {
 
     protected void generateTestProperties(Properties props) throws ConfigurationException, IOException {
         PropertiesConfiguration config =
-                new PropertiesConfiguration(System.getProperty("user.dir") + "/../src/conf/application.properties");
+                new PropertiesConfiguration(System.getProperty("user.dir") +
+                  "/../src/conf/" + ApplicationProperties.APPLICATION_PROPERTIES);
         for (String propName : props.stringPropertyNames()) {
             config.setProperty(propName, props.getProperty(propName));
         }
-        File file = new File(System.getProperty("user.dir"), "application.properties");
+        File file = new File(System.getProperty("user.dir"), ApplicationProperties.APPLICATION_PROPERTIES);
         file.deleteOnExit();
         Writer fileWriter = new FileWriter(file);
         config.save(fileWriter);
@@ -101,6 +100,16 @@ public class BaseSecurityTest {
     protected void bindJVMtoJAASFile(File jaasFile) {
         String path = jaasFile.getAbsolutePath();
         System.setProperty(Environment.JAAS_CONF_KEY, path);
+        disableZookeeperSecurity();
+    }
+
+    /* We only want Atlas to work in secure mode for the tests
+     * for otherwise a lot more configuration is required to
+     * make other components like Kafka run in secure mode.
+     */
+    private void disableZookeeperSecurity() {
+        System.setProperty("zookeeper.sasl.client", "false");
+        System.setProperty("zookeeper.sasl.clientconfig", "");
     }
 
     protected File createKeytab(MiniKdc kdc, File kdcWorkDir, String principal, String filename) throws Exception {
@@ -110,13 +119,13 @@ public class BaseSecurityTest {
     }
 
     protected String getWarPath() {
-        return System.getProperty("projectBaseDir") + String.format("/webapp/target/atlas-webapp-%s",
-                System.getProperty("project.version"));
+        return TestUtils.getWarPath();
     }
 
     protected PropertiesConfiguration getSSLConfiguration(String providerUrl) {
         String projectBaseDirectory = System.getProperty("projectBaseDir");
         final PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.setProperty("atlas.services.enabled", false);
         configuration.setProperty(TLS_ENABLED, true);
         configuration.setProperty(TRUSTSTORE_FILE_KEY, projectBaseDirectory + "/webapp/target/atlas.keystore");
         configuration.setProperty(KEYSTORE_FILE_KEY, projectBaseDirectory + "/webapp/target/atlas.keystore");

@@ -18,15 +18,16 @@
 
 package org.apache.atlas;
 
+import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.throwingproviders.ThrowingProviderBinder;
 import com.thinkaurelius.titan.core.TitanGraph;
-import com.tinkerpop.blueprints.Graph;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.apache.atlas.discovery.DiscoveryService;
 import org.apache.atlas.discovery.HiveLineageService;
 import org.apache.atlas.discovery.LineageService;
+import org.apache.atlas.discovery.SearchIndexer;
 import org.apache.atlas.discovery.graph.GraphBackedDiscoveryService;
 import org.apache.atlas.listener.TypesChangeListener;
 import org.apache.atlas.repository.MetadataRepository;
@@ -38,6 +39,7 @@ import org.apache.atlas.repository.typestore.GraphBackedTypeStore;
 import org.apache.atlas.repository.typestore.ITypeStore;
 import org.apache.atlas.services.DefaultMetadataService;
 import org.apache.atlas.services.MetadataService;
+import org.apache.atlas.typesystem.types.TypeSystem;
 
 /**
  * Guice module for Repository module.
@@ -47,13 +49,17 @@ public class RepositoryMetadataModule extends com.google.inject.AbstractModule {
     @Override
     protected void configure() {
         // special wiring for Titan Graph
+
+
+
         ThrowingProviderBinder.create(binder()).bind(GraphProvider.class, TitanGraph.class).to(TitanGraphProvider.class)
                 .asEagerSingleton();
 
         // allow for dynamic binding of the metadata repo & graph service
-
         // bind the MetadataRepositoryService interface to an implementation
         bind(MetadataRepository.class).to(GraphBackedMetadataRepository.class).asEagerSingleton();
+
+        bind(TypeSystem.class).in(Singleton.class);
 
         // bind the ITypeStore interface to an implementation
         bind(ITypeStore.class).to(GraphBackedTypeStore.class).asEagerSingleton();

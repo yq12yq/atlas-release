@@ -20,8 +20,7 @@ package org.apache.atlas.discovery;
 
 import org.apache.atlas.BaseHiveRepositoryTest;
 import org.apache.atlas.RepositoryMetadataModule;
-import org.apache.atlas.discovery.graph.GraphBackedDiscoveryService;
-import org.apache.atlas.repository.EntityNotFoundException;
+import org.apache.atlas.typesystem.exception.EntityNotFoundException;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.testng.Assert;
@@ -32,10 +31,6 @@ import org.testng.annotations.Guice;
 import org.testng.annotations.Test;
 
 import javax.inject.Inject;
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
 
 /**
  * Unit tests for Hive LineageService.
@@ -44,7 +39,7 @@ import java.util.List;
 public class HiveLineageServiceTest extends BaseHiveRepositoryTest {
 
     @Inject
-    private GraphBackedDiscoveryService discoveryService;
+    private DiscoveryService discoveryService;
 
     @Inject
     private HiveLineageService hiveLineageService;

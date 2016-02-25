@@ -21,14 +21,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.thinkaurelius.titan.core.TitanGraph;
 import com.thinkaurelius.titan.core.util.TitanCleanup;
-import org.apache.atlas.repository.graph.GraphBackedMetadataRepository;
+import org.apache.atlas.repository.MetadataRepository;
 import org.apache.atlas.repository.graph.GraphBackedSearchIndexer;
 import org.apache.atlas.repository.graph.GraphProvider;
-import org.apache.atlas.services.DefaultMetadataService;
+import org.apache.atlas.services.MetadataService;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.TypesDef;
-import org.apache.atlas.typesystem.json.InstanceSerialization;
 import org.apache.atlas.typesystem.json.TypesSerialization;
 import org.apache.atlas.typesystem.persistence.Id;
 import org.apache.atlas.typesystem.types.AttributeDefinition;
@@ -41,10 +40,7 @@ import org.apache.atlas.typesystem.types.Multiplicity;
 import org.apache.atlas.typesystem.types.StructTypeDefinition;
 import org.apache.atlas.typesystem.types.TraitType;
 import org.apache.atlas.typesystem.types.TypeSystem;
-import org.apache.atlas.typesystem.types.TypeUtils;
 import org.apache.atlas.typesystem.types.utils.TypesUtil;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Guice;
 
 import javax.inject.Inject;
@@ -59,10 +55,10 @@ import java.util.List;
 public class BaseHiveRepositoryTest {
 
     @Inject
-    protected DefaultMetadataService metadataService;
+    protected MetadataService metadataService;
 
     @Inject
-    protected GraphBackedMetadataRepository repository;
+    protected MetadataRepository repository;
 
     @Inject
     protected GraphProvider<TitanGraph> graphProvider;
@@ -71,7 +67,7 @@ public class BaseHiveRepositoryTest {
         setUpTypes();
         new GraphBackedSearchIndexer(graphProvider);
         setupInstances();
-        // TestUtils.dumpGraph(graphProvider.get());
+        TestUtils.dumpGraph(graphProvider.get());
     }
 
     protected void tearDown() throws Exception {
@@ -170,8 +166,10 @@ public class BaseHiveRepositoryTest {
 
         HierarchicalTypeDefinition<TraitType> jdbcTraitDef = TypesUtil.createTraitTypeDef("JdbcAccess", null);
 
-        return TypeUtils.getTypesDef(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
-            ImmutableList.of(dimTraitDef, factTraitDef, piiTraitDef, metricTraitDef, etlTraitDef, jdbcTraitDef),
+        HierarchicalTypeDefinition<TraitType> logTraitDef = TypesUtil.createTraitTypeDef("Log Data", null);
+
+        return TypesUtil.getTypesDef(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
+            ImmutableList.of(dimTraitDef, factTraitDef, piiTraitDef, metricTraitDef, etlTraitDef, jdbcTraitDef, logTraitDef),
             ImmutableList.of(dbClsDef, storageDescClsDef, columnClsDef, tblClsDef, loadProcessClsDef, viewClsDef, partClsDef));
     }
 
@@ -194,17 +192,24 @@ public class BaseHiveRepositoryTest {
         Id salesDB = database("Sales", "Sales Database", "John ETL", "hdfs://host:8000/apps/warehouse/sales");
 
         Referenceable sd =
-            storageDescriptor("hdfs://host:8000/apps/warehouse/sales", "TextInputFormat", "TextOutputFormat", true, ImmutableList.of(column("time_id", "int", "time id")));
+            storageDescriptor("hdfs://host:8000/apps/warehouse/sales", "TextInputFormat", "TextOutputFormat", true, ImmutableList.of(
+                column("time_id", "int", "time id")));
 
         List<Referenceable> salesFactColumns = ImmutableList
-            .of(column("time_id", "int", "time id"), column("product_id", "int", "product id"),
+            .of(column("time_id", "int", "time id"),
+                column("product_id", "int", "product id"),
                 column("customer_id", "int", "customer id", "PII"),
                 column("sales", "double", "product id", "Metric"));
 
         Id salesFact = table("sales_fact", "sales fact table", salesDB, sd, "Joe", "Managed", salesFactColumns, "Fact");
 
+        List<Referenceable> logFactColumns = ImmutableList
+            .of(column("time_id", "int", "time id"), column("app_id", "int", "app id"),
+                column("machine_id", "int", "machine id"), column("log", "string", "log data", "Log Data"));
+
         List<Referenceable> timeDimColumns = ImmutableList
-            .of(column("time_id", "int", "time id"), column("dayOfYear", "int", "day Of Year"),
+            .of(column("time_id", "int", "time id"),
+                column("dayOfYear", "int", "day Of Year"),
                 column("weekDay", "int", "week Day"));
 
         Id timeDim = table("time_dim", "time dimension table", salesDB, sd, "John Doe", "External", timeDimColumns,
@@ -220,8 +225,15 @@ public class BaseHiveRepositoryTest {
         loadProcess("loadSalesDaily", "hive query for daily summary", "John ETL", ImmutableList.of(salesFact, timeDim),
             ImmutableList.of(salesFactDaily), "create table as select ", "plan", "id", "graph", "ETL");
 
+        Id logDB = database("Logging", "logging database", "Tim ETL", "hdfs://host:8000/apps/warehouse/logging");
+
+        Id loggingFactDaily =
+            table("log_fact_daily_mv", "log fact daily materialized view", logDB, sd, "Tim ETL", "Managed",
+                logFactColumns, "Log Data");
+
         List<Referenceable> productDimColumns = ImmutableList
-            .of(column("product_id", "int", "product id"), column("product_name", "string", "product name"),
+            .of(column("product_id", "int", "product id"),
+                column("product_name", "string", "product name"),
                 column("brand_name", "int", "brand name"));
 
         Id productDim =
@@ -230,7 +242,8 @@ public class BaseHiveRepositoryTest {
 
         view("product_dim_view", reportingDB, ImmutableList.of(productDim), "Dimension", "JdbcAccess");
 
-        List<Referenceable> customerDimColumns = ImmutableList.of(column("customer_id", "int", "customer id", "PII"),
+        List<Referenceable> customerDimColumns = ImmutableList.of(
+            column("customer_id", "int", "customer id", "PII"),
             column("name", "string", "customer name", "PII"),
             column("address", "string", "customer address", "PII"));
 
@@ -246,6 +259,13 @@ public class BaseHiveRepositoryTest {
 
         loadProcess("loadSalesMonthly", "hive query for monthly summary", "John ETL", ImmutableList.of(salesFactDaily),
             ImmutableList.of(salesFactMonthly), "create table as select ", "plan", "id", "graph", "ETL");
+
+        Id loggingFactMonthly =
+            table("logging_fact_monthly_mv", "logging fact monthly materialized view", logDB, sd, "Tim ETL",
+                "Managed", logFactColumns, "Log Data");
+
+        loadProcess("loadLogsMonthly", "hive query for monthly summary", "Tim ETL", ImmutableList.of(loggingFactDaily),
+            ImmutableList.of(loggingFactMonthly), "create table as select ", "plan", "id", "graph", "ETL");
 
         partition(new ArrayList() {{ add("2015-01-01"); }}, salesFactDaily);
     }
@@ -345,13 +365,10 @@ public class BaseHiveRepositoryTest {
         return createInstance(referenceable, clsType);
     }
     private Id createInstance(Referenceable referenceable, ClassType clsType) throws Exception {
-//        String entityJSON = InstanceSerialization.toJson(referenceable, true);
-
-
         ITypedReferenceableInstance typedInstance = clsType.convert(referenceable, Multiplicity.REQUIRED);
-        String guid = repository.createEntity(typedInstance);
+        List<String> guids = repository.createEntities(typedInstance);
 
         // return the reference to created instance with guid
-        return new Id(guid, 0, referenceable.getTypeName());
+        return new Id(guids.get(guids.size() - 1), 0, referenceable.getTypeName());
     }
 }

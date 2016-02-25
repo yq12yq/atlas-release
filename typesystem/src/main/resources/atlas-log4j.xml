@@ -28,7 +28,7 @@
     </appender>
 
     <appender name="AUDIT" class="org.apache.log4j.DailyRollingFileAppender">
-        <param name="File" value="${user.dir}/target/logs/audit.log"/>
+        <param name="File" value="${atlas.log.dir}/audit.log"/>
         <param name="Append" value="true"/>
         <param name="Threshold" value="debug"/>
         <layout class="org.apache.log4j.PatternLayout">
@@ -36,18 +36,18 @@
         </layout>
     </appender>
 
-    <logger name="AUDIT" additivity="false">
-        <level value="debug"/>
-        <appender-ref ref="console"/>
-    </logger>
-
     <logger name="org.apache.atlas" additivity="false">
         <level value="debug"/>
         <appender-ref ref="console"/>
     </logger>
 
-    <logger name="org.apache.hive" additivity="false">
-        <level value="debug"/>
+    <logger name="com.thinkaurelius.titan" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <logger name="AUDIT">
+        <level value="info"/>
         <appender-ref ref="console"/>
     </logger>
 

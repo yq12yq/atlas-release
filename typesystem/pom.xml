@@ -26,7 +26,7 @@
     <parent>
         <groupId>org.apache.atlas</groupId>
         <artifactId>apache-atlas</artifactId>
-        <version>0.1-incubating-SNAPSHOT</version>
+        <version>0.7-incubating-SNAPSHOT</version>
     </parent>
     <artifactId>atlas-typesystem</artifactId>
     <description>Apache Atlas Typesystem Module</description>
@@ -70,12 +70,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.binary.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.scalamacros</groupId>
             <artifactId>quasiquotes_${scala.binary.version}</artifactId>
         </dependency>
@@ -106,11 +100,6 @@
         </dependency>
 
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
@@ -121,8 +110,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
+            <groupId>org.apache.atlas</groupId>
+            <artifactId>atlas-common</artifactId>
         </dependency>
 
         <dependency>

@@ -45,16 +45,15 @@
         </layout>
     </appender>
 
-    <logger name="com.thinkaurelius.titan" additivity="false">
-        <level value="info"/>
-        <appender-ref ref="FILE"/>
-    </logger>
-
     <logger name="org.apache.atlas" additivity="false">
         <level value="debug"/>
         <appender-ref ref="FILE"/>
     </logger>
 
+    <logger name="com.thinkaurelius.titan" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="FILE"/>
+    </logger>
 
     <logger name="AUDIT">
         <level value="info"/>
@@ -62,7 +61,7 @@
     </logger>
 
     <root>
-        <priority value="warn"/>
+        <priority value="info"/>
         <appender-ref ref="FILE"/>
     </root>
 

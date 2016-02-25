@@ -19,14 +19,18 @@
 package org.apache.atlas;
 
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 import org.apache.atlas.security.SecureClientUtils;
 import org.apache.atlas.typesystem.Referenceable;
+import org.apache.atlas.typesystem.TypesDef;
 import org.apache.atlas.typesystem.json.InstanceSerialization;
+import org.apache.atlas.typesystem.json.TypesSerialization;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -39,6 +43,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static org.apache.atlas.security.SecurityProperties.TLS_ENABLED;
@@ -50,6 +56,7 @@ public class AtlasClient {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasClient.class);
     public static final String NAME = "name";
     public static final String GUID = "GUID";
+    public static final String TYPE = "type";
     public static final String TYPENAME = "typeName";
 
     public static final String DEFINITION = "definition";
@@ -59,11 +66,12 @@ public class AtlasClient {
     public static final String RESULTS = "results";
     public static final String COUNT = "count";
     public static final String ROWS = "rows";
+    public static final String DATATYPE = "dataType";
 
     public static final String BASE_URI = "api/atlas/";
+    public static final String ADMIN_VERSION = "admin/version";
     public static final String TYPES = "types";
-    public static final String URI_ENTITIES = "entities";
-    public static final String URI_TRAITS = "traits";
+    public static final String URI_ENTITY = "entities";
     public static final String URI_SEARCH = "discovery/search";
     public static final String URI_LINEAGE = "lineage/hive/table";
 
@@ -76,10 +84,16 @@ public class AtlasClient {
     public static final String INFRASTRUCTURE_SUPER_TYPE = "Infrastructure";
     public static final String DATA_SET_SUPER_TYPE = "DataSet";
     public static final String PROCESS_SUPER_TYPE = "Process";
+    public static final String REFERENCEABLE_SUPER_TYPE = "Referenceable";
+    public static final String REFERENCEABLE_ATTRIBUTE_NAME = "qualifiedName";
 
     public static final String JSON_MEDIA_TYPE = MediaType.APPLICATION_JSON + "; charset=UTF-8";
 
     private WebResource service;
+
+    protected AtlasClient() {
+        //do nothing. For LocalAtlasClient
+    }
 
     public AtlasClient(String baseUrl) {
         this(baseUrl, null, null);
@@ -88,6 +102,8 @@ public class AtlasClient {
     public AtlasClient(String baseUrl, UserGroupInformation ugi, String doAsUser) {
         DefaultClientConfig config = new DefaultClientConfig();
         Configuration clientConfig = null;
+        int readTimeout = 60000;
+        int connectTimeout = 60000;
         try {
             clientConfig = getClientProperties();
             if (clientConfig.getBoolean(TLS_ENABLED, false)) {
@@ -96,6 +112,8 @@ public class AtlasClient {
                 // configuration object, persist it, then subsequently pass in an empty configuration to SSLFactory
                 SecureClientUtils.persistSSLClientConfiguration(clientConfig);
             }
+            readTimeout = clientConfig.getInt("atlas.client.readTimeoutMSecs", readTimeout);
+            connectTimeout = clientConfig.getInt("atlas.client.connectTimeoutMSecs", connectTimeout);
         } catch (Exception e) {
             LOG.info("Error processing client configuration.", e);
         }
@@ -105,50 +123,76 @@ public class AtlasClient {
 
         Client client = new Client(handler, config);
         client.resource(UriBuilder.fromUri(baseUrl).build());
+        client.setReadTimeout(readTimeout);
+        client.setConnectTimeout(connectTimeout);
 
         service = client.resource(UriBuilder.fromUri(baseUrl).build());
+    }
+
+    // for testing
+    AtlasClient(WebResource service) {
+        this.service = service;
     }
 
     protected Configuration getClientProperties() throws AtlasException {
         return ApplicationProperties.get();
     }
 
-    enum API {
+    public boolean isServerReady() throws AtlasServiceException {
+        WebResource resource = getResource(API.VERSION);
+        try {
+            callAPIWithResource(API.VERSION, resource);
+            return true;
+        } catch (ClientHandlerException che) {
+            return false;
+        }
+    }
+
+    public enum API {
+
+        //Admin operations
+        VERSION(BASE_URI + ADMIN_VERSION, HttpMethod.GET, Response.Status.OK),
 
         //Type operations
-        CREATE_TYPE(BASE_URI + TYPES, HttpMethod.POST),
-        GET_TYPE(BASE_URI + TYPES, HttpMethod.GET),
-        LIST_TYPES(BASE_URI + TYPES, HttpMethod.GET),
-        LIST_TRAIT_TYPES(BASE_URI + TYPES + "?type=trait", HttpMethod.GET),
+        CREATE_TYPE(BASE_URI + TYPES, HttpMethod.POST, Response.Status.CREATED),
+        UPDATE_TYPE(BASE_URI + TYPES, HttpMethod.PUT, Response.Status.OK),
+        GET_TYPE(BASE_URI + TYPES, HttpMethod.GET, Response.Status.OK),
+        LIST_TYPES(BASE_URI + TYPES, HttpMethod.GET, Response.Status.OK),
+        LIST_TRAIT_TYPES(BASE_URI + TYPES + "?type=trait", HttpMethod.GET, Response.Status.OK),
 
         //Entity operations
-        CREATE_ENTITY(BASE_URI + URI_ENTITIES, HttpMethod.POST),
-        GET_ENTITY(BASE_URI + URI_ENTITIES, HttpMethod.GET),
-        UPDATE_ENTITY(BASE_URI + URI_ENTITIES, HttpMethod.PUT),
-        LIST_ENTITY(BASE_URI + URI_ENTITIES, HttpMethod.GET),
+        CREATE_ENTITY(BASE_URI + URI_ENTITY, HttpMethod.POST, Response.Status.CREATED),
+        GET_ENTITY(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK),
+        UPDATE_ENTITY(BASE_URI + URI_ENTITY, HttpMethod.PUT, Response.Status.OK),
+        UPDATE_ENTITY_PARTIAL(BASE_URI + URI_ENTITY, HttpMethod.POST, Response.Status.OK),
+        LIST_ENTITIES(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK),
+        DELETE_ENTITIES(BASE_URI + URI_ENTITY, HttpMethod.DELETE, Response.Status.OK),
+
 
         //Trait operations
-        ADD_TRAITS(BASE_URI + URI_TRAITS, HttpMethod.POST),
-        DELETE_TRAITS(BASE_URI + URI_TRAITS, HttpMethod.DELETE),
-        LIST_TRAITS(BASE_URI + URI_TRAITS, HttpMethod.GET),
+        ADD_TRAITS(BASE_URI + URI_ENTITY, HttpMethod.POST, Response.Status.CREATED),
+        DELETE_TRAITS(BASE_URI + URI_ENTITY, HttpMethod.DELETE, Response.Status.OK),
+        LIST_TRAITS(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK),
 
         //Search operations
-        SEARCH(BASE_URI + URI_SEARCH, HttpMethod.GET),
-        SEARCH_DSL(BASE_URI + URI_SEARCH + "/dsl", HttpMethod.GET),
-        SEARCH_GREMLIN(BASE_URI + URI_SEARCH + "/gremlin", HttpMethod.GET),
-        SEARCH_FULL_TEXT(BASE_URI + URI_SEARCH + "/fulltext", HttpMethod.GET),
+        SEARCH(BASE_URI + URI_SEARCH, HttpMethod.GET, Response.Status.OK),
+        SEARCH_DSL(BASE_URI + URI_SEARCH + "/dsl", HttpMethod.GET, Response.Status.OK),
+        SEARCH_GREMLIN(BASE_URI + URI_SEARCH + "/gremlin", HttpMethod.GET, Response.Status.OK),
+        SEARCH_FULL_TEXT(BASE_URI + URI_SEARCH + "/fulltext", HttpMethod.GET, Response.Status.OK),
 
         //Lineage operations
-        LINEAGE_INPUTS_GRAPH(BASE_URI + URI_LINEAGE, HttpMethod.GET),
-        LINEAGE_OUTPUTS_GRAPH(BASE_URI + URI_LINEAGE, HttpMethod.GET),
-        LINEAGE_SCHEMA(BASE_URI + URI_LINEAGE, HttpMethod.GET);
+        LINEAGE_INPUTS_GRAPH(BASE_URI + URI_LINEAGE, HttpMethod.GET, Response.Status.OK),
+        LINEAGE_OUTPUTS_GRAPH(BASE_URI + URI_LINEAGE, HttpMethod.GET, Response.Status.OK),
+        LINEAGE_SCHEMA(BASE_URI + URI_LINEAGE, HttpMethod.GET, Response.Status.OK);
 
         private final String method;
         private final String path;
+        private final Response.Status status;
 
-        API(String path, String method) {
+        API(String path, String method, Response.Status status) {
             this.path = path;
             this.method = method;
+            this.status = status;
         }
 
         public String getMethod() {
@@ -158,6 +202,8 @@ public class AtlasClient {
         public String getPath() {
             return path;
         }
+        
+        public Response.Status getExpectedStatus() { return status; }
     }
 
     /**
@@ -166,23 +212,45 @@ public class AtlasClient {
      * @return result json object
      * @throws AtlasServiceException
      */
-    public JSONObject createType(String typeAsJson) throws AtlasServiceException {
-        return callAPI(API.CREATE_TYPE, typeAsJson);
+    public List<String> createType(String typeAsJson) throws AtlasServiceException {
+        JSONObject response = callAPI(API.CREATE_TYPE, typeAsJson);
+        return extractResults(response, AtlasClient.TYPES);
+    }
+
+    /**
+     * Register the given type(meta model)
+     * @param typeDef type definition
+     * @return result json object
+     * @throws AtlasServiceException
+     */
+    public List<String> createType(TypesDef typeDef) throws AtlasServiceException {
+        return createType(TypesSerialization.toJson(typeDef));
+    }
+
+    /**
+     * Register the given type(meta model)
+     * @param typeAsJson type definition a jaon
+     * @return result json object
+     * @throws AtlasServiceException
+     */
+    public List<String> updateType(String typeAsJson) throws AtlasServiceException {
+        JSONObject response = callAPI(API.UPDATE_TYPE, typeAsJson);
+        return extractResults(response, AtlasClient.TYPES);
+    }
+
+    /**
+     * Register the given type(meta model)
+     * @param typeDef type definition
+     * @return result json object
+     * @throws AtlasServiceException
+     */
+    public List<String> updateType(TypesDef typeDef) throws AtlasServiceException {
+        return updateType(TypesSerialization.toJson(typeDef));
     }
 
     public List<String> listTypes() throws AtlasServiceException {
-        try {
-            final JSONObject jsonObject = callAPI(API.LIST_TYPES, null);
-            final JSONArray list = jsonObject.getJSONArray(AtlasClient.RESULTS);
-            ArrayList<String> types = new ArrayList<>();
-            for (int index = 0; index < list.length(); index++) {
-                types.add(list.getString(index));
-            }
-
-            return types;
-        } catch (JSONException e) {
-            throw new AtlasServiceException(API.LIST_TYPES, e);
-        }
+        final JSONObject jsonObject = callAPI(API.LIST_TYPES, null);
+        return extractResults(jsonObject, AtlasClient.RESULTS);
     }
 
     public String getType(String typeName) throws AtlasServiceException {
@@ -191,7 +259,7 @@ public class AtlasClient {
             JSONObject response = callAPIWithResource(API.GET_TYPE, resource);
             return response.getString(DEFINITION);
         } catch (AtlasServiceException e) {
-            if (e.getStatus() == ClientResponse.Status.NOT_FOUND) {
+            if (Response.Status.NOT_FOUND.equals(e.getStatus())) {
                 return null;
             }
             throw e;
@@ -202,18 +270,137 @@ public class AtlasClient {
 
     /**
      * Create the given entity
-     * @param entityAsJson entity(type instance) as json
-     * @return result json object
+     * @param entities entity(type instance) as json
+     * @return json array of guids
      * @throws AtlasServiceException
      */
-    public JSONObject createEntity(String entityAsJson) throws AtlasServiceException {
-        return callAPI(API.CREATE_ENTITY, entityAsJson);
+    public JSONArray createEntity(JSONArray entities) throws AtlasServiceException {
+        JSONObject response = callAPI(API.CREATE_ENTITY, entities.toString());
+        try {
+            return response.getJSONArray(GUID);
+        } catch (JSONException e) {
+            throw new AtlasServiceException(API.GET_ENTITY, e);
+        }
     }
 
     /**
+     * Create the given entity
+     * @param entitiesAsJson entity(type instance) as json
+     * @return json array of guids
+     * @throws AtlasServiceException
+     */
+    public JSONArray createEntity(String... entitiesAsJson) throws AtlasServiceException {
+        return createEntity(new JSONArray(Arrays.asList(entitiesAsJson)));
+    }
+
+    public JSONArray createEntity(Referenceable... entities) throws AtlasServiceException {
+        return createEntity(Arrays.asList(entities));
+    }
+
+    public JSONArray createEntity(Collection<Referenceable> entities) throws AtlasServiceException {
+        JSONArray entityArray = getEntitiesArray(entities);
+        return createEntity(entityArray);
+    }
+
+    private JSONArray getEntitiesArray(Collection<Referenceable> entities) {
+        JSONArray entityArray = new JSONArray(entities.size());
+        for (Referenceable entity : entities) {
+            entityArray.put(InstanceSerialization.toJson(entity, true));
+        }
+        return entityArray;
+    }
+
+    /**
+     * Replaces entity definitions identified by their guid or unique attribute
+     * Updates properties set in the definition for the entity corresponding to guid
+     * @param entities entities to be updated
+     * @return json array of guids which were updated/created
+     * @throws AtlasServiceException
+     */
+    public JSONArray updateEntities(Referenceable... entities) throws AtlasServiceException {
+        return updateEntities(Arrays.asList(entities));
+    }
+
+    public JSONArray updateEntities(Collection<Referenceable> entities) throws AtlasServiceException {
+        JSONArray entitiesArray = getEntitiesArray(entities);
+        JSONObject response = callAPI(API.UPDATE_ENTITY, entitiesArray.toString());
+        try {
+            return response.getJSONArray(GUID);
+        } catch (JSONException e) {
+            throw new AtlasServiceException(API.UPDATE_ENTITY, e);
+        }
+    }
+
+    /**
+     * Supports Partial updates
+     * Updates property for the entity corresponding to guid
+     * @param guid      guid
+     * @param attribute  property key
+     * @param value     property value
+     */
+    public void updateEntityAttribute(String guid, String attribute, String value) throws AtlasServiceException {
+        API api = API.UPDATE_ENTITY_PARTIAL;
+        WebResource resource = getResource(api, guid);
+        resource = resource.queryParam(ATTRIBUTE_NAME, attribute);
+        callAPIWithResource(api, resource, value);
+    }
+
+    /**
+     * Supports Partial updates
+     * Updates properties set in the definition for the entity corresponding to guid
+     * @param guid      guid
+     * @param entity entity definition
+     */
+    public void updateEntity(String guid, Referenceable entity) throws AtlasServiceException {
+        String entityJson = InstanceSerialization.toJson(entity, true);
+        callAPI(API.UPDATE_ENTITY_PARTIAL, entityJson, guid);
+    }
+
+    /**
+     * Supports Partial updates
+     * Updates properties set in the definition for the entity corresponding to guid
+     * @param entityType Type of the entity being updated
+     * @param uniqueAttributeName Attribute Name that uniquely identifies the entity
+     * @param uniqueAttributeValue Attribute Value that uniquely identifies the entity
+     * @param entity entity definition
+     */
+    public String updateEntity(String entityType, String uniqueAttributeName, String uniqueAttributeValue,
+                               Referenceable entity) throws AtlasServiceException {
+        API api = API.UPDATE_ENTITY_PARTIAL;
+        WebResource resource = getResource(api, "qualifiedName");
+        resource = resource.queryParam(TYPE, entityType);
+        resource = resource.queryParam(ATTRIBUTE_NAME, uniqueAttributeName);
+        resource = resource.queryParam(ATTRIBUTE_VALUE, uniqueAttributeValue);
+        String entityJson = InstanceSerialization.toJson(entity, true);
+        JSONObject response = callAPIWithResource(api, resource, entityJson);
+        try {
+            return response.getString(GUID);
+        } catch (JSONException e) {
+            throw new AtlasServiceException(api, e);
+        }
+    }
+
+    /**
+     * Delete the specified entities from the repository
+     * 
+     * @param guids guids of entities to delete
+     * @return List of deleted entity guids
+     * @throws AtlasServiceException
+     */
+    public List<String> deleteEntities(String ... guids) throws AtlasServiceException {
+        API api = API.DELETE_ENTITIES;
+        WebResource resource = getResource(api);
+        for (String guid : guids) {
+            resource = resource.queryParam(GUID.toLowerCase(), guid);
+        }
+        JSONObject jsonResponse = callAPIWithResource(API.DELETE_ENTITIES, resource);
+        return extractResults(jsonResponse, GUID);
+    }
+    
+    /**
      * Get an entity given the entity id
      * @param guid entity id
-     * @return result json object
+     * @return result object
      * @throws AtlasServiceException
      */
     public Referenceable getEntity(String guid) throws AtlasServiceException {
@@ -222,27 +409,87 @@ public class AtlasClient {
             String entityInstanceDefinition = jsonResponse.getString(AtlasClient.DEFINITION);
             return InstanceSerialization.fromJsonReferenceable(entityInstanceDefinition, true);
         } catch (JSONException e) {
+            throw new AtlasServiceException(API.GET_ENTITY, e);
+        }
+    }
+
+    public static String toString(JSONArray jsonArray) throws JSONException {
+        ArrayList<String> resultsList = new ArrayList<>();
+        for (int index = 0; index < jsonArray.length(); index++) {
+            resultsList.add(jsonArray.getString(index));
+        }
+        return StringUtils.join(resultsList, ",");
+    }
+
+    /**
+     * Get an entity given the entity id
+     * @param entityType entity type name
+     * @param attribute qualified name of the entity
+     * @param value
+     * @return result object
+     * @throws AtlasServiceException
+     */
+    public Referenceable getEntity(String entityType, String attribute, String value) throws AtlasServiceException {
+        WebResource resource = getResource(API.GET_ENTITY);
+        resource = resource.queryParam(TYPE, entityType);
+        resource = resource.queryParam(ATTRIBUTE_NAME, attribute);
+        resource = resource.queryParam(ATTRIBUTE_VALUE, value);
+        JSONObject jsonResponse = callAPIWithResource(API.GET_ENTITY, resource);
+        try {
+            String entityInstanceDefinition = jsonResponse.getString(AtlasClient.DEFINITION);
+            return InstanceSerialization.fromJsonReferenceable(entityInstanceDefinition, true);
+        } catch (JSONException e) {
+            throw new AtlasServiceException(API.GET_ENTITY, e);
+        }
+    }
+
+    /**
+     * List entities for a given entity type
+     * @param entityType
+     * @return
+     * @throws AtlasServiceException
+     */
+    public List<String> listEntities(String entityType) throws AtlasServiceException {
+        WebResource resource = getResource(API.LIST_ENTITIES);
+        resource = resource.queryParam(TYPE, entityType);
+        JSONObject jsonResponse = callAPIWithResource(API.LIST_ENTITIES, resource);
+        return extractResults(jsonResponse, AtlasClient.RESULTS);
+    }
+
+    private List<String> extractResults(JSONObject jsonResponse, String key) throws AtlasServiceException {
+        try {
+            JSONArray results = jsonResponse.getJSONArray(key);
+            ArrayList<String> resultsList = new ArrayList<>();
+            for (int index = 0; index < results.length(); index++) {
+                Object element = results.get(index);
+                if (element instanceof String) {
+                    resultsList.add((String) element);
+                } else if (element instanceof JSONObject) {
+                    resultsList.add(((JSONObject) element).getString(AtlasClient.NAME));
+                }
+            }
+            return resultsList;
+        } catch (JSONException e) {
             throw new AtlasServiceException(e);
         }
     }
 
     /**
-     * Updates property for the entity corresponding to guid
-     * @param guid      guid
-     * @param property  property key
-     * @param value     property value
+     * Search using gremlin/dsl/full text
+     * @param searchQuery
+     * @return
+     * @throws AtlasServiceException
      */
-    public JSONObject updateEntity(String guid, String property, String value) throws AtlasServiceException {
-        WebResource resource = getResource(API.UPDATE_ENTITY, guid);
-        resource = resource.queryParam(ATTRIBUTE_NAME, property);
-        resource = resource.queryParam(ATTRIBUTE_VALUE, value);
-        return callAPIWithResource(API.UPDATE_ENTITY, resource);
-    }
-
-    public JSONObject searchEntity(String searchQuery) throws AtlasServiceException {
+    public JSONArray search(String searchQuery) throws AtlasServiceException {
         WebResource resource = getResource(API.SEARCH);
         resource = resource.queryParam(QUERY, searchQuery);
-        return callAPIWithResource(API.SEARCH, resource);
+        JSONObject result = callAPIWithResource(API.SEARCH, resource);
+        try {
+            return result.getJSONArray(RESULTS);
+        } catch (JSONException e) {
+            throw new AtlasServiceException(e);
+        }
+
     }
 
     /**
@@ -275,7 +522,7 @@ public class AtlasClient {
         resource = resource.queryParam(QUERY, query);
         JSONObject result = callAPIWithResource(API.SEARCH_DSL, resource);
         try {
-            return result.getJSONObject(RESULTS).getJSONArray(ROWS);
+            return result.getJSONArray(RESULTS);
         } catch (JSONException e) {
             throw new AtlasServiceException(e);
         }
@@ -287,11 +534,16 @@ public class AtlasClient {
      * @return result json object
      * @throws AtlasServiceException
      */
-    public JSONObject searchByGremlin(String gremlinQuery) throws AtlasServiceException {
+    public JSONArray searchByGremlin(String gremlinQuery) throws AtlasServiceException {
         LOG.debug("Gremlin query: " + gremlinQuery);
         WebResource resource = getResource(API.SEARCH_GREMLIN);
         resource = resource.queryParam(QUERY, gremlinQuery);
-        return callAPIWithResource(API.SEARCH_GREMLIN, resource);
+        JSONObject result = callAPIWithResource(API.SEARCH_GREMLIN, resource);
+        try {
+            return result.getJSONArray(RESULTS);
+        } catch (JSONException e) {
+            throw new AtlasServiceException(e);
+        }
     }
 
     /**
@@ -347,13 +599,11 @@ public class AtlasClient {
     }
 
     private JSONObject callAPIWithResource(API api, WebResource resource, Object requestObject)
-    throws AtlasServiceException {
+        throws AtlasServiceException {
         ClientResponse clientResponse = resource.accept(JSON_MEDIA_TYPE).type(JSON_MEDIA_TYPE)
-                .method(api.getMethod(), ClientResponse.class, requestObject);
+            .method(api.getMethod(), ClientResponse.class, requestObject);
 
-        Response.Status expectedStatus =
-                HttpMethod.POST.equals(api.getMethod()) ? Response.Status.CREATED : Response.Status.OK;
-        if (clientResponse.getStatus() == expectedStatus.getStatusCode()) {
+        if (clientResponse.getStatus() == api.getExpectedStatus().getStatusCode()) {
             String responseAsString = clientResponse.getEntity(String.class);
             try {
                 return new JSONObject(responseAsString);

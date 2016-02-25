@@ -24,29 +24,40 @@ import atlas_config as mc
 
 def main():
 
-    metadata_home = mc.metadataDir()
-    confdir = mc.dirMustExist(mc.confDir(metadata_home))
+    atlas_home = mc.atlasDir()
+    confdir = mc.dirMustExist(mc.confDir(atlas_home))
     mc.executeEnvSh(confdir)
-    piddir = mc.dirMustExist(mc.logDir(metadata_home))
+    piddir = mc.dirMustExist(mc.logDir(atlas_home))
 
-    metadata_pid_file = mc.pidFile(metadata_home)
+    atlas_pid_file = mc.pidFile(atlas_home)
 
     try:
-        pf = file(metadata_pid_file, 'r')
+        pf = file(atlas_pid_file, 'r')
         pid = int(pf.read().strip())
         pf.close()
     except:
         pid = None
-
     if not pid:
         sys.stderr.write("No process ID file found. Server not running?\n")
         return
+    if  mc.ON_POSIX:
+
+            if not mc.unix_exist_pid(pid):
+               sys.stderr.write("Server no longer running with pid %s\nImproper shutdown?\npid file deleted.\n" %pid)
+               os.remove(atlas_pid_file)
+               return
+    else:
+        if mc.IS_WINDOWS:
+            if not mc.win_exist_pid((str)(pid)):
+                sys.stderr.write("Server no longer running with pid %s\nImproper shutdown?\npid file deleted.\n" %pid)
+                os.remove(atlas_pid_file)
+                return
 
     os.kill(pid, SIGTERM)
 
     # assuming kill worked since process check on windows is more involved...
-    if os.path.exists(metadata_pid_file):
-        os.remove(metadata_pid_file)
+    if os.path.exists(atlas_pid_file):
+        os.remove(atlas_pid_file)
 
 if __name__ == '__main__':
     try:

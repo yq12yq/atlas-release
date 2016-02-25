@@ -20,19 +20,27 @@ package org.apache.atlas.hive.hook;
 
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.hive.bridge.HiveMetaStoreBridge;
+import org.apache.atlas.hive.model.HiveDataModelGenerator;
 import org.apache.atlas.hive.model.HiveDataTypes;
+import org.apache.atlas.hook.AtlasHook;
+import org.apache.atlas.notification.hook.HookNotification;
 import org.apache.atlas.typesystem.Referenceable;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.ql.QueryPlan;
 import org.apache.hadoop.hive.ql.exec.ExplainTask;
 import org.apache.hadoop.hive.ql.exec.Task;
 import org.apache.hadoop.hive.ql.hooks.Entity;
+import org.apache.hadoop.hive.ql.hooks.Entity.Type;
 import org.apache.hadoop.hive.ql.hooks.ExecuteWithHookContext;
 import org.apache.hadoop.hive.ql.hooks.HookContext;
 import org.apache.hadoop.hive.ql.hooks.ReadEntity;
 import org.apache.hadoop.hive.ql.hooks.WriteEntity;
+import org.apache.hadoop.hive.ql.metadata.Partition;
 import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -53,9 +61,18 @@ import java.util.concurrent.TimeUnit;
 /**
  * AtlasHook sends lineage information to the AtlasSever.
  */
-public class HiveHook implements ExecuteWithHookContext {
+public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(HiveHook.class);
+
+    public static final String CONF_PREFIX = "atlas.hook.hive.";
+    private static final String MIN_THREADS = CONF_PREFIX + "minThreads";
+    private static final String MAX_THREADS = CONF_PREFIX + "maxThreads";
+    private static final String KEEP_ALIVE_TIME = CONF_PREFIX + "keepAliveTime";
+    public static final String CONF_SYNC = CONF_PREFIX + "synchronous";
+    public static final String QUEUE_SIZE = CONF_PREFIX + "queueSize";
+
+    public static final String HOOK_NUM_RETRIES = CONF_PREFIX + "numRetries";
 
     private static final Map<String, HiveOperation> OPERATION_MAP = new HashMap<>();
 
@@ -64,66 +81,13 @@ public class HiveHook implements ExecuteWithHookContext {
     private static final int WAIT_TIME = 3;
     private static ExecutorService executor;
 
-    public static final String CONF_PREFIX = "atlas.hook.hive.";
-
-    private static final String MIN_THREADS = CONF_PREFIX + "minThreads";
-    private static final String MAX_THREADS = CONF_PREFIX + "maxThreads";
-    private static final String KEEP_ALIVE_TIME = CONF_PREFIX + "keepAliveTime";
-    public static final String CONF_SYNC = CONF_PREFIX + "synchronous";
-    public static final String QUEUE_SIZE = CONF_PREFIX + "queueSize";
-
-    private static final int minThreadsDefault = 1;
-    private static final int maxThreadsDefault = 1;
+    private static final int minThreadsDefault = 5;
+    private static final int maxThreadsDefault = 5;
     private static final long keepAliveTimeDefault = 10;
     private static final int queueSizeDefault = 10000;
+
     private static boolean typesRegistered = false;
-
-    static HiveConf hiveConf;
-
-    private static final boolean sync;
-
-    static {
-        // anything shared should be initialized here and destroyed in the
-        // shutdown hook The hook contract is weird in that it creates a
-        // boatload of hooks.
-
-        // initialize the async facility to process hook calls. We don't
-        // want to do this inline since it adds plenty of overhead for the
-        // query.
-        hiveConf = new HiveConf();
-        int minThreads = hiveConf.getInt(MIN_THREADS, minThreadsDefault);
-        int maxThreads = hiveConf.getInt(MAX_THREADS, maxThreadsDefault);
-        long keepAliveTime = hiveConf.getLong(KEEP_ALIVE_TIME, keepAliveTimeDefault);
-        int queueSize = hiveConf.getInt(QUEUE_SIZE, queueSizeDefault);
-
-
-        executor = new ThreadPoolExecutor(minThreads, maxThreads, keepAliveTime, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(queueSize),
-                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("Atlas Logger %d").build());
-
-        sync = hiveConf.get(CONF_SYNC, "false").equals("true");
-
-        try {
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        executor.shutdown();
-                        executor.awaitTermination(WAIT_TIME, TimeUnit.SECONDS);
-                        executor = null;
-                    } catch (InterruptedException ie) {
-                        LOG.info("Interrupt received in shutdown.");
-                    }
-                    // shutdown client
-                }
-            });
-        } catch (IllegalStateException is) {
-            LOG.info("Attempting to send msg while shutdown in progress.");
-        }
-
-        setupOperationMap();
-        LOG.info("Created Atlas Hook");
-    }
+    private static Configuration atlasProperties;
 
     class HiveEvent {
         public Set<ReadEntity> inputs;
@@ -139,6 +103,49 @@ public class HiveHook implements ExecuteWithHookContext {
         public Long queryStartTime;
     }
 
+    private List<HookNotification.HookNotificationMessage> messages = new ArrayList<>();
+
+    private static final HiveConf hiveConf;
+
+    static {
+        try {
+            atlasProperties = ApplicationProperties.get();
+
+            // initialize the async facility to process hook calls. We don't
+            // want to do this inline since it adds plenty of overhead for the query.
+            int minThreads = atlasProperties.getInt(MIN_THREADS, minThreadsDefault);
+            int maxThreads = atlasProperties.getInt(MAX_THREADS, maxThreadsDefault);
+            long keepAliveTime = atlasProperties.getLong(KEEP_ALIVE_TIME, keepAliveTimeDefault);
+            int queueSize = atlasProperties.getInt(QUEUE_SIZE, queueSizeDefault);
+
+            executor = new ThreadPoolExecutor(minThreads, maxThreads, keepAliveTime, TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<Runnable>(queueSize),
+                    new ThreadFactoryBuilder().setNameFormat("Atlas Logger %d").build());
+
+                Runtime.getRuntime().addShutdownHook(new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            executor.shutdown();
+                            executor.awaitTermination(WAIT_TIME, TimeUnit.SECONDS);
+                            executor = null;
+                        } catch (InterruptedException ie) {
+                            LOG.info("Interrupt received in shutdown.");
+                        }
+                        // shutdown client
+                    }
+                });
+
+            setupOperationMap();
+        } catch (Exception e) {
+            LOG.info("Attempting to send msg while shutdown in progress.", e);
+        }
+
+        hiveConf = new HiveConf();
+
+        LOG.info("Created Atlas Hook");
+    }
+
     private static void setupOperationMap() {
         //Populate OPERATION_MAP - string to HiveOperation mapping
         for (HiveOperation hiveOperation : HiveOperation.values()) {
@@ -147,27 +154,30 @@ public class HiveHook implements ExecuteWithHookContext {
     }
 
     @Override
-    public void run(final HookContext hookContext) throws Exception {
-        if (executor == null) {
-            LOG.info("No executor running. Bail.");
-            return;
-        }
+    protected String getNumberOfRetriesPropertyKey() {
+        return HOOK_NUM_RETRIES;
+    }
 
+    @Override
+    public void run(final HookContext hookContext) throws Exception {
         // clone to avoid concurrent access
         final HiveEvent event = new HiveEvent();
+        final HiveConf conf = new HiveConf(hookContext.getConf());
+
         event.inputs = hookContext.getInputs();
         event.outputs = hookContext.getOutputs();
 
         event.user = hookContext.getUserName() == null ? hookContext.getUgi().getUserName() : hookContext.getUserName();
         event.ugi = hookContext.getUgi();
         event.operation = OPERATION_MAP.get(hookContext.getOperationName());
+        event.hookType = hookContext.getHookType();
         event.queryId = hookContext.getQueryPlan().getQueryId();
         event.queryStr = hookContext.getQueryPlan().getQueryStr();
         event.queryStartTime = hookContext.getQueryPlan().getQueryStartTime();
 
-        event.hookType = hookContext.getHookType();
         event.jsonPlan = getQueryPlan(hookContext.getConf(), hookContext.getQueryPlan());
 
+        boolean sync = conf.get(CONF_SYNC, "false").equals("true");
         if (sync) {
             fireAndForget(event);
         } else {
@@ -188,21 +198,21 @@ public class HiveHook implements ExecuteWithHookContext {
         assert event.hookType == HookContext.HookType.POST_EXEC_HOOK : "Non-POST_EXEC_HOOK not supported!";
 
         LOG.info("Entered Atlas hook for hook type {} operation {}", event.hookType, event.operation);
-        HiveMetaStoreBridge dgiBridge = new HiveMetaStoreBridge(hiveConf, event.user, event.ugi);
+
+        HiveMetaStoreBridge dgiBridge = new HiveMetaStoreBridge(hiveConf, atlasProperties, event.user, event.ugi);
 
         if (!typesRegistered) {
             dgiBridge.registerHiveDataModel();
-
             typesRegistered = true;
         }
 
         switch (event.operation) {
         case CREATEDATABASE:
-            handleCreateDB(dgiBridge, event);
+            handleEventOutputs(dgiBridge, event, Type.DATABASE);
             break;
 
         case CREATETABLE:
-            handleCreateTable(dgiBridge, event);
+            handleEventOutputs(dgiBridge, event, Type.TABLE);
             break;
 
         case CREATETABLE_AS_SELECT:
@@ -230,6 +240,8 @@ public class HiveHook implements ExecuteWithHookContext {
 
         default:
         }
+
+        notifyEntities(messages);
     }
 
     private void renameTable(HiveMetaStoreBridge dgiBridge, HiveEvent event) throws Exception {
@@ -237,46 +249,85 @@ public class HiveHook implements ExecuteWithHookContext {
         assert event.inputs != null && event.inputs.size() == 1;
         assert event.outputs != null && event.outputs.size() > 0;
 
-        Table oldTable = event.inputs.iterator().next().getTable();
-        Table newTable = null;
+        //Update entity if not exists
+        ReadEntity oldEntity = event.inputs.iterator().next();
+        Table oldTable = oldEntity.getTable();
+
         for (WriteEntity writeEntity : event.outputs) {
             if (writeEntity.getType() == Entity.Type.TABLE) {
-                Table table = writeEntity.getTable();
-                if (table.getDbName().equals(oldTable.getDbName()) && !table.getTableName()
+                Table newTable = writeEntity.getTable();
+                if (newTable.getDbName().equals(oldTable.getDbName()) && !newTable.getTableName()
                         .equals(oldTable.getTableName())) {
-                    newTable = table;
-                    break;
+
+                    //Create/update old table entity - create new entity and replace id
+                    Referenceable tableEntity = createEntities(dgiBridge, writeEntity);
+                    String oldQualifiedName = dgiBridge.getTableQualifiedName(dgiBridge.getClusterName(),
+                            oldTable.getDbName(), oldTable.getTableName());
+                    tableEntity.set(HiveDataModelGenerator.NAME, oldQualifiedName);
+                    tableEntity.set(HiveDataModelGenerator.TABLE_NAME, oldTable.getTableName().toLowerCase());
+
+
+                    String newQualifiedName = dgiBridge.getTableQualifiedName(dgiBridge.getClusterName(),
+                            newTable.getDbName(), newTable.getTableName());
+
+                    Referenceable newEntity = new Referenceable(HiveDataTypes.HIVE_TABLE.getName());
+                    newEntity.set(HiveDataModelGenerator.NAME, newQualifiedName);
+                    newEntity.set(HiveDataModelGenerator.TABLE_NAME, newTable.getTableName().toLowerCase());
+                    messages.add(new HookNotification.EntityPartialUpdateRequest(HiveDataTypes.HIVE_TABLE.getName(),
+                            HiveDataModelGenerator.NAME, oldQualifiedName, newEntity));
                 }
             }
         }
-        if (newTable == null) {
-            LOG.warn("Failed to deduct new name for " + event.queryStr);
-            return;
-        }
-
-        Referenceable dbReferenceable = dgiBridge.registerDatabase(oldTable.getDbName());
-        Referenceable tableReferenceable =
-                dgiBridge.registerTable(dbReferenceable, oldTable.getDbName(), oldTable.getTableName());
-        LOG.info("Updating entity name {}.{} to {}", oldTable.getDbName(), oldTable.getTableName(),
-                newTable.getTableName());
-        dgiBridge.updateTable(tableReferenceable, newTable);
     }
 
-    private void handleCreateTable(HiveMetaStoreBridge dgiBridge, HiveEvent event) throws Exception {
-        for (WriteEntity entity : event.outputs) {
-            if (entity.getType() == Entity.Type.TABLE) {
+    private Referenceable createEntities(HiveMetaStoreBridge dgiBridge, Entity entity) throws Exception {
+        Database db = null;
+        Table table = null;
+        Partition partition = null;
+        List<Referenceable> entities = new ArrayList<>();
 
-                Table table = entity.getTable();
-                Referenceable dbReferenceable = dgiBridge.registerDatabase(table.getDbName());
-                dgiBridge.registerTable(dbReferenceable, table.getDbName(), table.getTableName());
-            }
+        switch (entity.getType()) {
+            case DATABASE:
+                db = entity.getDatabase();
+                break;
+
+            case TABLE:
+                table = entity.getTable();
+                db = dgiBridge.hiveClient.getDatabase(table.getDbName());
+                break;
+
+            case PARTITION:
+                partition = entity.getPartition();
+                table = partition.getTable();
+                db = dgiBridge.hiveClient.getDatabase(table.getDbName());
+                break;
         }
+
+        db = dgiBridge.hiveClient.getDatabase(db.getName());
+        Referenceable dbEntity = dgiBridge.createDBInstance(db);
+        entities.add(dbEntity);
+
+        Referenceable tableEntity = null;
+        if (table != null) {
+            table = dgiBridge.hiveClient.getTable(table.getDbName(), table.getTableName());
+            tableEntity = dgiBridge.createTableInstance(dbEntity, table);
+            entities.add(tableEntity);
+        }
+
+        if (partition != null) {
+            Referenceable partitionEntity = dgiBridge.createPartitionReferenceable(tableEntity,
+                    (Referenceable) tableEntity.get("sd"), partition);
+            entities.add(partitionEntity);
+        }
+
+        messages.add(new HookNotification.EntityUpdateRequest(entities));
+        return tableEntity;
     }
 
-    private void handleCreateDB(HiveMetaStoreBridge dgiBridge, HiveEvent event) throws Exception {
+    private void handleEventOutputs(HiveMetaStoreBridge dgiBridge, HiveEvent event, Type entityType) throws Exception {
         for (WriteEntity entity : event.outputs) {
-            if (entity.getType() == Entity.Type.DATABASE) {
-                dgiBridge.registerDatabase(entity.getDatabase().getName());
+            if (entity.getType() == entityType) {
+                createEntities(dgiBridge, entity);
             }
         }
     }
@@ -301,65 +352,52 @@ public class HiveHook implements ExecuteWithHookContext {
             LOG.info("Query plan is missing. Skipping...");
         }
 
-        String queryId = event.queryId;
         String queryStr = normalize(event.queryStr);
-        long queryStartTime = event.queryStartTime;
 
-        LOG.debug("Registering CTAS query: {}", queryStr);
-        Referenceable processReferenceable = dgiBridge.getProcessReference(queryStr);
-        if (processReferenceable == null) {
-            processReferenceable = new Referenceable(HiveDataTypes.HIVE_PROCESS.getName());
-            processReferenceable.set("name", event.operation.getOperationName());
-            processReferenceable.set("startTime", queryStartTime);
-            processReferenceable.set("userName", event.user);
+        LOG.debug("Registering query: {}", queryStr);
 
-            List<Referenceable> source = new ArrayList<>();
-            for (ReadEntity readEntity : inputs) {
-                if (readEntity.getType() == Entity.Type.TABLE) {
-                    Table table = readEntity.getTable();
-                    String dbName = table.getDbName();
-                    source.add(dgiBridge.registerTable(dbName, table.getTableName()));
-                }
-                if (readEntity.getType() == Entity.Type.PARTITION) {
-                    dgiBridge.registerPartition(readEntity.getPartition());
-                }
+        Referenceable processReferenceable = new Referenceable(HiveDataTypes.HIVE_PROCESS.getName());
+        processReferenceable.set("name", queryStr);
+        processReferenceable.set("operationType", event.operation.getOperationName());
+        processReferenceable.set("startTime", event.queryStartTime);
+        processReferenceable.set("userName", event.user);
+
+        List<Referenceable> source = new ArrayList<>();
+        for (ReadEntity readEntity : inputs) {
+            if (readEntity.getType() == Type.TABLE || readEntity.getType() == Type.PARTITION) {
+                Referenceable inTable = createEntities(dgiBridge, readEntity);
+                source.add(inTable);
             }
-            processReferenceable.set("inputs", source);
-
-            List<Referenceable> target = new ArrayList<>();
-            for (WriteEntity writeEntity : outputs) {
-                if (writeEntity.getType() == Entity.Type.TABLE || writeEntity.getType() == Entity.Type.PARTITION) {
-                    Table table = writeEntity.getTable();
-                    String dbName = table.getDbName();
-                    target.add(dgiBridge.registerTable(dbName, table.getTableName()));
-                }
-                if (writeEntity.getType() == Entity.Type.PARTITION) {
-                    dgiBridge.registerPartition(writeEntity.getPartition());
-                }
-            }
-            processReferenceable.set("outputs", target);
-            processReferenceable.set("queryText", queryStr);
-            processReferenceable.set("queryId", queryId);
-            processReferenceable.set("queryPlan", event.jsonPlan.toString());
-            processReferenceable.set("endTime", System.currentTimeMillis());
-
-            //TODO set
-            processReferenceable.set("queryGraph", "queryGraph");
-            dgiBridge.createInstance(processReferenceable);
-        } else {
-            LOG.debug("Query {} is already registered", queryStr);
         }
+        processReferenceable.set("inputs", source);
+
+        List<Referenceable> target = new ArrayList<>();
+        for (WriteEntity writeEntity : outputs) {
+            if (writeEntity.getType() == Type.TABLE || writeEntity.getType() == Type.PARTITION) {
+                Referenceable outTable = createEntities(dgiBridge, writeEntity);
+                target.add(outTable);
+            }
+        }
+        processReferenceable.set("outputs", target);
+        processReferenceable.set("queryText", queryStr);
+        processReferenceable.set("queryId", event.queryId);
+        processReferenceable.set("queryPlan", event.jsonPlan.toString());
+        processReferenceable.set("endTime", System.currentTimeMillis());
+
+        //TODO set
+        processReferenceable.set("queryGraph", "queryGraph");
+        messages.add(new HookNotification.EntityCreateRequest(processReferenceable));
     }
 
 
-    private JSONObject getQueryPlan(HiveConf conf, QueryPlan queryPlan) throws Exception {
+    private JSONObject getQueryPlan(HiveConf hiveConf, QueryPlan queryPlan) throws Exception {
         try {
             ExplainTask explain = new ExplainTask();
-            explain.initialize(conf, queryPlan, null);
+            explain.initialize(hiveConf, queryPlan, null);
             List<Task<?>> rootTasks = queryPlan.getRootTasks();
             return explain.getJSONPlan(null, null, rootTasks, queryPlan.getFetchTask(), true, false, false);
         } catch (Exception e) {
-            LOG.warn("Failed to get queryplan", e);
+            LOG.info("Failed to get queryplan", e);
             return new JSONObject();
         }
     }

@@ -18,16 +18,19 @@
 
 package org.apache.atlas.typesystem.types;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
 import org.apache.atlas.typesystem.Referenceable;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.atlas.typesystem.TypesDef;
+import org.apache.atlas.typesystem.types.utils.TypesUtil;
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
-public class ClassTest extends BaseTest {
+public class ClassTest extends HierarchicalTypeTest<ClassType> {
 
-    @Before
+    @BeforeMethod
     public void setup() throws Exception {
         super.setup();
     }
@@ -67,6 +70,29 @@ public class ClassTest extends BaseTest {
                 "\t\tlevel : \t\t1\n" +
                 "\t}}]\n" +
                 "}");
+    }
 
+    @Override
+    protected HierarchicalTypeDefinition<ClassType> getTypeDefinition(String name, AttributeDefinition... attributes) {
+        return new HierarchicalTypeDefinition(ClassType.class, name, null, attributes);
+    }
+
+    @Override
+    protected HierarchicalTypeDefinition<ClassType> getTypeDefinition(String name, ImmutableList<String> superTypes,
+                                                                      AttributeDefinition... attributes) {
+        return new HierarchicalTypeDefinition(ClassType.class, name, superTypes, attributes);
+    }
+
+    @Override
+    protected TypesDef getTypesDef(StructTypeDefinition typeDefinition) {
+        return TypesUtil.getTypesDef(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
+                ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(),
+                ImmutableList.of((HierarchicalTypeDefinition<ClassType>) typeDefinition));
+    }
+
+    @Override
+    protected TypesDef getTypesDef(HierarchicalTypeDefinition<ClassType>... typeDefinitions) {
+        return TypesUtil.getTypesDef(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
+                ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(), ImmutableList.copyOf(typeDefinitions));
     }
 }

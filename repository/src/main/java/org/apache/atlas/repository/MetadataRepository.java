@@ -19,11 +19,14 @@
 package org.apache.atlas.repository;
 
 import org.apache.atlas.AtlasException;
-import org.apache.atlas.typesystem.IReferenceableInstance;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
 import org.apache.atlas.typesystem.ITypedStruct;
+import org.apache.atlas.typesystem.exception.EntityExistsException;
+import org.apache.atlas.typesystem.exception.EntityNotFoundException;
+import org.apache.atlas.typesystem.exception.TraitNotFoundException;
 import org.apache.atlas.typesystem.types.AttributeInfo;
 import org.apache.atlas.typesystem.types.IDataType;
+import org.apache.atlas.typesystem.types.TypeUtils;
 
 import java.util.List;
 
@@ -71,16 +74,17 @@ public interface MetadataRepository {
      * @param aInfo    attribute info
      * @return edge label for a given attribute
      */
-    String getEdgeLabel(IDataType<?> dataType, AttributeInfo aInfo);
+    String getEdgeLabel(IDataType<?> dataType, AttributeInfo aInfo) throws AtlasException;
 
     /**
      * Creates an entity definition (instance) corresponding to a given type.
      *
-     * @param entity     entity (typed instance)
+     * @param entities     entity (typed instance)
      * @return a globally unique identifier
      * @throws RepositoryException
+     * @throws EntityExistsException
      */
-    String createEntity(IReferenceableInstance entity) throws RepositoryException;
+    List<String> createEntities(ITypedReferenceableInstance... entities) throws RepositoryException, EntityExistsException;
 
     /**
      * Fetch the complete definition of an entity given its GUID.
@@ -89,7 +93,7 @@ public interface MetadataRepository {
      * @return entity (typed instance) definition
      * @throws RepositoryException
      */
-    ITypedReferenceableInstance getEntityDefinition(String guid) throws RepositoryException;
+    ITypedReferenceableInstance getEntityDefinition(String guid) throws RepositoryException, EntityNotFoundException;
 
     /**
      * Gets the list of entities for a given entity type.
@@ -101,27 +105,15 @@ public interface MetadataRepository {
     List<String> getEntityList(String entityType) throws RepositoryException;
 
     /**
-     * Deletes an entity definition (instance) corresponding to a given type.
+     * Deletes entities for the specified guids.
      *
-     * @param guid globally unique identifier for the entity
-     * @return true if deleted else false
+     * @param guids globally unique identifiers for the deletion candidate entities
+     * @return guids of deleted entities
      * @throws RepositoryException
      */
-    // boolean deleteEntity(String guid) throws RepositoryException;
-
-    /**
-     * Updates an entity given its GUID with the attribute name and value.
-     *
-     * @param guid           globally unique identifier for the entity
-     * @param attributeName  name of the attribute
-     * @param attributeValue value of the attribute
-     * @return an entity instance with updated state
-     * @throws RepositoryException
-     */
-    //ITypedReferenceableInstance updateEntity(String guid, String attributeName,
-    //                                         String attributeValue) throws RepositoryException;
-
-
+    TypeUtils.Pair<List<String>, List<ITypedReferenceableInstance>> deleteEntities(List<String> guids) throws RepositoryException;
+    
+    
     // Trait management functions
 
     /**
@@ -149,13 +141,26 @@ public interface MetadataRepository {
      * @param traitNameToBeDeleted name of the trait
      * @throws RepositoryException
      */
-    void deleteTrait(String guid, String traitNameToBeDeleted) throws RepositoryException;
+    void deleteTrait(String guid, String traitNameToBeDeleted) throws TraitNotFoundException, EntityNotFoundException, RepositoryException;
 
     /**
-     * Adds/Updates the property to/in the entity that corresponds to the GUID
-     * @param guid entity id
-     * @param property property name
-     * @param value    property value
+     * Adds/Updates the property to the entity that corresponds to the GUID
+     * Supports only primitive attribute/Class Id updations.
      */
-    void updateEntity(String guid, String property, String value) throws RepositoryException;
+    TypeUtils.Pair<List<String>, List<String>> updatePartial(ITypedReferenceableInstance entity) throws RepositoryException;
+
+    /**
+     * Adds the property to the entity that corresponds to the GUID
+     * @param entitiesToBeUpdated The entities to be updated
+     */
+    TypeUtils.Pair<List<String>, List<String>> updateEntities(ITypedReferenceableInstance... entitiesToBeUpdated) throws RepositoryException;
+
+    /**
+     * Returns the entity for the given type and qualified name
+     * @param entityType
+     * @param attribute
+     * @param value
+     * @return entity instance
+     */
+    ITypedReferenceableInstance getEntityDefinition(String entityType, String attribute, Object value) throws AtlasException;
 }

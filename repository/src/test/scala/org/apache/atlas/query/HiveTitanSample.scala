@@ -19,8 +19,8 @@
 package org.apache.atlas.query
 
 import java.io.File
-import java.util.{Date, UUID}
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.{Date, UUID}
 import javax.script.{Bindings, ScriptEngine, ScriptEngineManager}
 
 import com.thinkaurelius.titan.core.TitanGraph
@@ -369,7 +369,7 @@ object HiveTitanSample {
 
 object TestApp extends App with GraphUtils {
 
-    val g: TitanGraph = new TitanGraphProvider().get();
+    val g: TitanGraph = TitanGraphProvider.getGraphInstance
     val manager: ScriptEngineManager = new ScriptEngineManager
     val engine: ScriptEngine = manager.getEngineByName("gremlin-groovy")
     val bindings: Bindings = engine.createBindings

@@ -19,7 +19,7 @@
 package org.apache.atlas.web.util;
 
 import org.apache.atlas.AtlasClient;
-import org.apache.atlas.ParamChecker;
+import org.apache.atlas.utils.ParamChecker;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -104,7 +104,8 @@ public final class Servlets {
     }
 
     public static Response getErrorResponse(Throwable e, Response.Status status) {
-        Response response = getErrorResponse(e.getMessage(), status);
+        String message = e.getMessage() == null ? "Failed with " + e.getClass().getName() : e.getMessage();
+        Response response = getErrorResponse(message, status);
         JSONObject responseJson = (JSONObject) response.getEntity();
         try {
             responseJson.put(AtlasClient.STACKTRACE, printStackTrace(e));
@@ -122,7 +123,7 @@ public final class Servlets {
 
     public static Response getErrorResponse(String message, Response.Status status) {
         JSONObject errorJson = new JSONObject();
-        Object errorEntity = Servlets.escapeJsonString(message);
+        Object errorEntity = escapeJsonString(message);
         try {
             errorJson.put(AtlasClient.ERROR, errorEntity);
             errorEntity = errorJson;

@@ -15,40 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.atlas.repository.graph;
 
-import com.thinkaurelius.titan.core.PropertyKey;
 import com.thinkaurelius.titan.core.TitanGraph;
 import com.thinkaurelius.titan.core.util.TitanCleanup;
+import com.thinkaurelius.titan.diskstorage.Backend;
+import com.thinkaurelius.titan.graphdb.database.StandardTitanGraph;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
-import org.apache.atlas.repository.BaseTest;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.junit.Test;
+import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
-import java.util.List;
+@Test
+public class TitanGraphProviderTest {
 
-import static org.junit.Assert.assertEquals;
+   private Configuration configuration;
+   private TitanGraph graph;
 
-/**
- * TitanGraphProvider unit tests.
- */
-public class TitanGraphProviderTest extends BaseTest {
-
-    private Configuration configuration;
-    private TitanGraph graph;
-
-    @BeforeTest
-    public void setUp() throws AtlasException {
-        //First get Instance
-        graph = TitanGraphProvider.getGraphInstance();
-        configuration = ApplicationProperties.getSubsetConfiguration(ApplicationProperties.get(), TitanGraphProvider.GRAPH_PREFIX);
-    }
+   @BeforeTest
+   public void setUp() throws AtlasException {
+       //First get Instance
+       graph = TitanGraphProvider.getGraphInstance();
+       configuration = ApplicationProperties.getSubsetConfiguration(ApplicationProperties.get(), TitanGraphProvider.GRAPH_PREFIX);
+   }
 
     @AfterClass
     public void tearDown() throws Exception {
@@ -65,38 +58,21 @@ public class TitanGraphProviderTest extends BaseTest {
         }
     }
 
-    @org.testng.annotations.Test
-    public void testValidate() throws AtlasException {
-        try {
-            TitanGraphProvider.validateIndexBackend(configuration);
-        } catch(Exception e){
-            Assert.fail("Unexpected exception ", e);
-        }
+   @Test
+   public void testValidate() throws AtlasException {
+       try {
+           TitanGraphProvider.validateIndexBackend(configuration);
+       } catch(Exception e){
+           Assert.fail("Unexpected exception ", e);
+       }
 
-        //Change backend
-        configuration.setProperty(TitanGraphProvider.INDEX_BACKEND_CONF, TitanGraphProvider.INDEX_BACKEND_LUCENE);
-        try {
-            TitanGraphProvider.validateIndexBackend(configuration);
-            Assert.fail("Expected exception");
-        } catch(Exception e){
-            Assert.assertEquals(e.getMessage(), "Configured Index Backend lucene differs from earlier configured Index Backend elasticsearch. Aborting!");
-        }
-    }
-
-    @Test
-    public void testGetConfiguration() throws Exception {
-        Configuration config = ApplicationProperties.getSubsetConfiguration(ApplicationProperties.get(), TitanGraphProvider.GRAPH_PREFIX);
-        config.setProperty("storage.hostname", "host1,host2,host3");
-
-        // assert properties from config file
-        assertEquals("target/data/berkley", config.getString("storage.directory"));
-
-        // assert property which is a comma delimited list
-        List hosts = config.getList("storage.hostname");
-        assertEquals(3, hosts.size());
-
-        assertEquals("host1", hosts.get(0));
-        assertEquals("host2", hosts.get(1));
-        assertEquals("host3", hosts.get(2));
-    }
+       //Change backend
+       configuration.setProperty(TitanGraphProvider.INDEX_BACKEND_CONF, TitanGraphProvider.INDEX_BACKEND_LUCENE);
+       try {
+           TitanGraphProvider.validateIndexBackend(configuration);
+           Assert.fail("Expected exception");
+       } catch(Exception e){
+           Assert.assertEquals(e.getMessage(), "Configured Index Backend lucene differs from earlier configured Index Backend elasticsearch. Aborting!");
+       }
+   }
 }

@@ -22,7 +22,7 @@
     <parent>
         <artifactId>apache-atlas</artifactId>
         <groupId>org.apache.atlas</groupId>
-        <version>0.1-incubating-SNAPSHOT</version>
+        <version>0.7-incubating-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>atlas-distro</artifactId>
@@ -58,7 +58,7 @@
             </properties>
         </profile>
 
-	<profile>
+        <profile>
             <id>dist</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
@@ -89,6 +89,16 @@
     </profiles>
 
     <build>
+        <outputDirectory>target/bin</outputDirectory>
+        <resources>
+            <resource>
+                <directory>src/bin</directory>
+                <filtering>true</filtering>
+		        <includes>
+	                <include>**/*.py</include>
+	            </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -98,6 +108,7 @@
                 <executions>
                     <execution>
                         <configuration>
+                            <skip>${skipTests}</skip>
                             <executable>python</executable>
                             <workingDirectory>src/test/python</workingDirectory>
                             <arguments>
@@ -115,26 +126,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <inherited>false</inherited>
-                <configuration>
-                    <descriptors>
-                        <descriptor>src/main/assemblies/standalone-package.xml</descriptor>
-                        <descriptor>src/main/assemblies/src-package.xml</descriptor>
-                    </descriptors>
-                    <finalName>apache-atlas-${project.version}</finalName>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
@@ -143,7 +134,7 @@
         <dependency>
             <groupId>org.apache.atlas</groupId>
             <artifactId>hive-bridge</artifactId>
-            <version>${project.version}</version>
+            <version>0.7-incubating-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

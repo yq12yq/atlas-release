@@ -22,6 +22,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.services.MetadataService;
+import org.apache.atlas.typesystem.exception.TypeExistsException;
 import org.apache.atlas.typesystem.types.DataTypes;
 import org.apache.atlas.web.util.Servlets;
 import org.codehaus.jettison.json.JSONArray;
@@ -37,6 +38,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -58,7 +60,7 @@ import java.util.List;
 @Singleton
 public class TypesResource {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EntityResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TypesResource.class);
 
     private final MetadataService metadataService;
 
@@ -96,6 +98,53 @@ public class TypesResource {
             response.put(AtlasClient.REQUEST_ID, Servlets.getRequestId());
             response.put(AtlasClient.TYPES, typesResponse);
             return Response.status(ClientResponse.Status.CREATED).entity(response).build();
+        } catch (TypeExistsException e) {
+            LOG.error("Type already exists", e);
+            throw new WebApplicationException(Servlets.getErrorResponse(e, Response.Status.CONFLICT));
+        } catch (AtlasException | IllegalArgumentException e) {
+            LOG.error("Unable to persist types", e);
+            throw new WebApplicationException(Servlets.getErrorResponse(e, Response.Status.BAD_REQUEST));
+        } catch (Throwable e) {
+            LOG.error("Unable to persist types", e);
+            throw new WebApplicationException(Servlets.getErrorResponse(e, Response.Status.INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    /**
+     * Update of existing types - if the given type doesn't exist, creates new type
+     * Allowed updates are:
+     * 1. Add optional attribute
+     * 2. Change required to optional attribute
+     * 3. Add super types - super types shouldn't contain any required attributes
+     * @param request
+     * @return
+     */
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response update(@Context HttpServletRequest request) {
+        try {
+            final String typeDefinition = Servlets.getRequestPayload(request);
+            LOG.debug("Updating type with definition {} ", typeDefinition);
+
+            JSONObject typesJson = metadataService.updateType(typeDefinition);
+            final JSONArray typesJsonArray = typesJson.getJSONArray(AtlasClient.TYPES);
+
+            JSONArray typesResponse = new JSONArray();
+            for (int i = 0; i < typesJsonArray.length(); i++) {
+                final String name = typesJsonArray.getString(i);
+                typesResponse.put(new JSONObject() {{
+                    put(AtlasClient.NAME, name);
+                }});
+            }
+
+            JSONObject response = new JSONObject();
+            response.put(AtlasClient.REQUEST_ID, Servlets.getRequestId());
+            response.put(AtlasClient.TYPES, typesResponse);
+            return Response.ok().entity(response).build();
+        } catch (TypeExistsException e) {
+            LOG.error("Type already exists", e);
+            throw new WebApplicationException(Servlets.getErrorResponse(e, Response.Status.CONFLICT));
         } catch (AtlasException | IllegalArgumentException e) {
             LOG.error("Unable to persist types", e);
             throw new WebApplicationException(Servlets.getErrorResponse(e, Response.Status.BAD_REQUEST));
@@ -119,7 +168,7 @@ public class TypesResource {
 
             JSONObject response = new JSONObject();
             response.put(AtlasClient.TYPENAME, typeName);
-            response.put(AtlasClient.DEFINITION, typeDefinition);
+            response.put(AtlasClient.DEFINITION, new JSONObject(typeDefinition));
             response.put(AtlasClient.REQUEST_ID, Servlets.getRequestId());
 
             return Response.ok(response).build();
@@ -165,7 +214,7 @@ public class TypesResource {
         } catch (IllegalArgumentException | AtlasException ie) {
             LOG.error("Unsupported typeName while retrieving type list {}", type);
             throw new WebApplicationException(
-                    Servlets.getErrorResponse("Unsupported type " + type, Response.Status.BAD_REQUEST));
+                    Servlets.getErrorResponse(new Exception("Unsupported type " + type, ie), Response.Status.BAD_REQUEST));
         } catch (Throwable e) {
             LOG.error("Unable to get types list", e);
             throw new WebApplicationException(Servlets.getErrorResponse(e, Response.Status.INTERNAL_SERVER_ERROR));
