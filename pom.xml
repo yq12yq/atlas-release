@@ -87,7 +87,18 @@
         <tag>HEAD</tag>
         <url>https://github.com/apache/incubator-atlas.git</url>
     </scm>
-
+    <distributionManagement>
+        <repository>
+            <id>${StagingId}</id>
+            <name>${StagingName}</name>
+            <url>${StagingUrl}</url>
+        </repository>
+        <snapshotRepository>
+            <id>${SnapshotsId}</id>
+            <name>${SnapshotsName}</name>
+            <url>${SnapshotsUrl}</url>
+        </snapshotRepository>
+    </distributionManagement>
     <developers>
         <developer>
             <id>venkatesh</id>
