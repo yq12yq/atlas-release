@@ -18,8 +18,16 @@
 import os
 import sys
 import traceback
-
+import fnmatch
 import atlas_config as mc
+
+def find(pattern, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if fnmatch.fnmatch(name, pattern):
+                result.append(os.path.join(root, name))
+    return result
 
 METADATA_LOG_OPTS="-Datlas.log.dir=%s -Datlas.log.file=application.log"
 METADATA_COMMAND_OPTS="-Datlas.home=%s"
@@ -29,6 +37,17 @@ CONF_FILE="application.properties"
 HBASE_STORAGE_CONF_ENTRY="atlas.graph.storage.backend\s*=\s*hbase"
 
 bdb_lib_location = "/usr/local/je/lib/je-5.0.73.jar"
+
+#
+# Since the Unit Tests are being executed from ./distro/src/test/python
+#
+rootdirList = [ os.path.abspath('.'), os.path.abspath('../../../..') ] 
+for rootdir in rootdirList:
+   if os.path.exists(os.path.join(rootdir,'README.txt')):
+      dev_bdb_lib_locations = find('je-*.jar', rootdir)
+      if (dev_bdb_lib_locations and len(dev_bdb_lib_locations)):
+         dev_bdb_lib_location = dev_bdb_lib_locations[0]
+         break 
 
 def main():
 
@@ -66,6 +85,10 @@ def main():
     if os.path.exists(bdb_lib_location):
         metadata_classpath = metadata_classpath + p \
                             + bdb_lib_location
+
+    if (dev_bdb_lib_location and os.path.exists(dev_bdb_lib_location)):
+         metadata_classpath = metadata_classpath + p \
+                         + dev_bdb_lib_location
 
     if os.path.exists(hbase_conf_dir):
         metadata_classpath = metadata_classpath + p \
