@@ -28,6 +28,8 @@ DEFAULT_JVM_OPTS="-Xmx1024m -XX:MaxPermSize=512m -Dlog4j.configuration=atlas-log
 CONF_FILE="application.properties"
 HBASE_STORAGE_CONF_ENTRY="atlas.graph.storage.backend\s*=\s*hbase"
 
+bdb_lib_location = "/usr/local/je/lib/je-5.0.73.jar"
+
 def main():
 
     metadata_home = mc.metadataDir()
@@ -61,13 +63,17 @@ def main():
                        + os.path.join(web_app_dir, "atlas", "WEB-INF", "lib", "*" )  + p \
                        + os.path.join(metadata_home, "libext", "*")
 
+    if os.path.exists(bdb_lib_location):
+        metadata_classpath = metadata_classpath + p \
+                            + bdb_lib_location
+
     if os.path.exists(hbase_conf_dir):
         metadata_classpath = metadata_classpath + p \
                             + hbase_conf_dir
     else: 
        storage_backend = mc.grep(os.path.join(confdir, CONF_FILE), HBASE_STORAGE_CONF_ENTRY)
        if storage_backend != None:
-	   raise Exception("Could not find hbase-site.xml in %s. Please set env var HBASE_CONF_DIR to the hbase client conf dir", hbase_conf_dir)
+          raise Exception("Could not find hbase-site.xml in %s. Please set env var HBASE_CONF_DIR to the hbase client conf dir", hbase_conf_dir)
     
     metadata_pid_file = mc.pidFile(metadata_home)
 
