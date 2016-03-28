@@ -37,6 +37,7 @@ CONF_FILE="application.properties"
 HBASE_STORAGE_CONF_ENTRY="atlas.graph.storage.backend\s*=\s*hbase"
 
 bdb_lib_location = "/usr/local/je/lib/je-5.0.73.jar"
+dev_bdb_lib_location = ""
 
 #
 # Since the Unit Tests are being executed from ./distro/src/test/python
@@ -86,7 +87,7 @@ def main():
         metadata_classpath = metadata_classpath + p \
                             + bdb_lib_location
 
-    if (dev_bdb_lib_location and os.path.exists(dev_bdb_lib_location)):
+    if ((dev_bdb_lib_location is not None) and os.path.exists(dev_bdb_lib_location)):
          metadata_classpath = metadata_classpath + p \
                          + dev_bdb_lib_location
 
