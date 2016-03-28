@@ -18,16 +18,8 @@
 import os
 import sys
 import traceback
-import fnmatch
-import atlas_config as mc
 
-def find(pattern, path):
-    result = []
-    for root, dirs, files in os.walk(path):
-        for name in files:
-            if fnmatch.fnmatch(name, pattern):
-                result.append(os.path.join(root, name))
-    return result
+import atlas_config as mc
 
 METADATA_LOG_OPTS="-Datlas.log.dir=%s -Datlas.log.file=application.log"
 METADATA_COMMAND_OPTS="-Datlas.home=%s"
@@ -35,20 +27,6 @@ METADATA_CONFIG_OPTS="-Datlas.conf=%s"
 DEFAULT_JVM_OPTS="-Xmx1024m -XX:MaxPermSize=512m -Dlog4j.configuration=atlas-log4j.xml"
 CONF_FILE="application.properties"
 HBASE_STORAGE_CONF_ENTRY="atlas.graph.storage.backend\s*=\s*hbase"
-
-bdb_lib_location = "/usr/local/je/lib/je-5.0.73.jar"
-dev_bdb_lib_location = ""
-
-#
-# Since the Unit Tests are being executed from ./distro/src/test/python
-#
-rootdirList = [ os.path.abspath('.'), os.path.abspath('../../../..') ] 
-for rootdir in rootdirList:
-   if os.path.exists(os.path.join(rootdir,'README.txt')):
-      dev_bdb_lib_locations = find('je-*.jar', rootdir)
-      if (dev_bdb_lib_locations and len(dev_bdb_lib_locations)):
-         dev_bdb_lib_location = dev_bdb_lib_locations[0]
-         break 
 
 def main():
 
@@ -83,21 +61,13 @@ def main():
                        + os.path.join(web_app_dir, "atlas", "WEB-INF", "lib", "*" )  + p \
                        + os.path.join(metadata_home, "libext", "*")
 
-    if os.path.exists(bdb_lib_location):
-        metadata_classpath = metadata_classpath + p \
-                            + bdb_lib_location
-
-    if ((dev_bdb_lib_location is not None) and os.path.exists(dev_bdb_lib_location)):
-         metadata_classpath = metadata_classpath + p \
-                         + dev_bdb_lib_location
-
     if os.path.exists(hbase_conf_dir):
         metadata_classpath = metadata_classpath + p \
                             + hbase_conf_dir
     else: 
        storage_backend = mc.grep(os.path.join(confdir, CONF_FILE), HBASE_STORAGE_CONF_ENTRY)
        if storage_backend != None:
-          raise Exception("Could not find hbase-site.xml in %s. Please set env var HBASE_CONF_DIR to the hbase client conf dir", hbase_conf_dir)
+	   raise Exception("Could not find hbase-site.xml in %s. Please set env var HBASE_CONF_DIR to the hbase client conf dir", hbase_conf_dir)
     
     metadata_pid_file = mc.pidFile(metadata_home)
 
