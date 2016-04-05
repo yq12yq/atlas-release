@@ -18,15 +18,13 @@
 
 package org.apache.atlas.discovery;
 
-import com.google.common.collect.ImmutableList;
-import com.thinkaurelius.titan.core.TitanGraph;
+import com.google.common.collect.ImmutableSet;
 import org.apache.atlas.BaseHiveRepositoryTest;
 import org.apache.atlas.RepositoryMetadataModule;
 import org.apache.atlas.TestUtils;
 import org.apache.atlas.discovery.graph.GraphBackedDiscoveryService;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.MetadataRepository;
-import org.apache.atlas.repository.graph.GraphProvider;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.persistence.Id;
@@ -56,9 +54,6 @@ import static org.apache.atlas.typesystem.types.utils.TypesUtil.createRequiredAt
 
 @Guice(modules = RepositoryMetadataModule.class)
 public class GraphBackedDiscoveryServiceTest extends BaseHiveRepositoryTest {
-
-    @Inject
-    private GraphProvider<TitanGraph> graphProvider;
 
     @Inject
     private MetadataRepository repositoryService;
@@ -192,8 +187,8 @@ public class GraphBackedDiscoveryServiceTest extends BaseHiveRepositoryTest {
                 {"hive_column where hive_column isa PII", 6},
                 {"View is Dimension" , 2},
 //                {"hive_column where hive_column isa PII select hive_column.name", 6}, //Not working - ATLAS-175
-                {"hive_column select hive_column.name", 37},
-                {"hive_column select name", 37},
+                {"hive_column select hive_column.name", 29},
+                {"hive_column select name", 29},
                 {"hive_column where hive_column.name=\"customer_id\"", 4},
                 {"from hive_table select hive_table.name", 8},
                 {"hive_db where (name = \"Reporting\")", 1},
@@ -305,13 +300,13 @@ public class GraphBackedDiscoveryServiceTest extends BaseHiveRepositoryTest {
         HierarchicalTypeDefinition A = createClassTypeDef("A", null, createRequiredAttrDef("a", DataTypes.INT_TYPE));
 
         HierarchicalTypeDefinition B =
-                createClassTypeDef("B", ImmutableList.of("A"), createOptionalAttrDef("b", DataTypes.BOOLEAN_TYPE));
+                createClassTypeDef("B", ImmutableSet.of("A"), createOptionalAttrDef("b", DataTypes.BOOLEAN_TYPE));
 
         HierarchicalTypeDefinition C =
-                createClassTypeDef("C", ImmutableList.of("B"), createOptionalAttrDef("c", DataTypes.BYTE_TYPE));
+                createClassTypeDef("C", ImmutableSet.of("B"), createOptionalAttrDef("c", DataTypes.BYTE_TYPE));
 
         HierarchicalTypeDefinition D =
-                createClassTypeDef("D", ImmutableList.of("C"), createOptionalAttrDef("d", DataTypes.SHORT_TYPE));
+                createClassTypeDef("D", ImmutableSet.of("C"), createOptionalAttrDef("d", DataTypes.SHORT_TYPE));
 
         TypeSystem.getInstance().defineClassTypes(A, B, C, D);
     }

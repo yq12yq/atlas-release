@@ -20,6 +20,8 @@ package org.apache.atlas.typesystem.types;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.typesystem.IStruct;
 import org.apache.atlas.typesystem.persistence.DownCastStructInstance;
@@ -44,28 +46,31 @@ import java.util.Set;
  *            as SuperTypes.
  * @param <T> the class of the Instance of this DataType.
  */
-public abstract class HierarchicalType<ST extends HierarchicalType, T> extends AbstractDataType<T>
-        implements Comparable<ST> {
+public abstract class HierarchicalType<ST extends HierarchicalType, T> extends AbstractDataType<T> {
 
     public final TypeSystem typeSystem;
     public final Class<ST> superTypeClass;
-    public final String name;
     public final FieldMapping fieldMapping;
     public final int numFields;
-    public final ImmutableList<String> superTypes;
+    public final ImmutableSet<String> superTypes;
     public final ImmutableList<AttributeInfo> immediateAttrs;
     public final ImmutableMap<String, String> attributeNameToType;
     protected ImmutableMap<String, List<Path>> superTypePaths;
     protected ImmutableMap<String, Path> pathNameToPathMap;
 
+    HierarchicalType(TypeSystem typeSystem, Class<ST> superTypeClass, String name, ImmutableSet<String> superTypes,
+        int numFields) {
+        this(typeSystem, superTypeClass, name, null, superTypes, numFields);
+    }
+
     /**
      * Used when creating a Type, to support recursive Structs.
      */
-    HierarchicalType(TypeSystem typeSystem, Class<ST> superTypeClass, String name, ImmutableList<String> superTypes,
+    HierarchicalType(TypeSystem typeSystem, Class<ST> superTypeClass, String name, String description, ImmutableSet<String> superTypes,
             int numFields) {
+        super(name, description);
         this.typeSystem = typeSystem;
         this.superTypeClass = superTypeClass;
-        this.name = name;
         this.fieldMapping = null;
         this.numFields = numFields;
         this.superTypes = superTypes;
@@ -73,22 +78,21 @@ public abstract class HierarchicalType<ST extends HierarchicalType, T> extends A
         this.attributeNameToType = null;
     }
 
-    HierarchicalType(TypeSystem typeSystem, Class<ST> superTypeClass, String name, ImmutableList<String> superTypes,
+    HierarchicalType(TypeSystem typeSystem, Class<ST> superTypeClass, String name, ImmutableSet<String> superTypes,
+        AttributeInfo... fields) throws AtlasException {
+        this(typeSystem, superTypeClass, name, null, superTypes, fields);
+    }
+    HierarchicalType(TypeSystem typeSystem, Class<ST> superTypeClass, String name, String description, ImmutableSet<String> superTypes,
             AttributeInfo... fields) throws AtlasException {
+        super(name, description);
         this.typeSystem = typeSystem;
         this.superTypeClass = superTypeClass;
-        this.name = name;
         Pair<FieldMapping, ImmutableMap<String, String>> p = constructFieldMapping(superTypes, fields);
         this.fieldMapping = p.left;
         this.attributeNameToType = p.right;
         this.numFields = this.fieldMapping.fields.size();
-        this.superTypes = superTypes == null ? ImmutableList.<String>of() : superTypes;
+        this.superTypes = superTypes == null ? ImmutableSet.<String>of() : superTypes;
         this.immediateAttrs = ImmutableList.copyOf(fields);
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 
     public FieldMapping fieldMapping() {
@@ -133,7 +137,7 @@ public abstract class HierarchicalType<ST extends HierarchicalType, T> extends A
         setupSuperTypesGraph(superTypes);
     }
 
-    private void setupSuperTypesGraph(ImmutableList<String> superTypes) throws AtlasException {
+    private void setupSuperTypesGraph(ImmutableSet<String> superTypes) throws AtlasException {
         Map<String, List<Path>> superTypePaths = new HashMap<String, List<Path>>();
         Map<String, Path> pathNameToPathMap = new HashMap<String, Path>();
         Queue<Path> queue = new LinkedList<Path>();
@@ -154,7 +158,7 @@ public abstract class HierarchicalType<ST extends HierarchicalType, T> extends A
                 typePaths.add(currentPath);
             }
 
-            ImmutableList<String> sTs = superType == this ? superTypes : superType.superTypes;
+            ImmutableSet<String> sTs = superType == this ? superTypes : superType.superTypes;
 
             if (sTs != null) {
                 for (String sT : sTs) {
@@ -168,7 +172,7 @@ public abstract class HierarchicalType<ST extends HierarchicalType, T> extends A
 
     }
 
-    protected Pair<FieldMapping, ImmutableMap<String, String>> constructFieldMapping(ImmutableList<String> superTypes,
+    protected Pair<FieldMapping, ImmutableMap<String, String>> constructFieldMapping(ImmutableSet<String> superTypes,
             AttributeInfo... fields) throws AtlasException {
 
         Map<String, AttributeInfo> fieldsMap = new LinkedHashMap();
@@ -362,19 +366,10 @@ public abstract class HierarchicalType<ST extends HierarchicalType, T> extends A
     }
 
     @Override
-    public int compareTo(ST o) {
-        String oName = o.getName();
-        try {
-            if (o.isSubType(getName())) {
-                return 1;
-            } else if (isSubType(oName)) {
-                return -1;
-            } else {
-                return getName().compareTo(oName);
-            }
-        } catch(AtlasException e) {
-            throw new RuntimeException(e);
-        }
+    public String toString() {
+
+        return "[name=" + name + ", description=" + description + 
+            ", superTypes=" + superTypes + ", immediateAttrs=" + immediateAttrs + "]";
     }
 
     public Set<String> getAllSuperTypeNames() {
@@ -476,7 +471,7 @@ public abstract class HierarchicalType<ST extends HierarchicalType, T> extends A
                 throw new RuntimeException(me);
             }
             if (t.superTypes != null) {
-                ImmutableList<String> sTs = t.superTypes;
+                ImmutableSet<String> sTs = t.superTypes;
                 for (String sT : sTs) {
                     String nm = sT + "." + p.pathName;
                     pathQueue.add(pathNameToPathMap.get(nm));
@@ -490,6 +485,4 @@ public abstract class HierarchicalType<ST extends HierarchicalType, T> extends A
             throw new UnsupportedOperationException();
         }
     }
-
-
 }

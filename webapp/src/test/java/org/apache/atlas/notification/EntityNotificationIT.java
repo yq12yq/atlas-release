@@ -18,10 +18,11 @@
 
 package org.apache.atlas.notification;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+
 import org.apache.atlas.notification.entity.EntityNotification;
 import org.apache.atlas.typesystem.IReferenceableInstance;
 import org.apache.atlas.typesystem.IStruct;
@@ -42,6 +43,7 @@ import org.testng.annotations.Test;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.Response;
+
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -100,6 +102,25 @@ public class EntityNotificationIT extends BaseResourceIT {
 
         waitForNotification(notificationConsumer, MAX_WAIT_TIME,
                 newNotificationPredicate(EntityNotification.OperationType.ENTITY_UPDATE, HIVE_TABLE_TYPE, guid));
+    }
+
+    @Test
+    public void testDeleteEntity() throws Exception {
+        final String tableName = "table-" + randomString();
+        Referenceable tableInstance = createHiveTableInstance(DATABASE_NAME, tableName);
+        final Id tableId = createInstance(tableInstance);
+        final String guid = tableId._getId();
+
+        waitForNotification(notificationConsumer, MAX_WAIT_TIME,
+            newNotificationPredicate(EntityNotification.OperationType.ENTITY_CREATE, HIVE_TABLE_TYPE, guid));
+
+        final String property = "name";
+        final String name = (String) tableInstance.get(property);
+
+        serviceClient.deleteEntity(HIVE_TABLE_TYPE, property, name);
+
+        waitForNotification(notificationConsumer, MAX_WAIT_TIME,
+            newNotificationPredicate(EntityNotification.OperationType.ENTITY_DELETE, HIVE_TABLE_TYPE, guid));
     }
 
     @Test(dependsOnMethods = "testCreateEntity")
@@ -181,7 +202,7 @@ public class EntityNotificationIT extends BaseResourceIT {
 
     private void createTrait(String traitName, String ... superTraitNames) throws Exception {
         HierarchicalTypeDefinition<TraitType> trait =
-            TypesUtil.createTraitTypeDef(traitName, ImmutableList.copyOf(superTraitNames));
+            TypesUtil.createTraitTypeDef(traitName, ImmutableSet.copyOf(superTraitNames));
 
         String traitDefinitionJSON = TypesSerialization$.MODULE$.toJson(trait, true);
         LOG.debug("Trait definition = " + traitDefinitionJSON);

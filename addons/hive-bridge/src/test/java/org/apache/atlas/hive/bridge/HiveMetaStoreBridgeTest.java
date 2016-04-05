@@ -35,6 +35,7 @@ import org.codehaus.jettison.json.JSONObject;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import scala.actors.threadpool.Arrays;
@@ -128,47 +129,31 @@ public class HiveMetaStoreBridgeTest {
     }
 
     @Test
-    public void testImportThatUpdatesRegisteredPartition() throws Exception {
+    public void testImportWhenPartitionKeysAreNull() throws Exception {
         setupDB(hiveClient, TEST_DB_NAME);
         Table hiveTable = setupTable(hiveClient, TEST_DB_NAME, TEST_TABLE_NAME);
 
         returnExistingDatabase(TEST_DB_NAME, atlasClient, CLUSTER_NAME);
 
         when(atlasClient.searchByDSL(HiveMetaStoreBridge.getTableDSLQuery(CLUSTER_NAME, TEST_DB_NAME,
-                TEST_TABLE_NAME,
-                HiveDataTypes.HIVE_TABLE.getName()))).thenReturn(
-                getEntityReference("82e06b34-9151-4023-aa9d-b82103a50e77"));
+            TEST_TABLE_NAME,
+            HiveDataTypes.HIVE_TABLE.getName()))).thenReturn(
+            getEntityReference("82e06b34-9151-4023-aa9d-b82103a50e77"));
         when(atlasClient.getEntity("82e06b34-9151-4023-aa9d-b82103a50e77")).thenReturn(createTableReference());
 
         Partition partition = mock(Partition.class);
         when(partition.getTable()).thenReturn(hiveTable);
-        List partitionValues = Arrays.asList(new String[]{"name", "location"});
+        List partitionValues = Arrays.asList(new String[]{});
         when(partition.getValues()).thenReturn(partitionValues);
-        int lastAccessTime = 1234512345;
-        when(partition.getLastAccessTime()).thenReturn(lastAccessTime);
 
         when(hiveClient.getPartitions(hiveTable)).thenReturn(Arrays.asList(new Partition[]{partition}));
 
-        when(atlasClient.searchByGremlin(
-                HiveMetaStoreBridge.getPartitionGremlinQuery(
-                        HiveMetaStoreBridge.joinPartitionValues(partitionValues),
-                        HiveMetaStoreBridge.getTableQualifiedName(CLUSTER_NAME, TEST_DB_NAME, TEST_TABLE_NAME)))).
-                thenReturn(getPartitionReference("9ae06b34-9151-3043-aa9d-b82103a50e99"));
-
         HiveMetaStoreBridge bridge = new HiveMetaStoreBridge(CLUSTER_NAME, hiveClient, atlasClient);
-        bridge.importHiveMetadata();
-
-        verify(atlasClient).updateEntity(eq("9ae06b34-9151-3043-aa9d-b82103a50e99"),
-                (Referenceable) argThat(new MatchesReferenceableProperty(HiveMetaStoreBridge.LAST_ACCESS_TIME_ATTR,
-                        new Integer(lastAccessTime))));
-    }
-
-    private JSONArray getPartitionReference(String id) throws JSONException {
-        JSONObject resultEntry = new JSONObject();
-        resultEntry.put(HiveMetaStoreBridge.SEARCH_ENTRY_GUID_ATTR, id);
-        JSONArray results = new JSONArray();
-        results.put(resultEntry);
-        return results;
+        try {
+            bridge.importHiveMetadata();
+        } catch (Exception e) {
+            Assert.fail("Partition with null key caused import to fail with exception ", e);
+        }
     }
 
     private JSONArray getEntityReference(String id) throws JSONException {
@@ -203,4 +188,6 @@ public class HiveMetaStoreBridgeTest {
             return attrValue.equals(((Referenceable) o).get(attrName));
         }
     }
+
+
 }

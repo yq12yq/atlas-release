@@ -21,6 +21,7 @@ import com.thinkaurelius.titan.core.SchemaViolationException;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
+
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.RepositoryException;
@@ -35,13 +36,17 @@ import org.apache.atlas.typesystem.persistence.ReferenceableInstance;
 import org.apache.atlas.typesystem.types.AttributeInfo;
 import org.apache.atlas.typesystem.types.ClassType;
 import org.apache.atlas.typesystem.types.DataTypes;
+import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
 import org.apache.atlas.typesystem.types.EnumValue;
+import org.apache.atlas.typesystem.types.IConstructableType;
 import org.apache.atlas.typesystem.types.IDataType;
 import org.apache.atlas.typesystem.types.Multiplicity;
 import org.apache.atlas.typesystem.types.ObjectGraphWalker;
+import org.apache.atlas.typesystem.types.StructType;
 import org.apache.atlas.typesystem.types.TraitType;
 import org.apache.atlas.typesystem.types.TypeSystem;
 import org.apache.atlas.typesystem.types.TypeUtils;
+import org.apache.atlas.typesystem.types.TypeUtils.Pair;
 import org.apache.atlas.utils.MD5Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,19 +57,22 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class TypedInstanceToGraphMapper {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypedInstanceToGraphMapper.class);
     private final Map<Id, Vertex> idToVertexMap = new HashMap<>();
+    //Maintains a set of Guid based Ids that are referenced/created during graph walk
+    private final Set<Id> referencedIds = new HashSet<>();
     private final TypeSystem typeSystem = TypeSystem.getInstance();
     private final List<String> deletedEntityGuids = new ArrayList<>();
     private final List<ITypedReferenceableInstance> deletedEntities = new ArrayList<>();
     private final GraphToTypedInstanceMapper graphToTypedInstanceMapper;
-
     private static final GraphHelper graphHelper = GraphHelper.getInstance();
 
     private final String SIGNATURE_HASH_PROPERTY_KEY = Constants.INTERNAL_PROPERTY_KEY_PREFIX + "signature";
@@ -174,6 +182,7 @@ public final class TypedInstanceToGraphMapper {
     void mapInstanceToVertex(ITypedInstance typedInstance, Vertex instanceVertex,
                              Map<String, AttributeInfo> fields, boolean mapOnlyUniqueAttributes, Operation operation)
             throws AtlasException {
+        
         LOG.debug("Mapping instance {} of {} to vertex {}", typedInstance, typedInstance.getTypeName(),
                 instanceVertex);
         for (AttributeInfo attributeInfo : fields.values()) {
@@ -184,10 +193,25 @@ public final class TypedInstanceToGraphMapper {
         }
         
         if (operation == Operation.DELETE) {
+            // Remove uni-directional references to the deletion candidate.
+            removeUnidirectionalReferences(instanceVertex);
+            
             // Remove vertex for deletion candidate.
             graphHelper.removeVertex(instanceVertex);
         }
 
+    }
+
+    private String getInstanceName(Vertex referencingVertex, IConstructableType referencingType) {
+
+        if (referencingType.getTypeCategory() == TypeCategory.CLASS) {
+            Id idFromVertex = GraphHelper.getIdFromVertex(referencingType.getName(), referencingVertex);
+            String instanceId = referencingType.getName() + ":" + idFromVertex._getId();
+            return instanceId;
+        }
+        else {
+            return referencingType.getName();
+        }
     }
 
     void mapAttributesToVertex(ITypedInstance typedInstance, Vertex instanceVertex,
@@ -281,10 +305,13 @@ public final class TypedInstanceToGraphMapper {
                         newInstance = (ITypedReferenceableInstance) instance;
                         instancesToUpdate.add(newInstance);
                     }
+
                 }
 
                 //Set the id in the new instance
                 idToVertexMap.put(id, instanceVertex);
+                referencedIds.add(GraphHelper.getIdFromVertex(instance.getTypeName(), instanceVertex));
+
             }
         }
         return TypeUtils.Pair.of(instancesToCreate, instancesToUpdate);
@@ -361,7 +388,6 @@ public final class TypedInstanceToGraphMapper {
 
             IDataType elementType = ((DataTypes.ArrayType) attributeInfo.dataType()).getElemType();
             List<String> newEntries = new ArrayList<>();
-
             if (newElements != null && !newElements.isEmpty()) {
                 int index = 0;
                 for (; index < newElements.size(); index++) {
@@ -376,7 +402,14 @@ public final class TypedInstanceToGraphMapper {
                 if (currentEntries != null) {
                     if (index < currentEntries.size()) {
                         for (; index < currentEntries.size(); index++) {
-                            removeUnusedReference(currentEntries.get(index), attributeInfo, elementType);
+                            if (elementType.getTypeCategory() == TypeCategory.CLASS) {
+                                final String edgeId = currentEntries.get(index);
+                                final Pair<Edge, Vertex> edgeAndTargetVertex = GraphHelper.getInstance().getEdgeAndTargetVertex(edgeId);
+                                Id guid = GraphHelper.getIdFromVertex(elementType.getName(), edgeAndTargetVertex.right);
+                                removeUnusedClassReference(edgeId, attributeInfo, elementType, !referencedIds.contains(guid));
+                            } else if (elementType.getTypeCategory() == TypeCategory.STRUCT) {
+                                removeUnusedStructReference(currentEntries.get(index), attributeInfo, elementType);
+                            }
                         }
                     }
                 }
@@ -384,8 +417,12 @@ public final class TypedInstanceToGraphMapper {
             else if (operation == Operation.UPDATE_FULL || operation == Operation.DELETE) {
                 // Clear all existing entries
                 if (currentEntries != null) {
-                    for (String edgeId : currentEntries) {
-                        removeUnusedReference(edgeId, attributeInfo, elementType);
+                    for (String entry : currentEntries) {
+                        if (elementType.getTypeCategory() == TypeCategory.CLASS) {
+                            removeUnusedClassReference(entry, attributeInfo, elementType, true);
+                        } else if(elementType.getTypeCategory() == TypeCategory.STRUCT) {
+                            removeUnusedStructReference(entry, attributeInfo, elementType);
+                        }
                     }
                 }
             }
@@ -404,7 +441,7 @@ public final class TypedInstanceToGraphMapper {
         @SuppressWarnings("unchecked") Map<Object, Object> collection =
             (Map<Object, Object>) typedInstance.get(attributeInfo.name);
         boolean empty = (collection == null || collection.isEmpty());
-        if (!empty  || operation == Operation.UPDATE_FULL) {
+        if (!empty  || operation == Operation.UPDATE_FULL || operation == Operation.DELETE) {
 
             String propertyName = GraphHelper.getQualifiedFieldName(typedInstance, attributeInfo);
             IDataType elementType = ((DataTypes.MapType) attributeInfo.dataType()).getValueType();
@@ -420,23 +457,27 @@ public final class TypedInstanceToGraphMapper {
                     //Add/Update/Remove property value
                     GraphHelper.setProperty(instanceVertex, myPropertyName, newEntry);
                 }
-
-                //Remove unused key references
-                List<Object> origKeys = instanceVertex.getProperty(propertyName);
-                if (origKeys != null) {
-                    if (collection != null) {
-                        origKeys.removeAll(collection.keySet());
-                    }
-                    for (Object unusedKey : origKeys) {
-                        String edgeLabel = GraphHelper.getEdgeLabel(typedInstance, attributeInfo) + "." + unusedKey;
-                        if (instanceVertex.getEdges(Direction.OUT, edgeLabel).iterator().hasNext()) {
-                            Edge edge = instanceVertex.getEdges(Direction.OUT, edgeLabel).iterator().next();
-                            removeUnusedReference(edge.getId().toString(), attributeInfo,
-                                    ((DataTypes.MapType) attributeInfo.dataType()).getValueType());
-                        }
+            }
+            
+            //Remove unused key references
+            List<Object> origKeys = instanceVertex.getProperty(propertyName);
+            if (origKeys != null) {
+                if (collection != null) {
+                    origKeys.removeAll(collection.keySet());
+                }
+                for (Object unusedKey : origKeys) {
+                    String edgeLabel = GraphHelper.getEdgeLabel(typedInstance, attributeInfo) + "." + unusedKey;
+                    if (instanceVertex.getEdges(Direction.OUT, edgeLabel).iterator().hasNext()) {
+                        Edge edge = instanceVertex.getEdges(Direction.OUT, edgeLabel).iterator().next();
+                        if (TypeCategory.STRUCT.equals(((DataTypes.MapType) attributeInfo.dataType()).getValueType().getTypeCategory())) {
+                           removeUnusedStructReference(edge.getId().toString(), attributeInfo,
+                               ((DataTypes.MapType) attributeInfo.dataType()).getValueType());
+                        } else if(TypeCategory.CLASS.equals(((DataTypes.MapType) attributeInfo.dataType()).getValueType().getTypeCategory())){
+                            final Vertex targetVertex = edge.getVertex(Direction.OUT);
+                            Id guid = GraphHelper.getIdFromVertex(elementType.getName(), targetVertex);
+                            removeUnusedClassReference(edge.getId().toString(), attributeInfo, elementType, !referencedIds.contains(guid));                        }
                     }
                 }
-
             }
 
             // for dereference on way out
@@ -481,7 +522,7 @@ public final class TypedInstanceToGraphMapper {
         TypeUtils.Pair<Vertex, Edge> vertexEdgePair = null;
         if (curVal != null && structAttr == null) {
             //remove edge
-            removeUnusedReference(curVal, attributeInfo, elementType);
+            removeUnusedStructReference(curVal, attributeInfo, elementType);
         } else if (curVal != null && structAttr != null) {
             //update
             Edge edge = graphHelper.getOutGoingEdgeById(curVal);
@@ -506,7 +547,7 @@ public final class TypedInstanceToGraphMapper {
         TypeUtils.Pair<Vertex, Edge> vertexEdgePair = null;
         if (curVal != null && newVal == null) {
             //remove edge
-            removeUnusedReference(curVal, attributeInfo, elementType);
+            removeUnusedClassReference(curVal, attributeInfo, elementType, true);
         } else if (curVal != null && newVal != null) {
             Edge edge = graphHelper.getOutGoingEdgeById(curVal);
             Id classRefId = getId(newVal);
@@ -568,13 +609,16 @@ public final class TypedInstanceToGraphMapper {
         String currentGUID = invertex.getProperty(Constants.GUID_PROPERTY_KEY);
         Id currentId = new Id(currentGUID, 0, (String) invertex.getProperty(Constants.ENTITY_TYPE_PROPERTY_KEY));
         if (!currentId.equals(id)) {
-             // add an edge to the class vertex from the instance
-            if(toVertex != null) {
+            // add an edge to the class vertex from the instance
+            if (toVertex != null) {
                 newEdge = graphHelper.addEdge(instanceVertex, toVertex, edgeLabel);
                 result = TypeUtils.Pair.of(toVertex, newEdge);
             }
-            removeUnusedReference(edge.getId().toString(), attributeInfo, dataType);
+
+            //Delete vertex only if the IdtoVertex map doesnt have it in future references
+            removeUnusedClassReference(edge.getId().toString(), attributeInfo, dataType, !referencedIds.contains(currentId));
         }
+
 
         if (attributeInfo.isComposite) {
             //Update the attributes also if composite
@@ -652,43 +696,245 @@ public final class TypedInstanceToGraphMapper {
         GraphHelper.setProperty(instanceVertex, vertexPropertyName, propertyValue);
     }
 
-    private Edge removeUnusedReference(String edgeId, AttributeInfo attributeInfo, IDataType<?> elementType) throws AtlasException {
-        //Remove edges for property values which do not exist any more
+    private Edge removeUnusedClassReference(String edgeId, AttributeInfo attributeInfo, IDataType<?> elementType, boolean deleteReferredVertex) throws AtlasException {
+        // Remove edge to disconnect struct or class reference.
+        // For struct or composite class reference, also delete the target instance.
         Edge removedRelation = null;
-        switch (elementType.getTypeCategory()) {
-        case STRUCT:
-            removedRelation = graphHelper.removeRelation(edgeId, true);
-            //Remove the vertex from state so that further processing no longer uses this
-            break;
-        case CLASS:
-            // TODO: disconnect inverse reference if attributeInfo.reverseAttributeName is non-null.
-            if (attributeInfo.isComposite) {
-                // Delete contained entity.
-                TypeUtils.Pair<Edge, Vertex> edgeAndVertex = graphHelper.getEdgeAndTargetVertex(edgeId);
-                deleteEntity(elementType.getName(), edgeAndVertex.right);
+        TypeUtils.Pair<Edge, Vertex> edgeAndVertex = graphHelper.getEdgeAndTargetVertex(edgeId);
+        if (attributeInfo.isComposite) {
+            // For uni-directional reference, remove the edge.
+            // For bi-directional reference, the edges are removed
+            // when the composite entity is deleted.
+            if (attributeInfo.reverseAttributeName == null) {
                 graphHelper.removeEdge(edgeAndVertex.left);
                 removedRelation = edgeAndVertex.left;
             }
-            else {
-                removedRelation = graphHelper.removeRelation(edgeId, false);
+
+            // Delete the contained entity.
+            if (deleteReferredVertex) {
+                if (LOG.isDebugEnabled()) {
+                    Vertex sourceVertex = edgeAndVertex.left.getVertex(Direction.OUT);
+                    String sourceTypeName = GraphHelper.getTypeName(sourceVertex);
+                    LOG.debug("Deleting composite entity {}:{} contained by {}:{} through reference {}",
+                        elementType.getName(), GraphHelper.getIdFromVertex(elementType.getName(), edgeAndVertex.right)._getId(),
+                        sourceTypeName, GraphHelper.getIdFromVertex(sourceTypeName, sourceVertex)._getId(),
+                        attributeInfo.name);
+                }
+                deleteEntity(elementType.getName(), edgeAndVertex.right);
             }
-            break;
+        }
+        else {
+            if (attributeInfo.reverseAttributeName != null) {
+                // Disconnect both ends of the bi-directional reference
+                removeReverseReference(edgeAndVertex, attributeInfo);
+            }
+            graphHelper.removeEdge(edgeAndVertex.left);
+            removedRelation = edgeAndVertex.left;
+
+            return removedRelation;
         }
         return removedRelation;
+
     }
+
+    private Edge removeUnusedStructReference(String edgeId, AttributeInfo attributeInfo, IDataType<?> elementType) throws AtlasException {
+        // Remove edge to disconnect struct or class reference.
+        // For struct or composite class reference, also delete the target instance.
+        Edge removedRelation = null;
+        TypeUtils.Pair<Edge, Vertex> edgeAndVertex = graphHelper.getEdgeAndTargetVertex(edgeId);
+        graphHelper.removeEdge(edgeAndVertex.left);
+        removedRelation = edgeAndVertex.left;
+
+            // Create an empty instance to use for clearing all struct attributes.
+        StructType structType = (StructType) elementType;
+        ITypedStruct typedInstance = structType.createInstance();
+            
+         //  Delete target vertex and any underlying structs and composite entities owned by this struct.
+        mapInstanceToVertex(typedInstance, edgeAndVertex.right, structType.fieldMapping().fields, false, Operation.DELETE);
+        return removedRelation;
+    }
+
+    /**
+     * Remove the reverse reference value for the specified edge and vertex.
+     * 
+     * @param edgeAndVertex
+     * @param attributeInfo
+     * @throws AtlasException
+     */
+    private void removeReverseReference(TypeUtils.Pair<Edge, Vertex> edgeAndVertex, 
+        AttributeInfo attributeInfo) throws AtlasException {
+        
+        Vertex sourceVertex = edgeAndVertex.left.getVertex(Direction.OUT);
+        String inverseTypeName = GraphHelper.getTypeName(edgeAndVertex.right);
+        IConstructableType inverseType = typeSystem.getDataType(IConstructableType.class, inverseTypeName);
+        AttributeInfo inverseAttributeInfo = inverseType.fieldMapping().fields.get(attributeInfo.reverseAttributeName);
+        String inverseEdgeLabel = GraphHelper.getEdgeLabel(inverseType, inverseAttributeInfo);
+        TypeCategory inverseTypeCategory = inverseAttributeInfo.dataType().getTypeCategory();
     
+        // Find and remove the edge which represents the inverse reference value.
+        Iterable<Edge> inverseEdges = GraphHelper.getOutGoingEdgesByLabel(edgeAndVertex.right, inverseEdgeLabel);
+        Edge removedEdge = null;
+        // Search for the edge which references the source vertex.
+        for (Edge edge : inverseEdges) {
+            Vertex vertex = edge.getVertex(Direction.IN);
+            if (vertex.equals(sourceVertex)) {
+                // Found the edge which points back at source vertex.
+                // Disconnect the reference by removing the edge and
+                // removing the edge ID from the vertex property.
+                removeReferenceValue(edge, new AtlasEdgeLabel(edge.getLabel()), edgeAndVertex.right, inverseType, inverseTypeCategory);
+                removedEdge = edge;
+                break;
+            }
+        }
+        if (removedEdge != null) {
+            if (LOG.isDebugEnabled()) {
+                String sourceTypeName = GraphHelper.getTypeName(sourceVertex);
+                LOG.debug("Removed edge {} for reverse reference {} from {}:{} to {}:{} ", removedEdge,
+                    GraphHelper.getQualifiedFieldName(inverseType, inverseAttributeInfo.name), 
+                    inverseTypeName, GraphHelper.getIdFromVertex(inverseTypeName, edgeAndVertex.right)._getId(), 
+                    sourceTypeName, GraphHelper.getIdFromVertex(sourceTypeName, sourceVertex)._getId());
+            }
+        }
+        else {
+            // We didn't find the edge for the inverse reference.
+            // Since Atlas currently does not automatically set
+            // the inverse reference when a reference value is updated,
+            // unbalanced references are not unexpected.
+            // The presence of inverse reference values depends on
+            // well behaved client applications which explicitly set
+            // both ends of the reference.
+            // TODO: throw an exception as it indicates a unbalanced reference?
+            String sourceTypeName = GraphHelper.getTypeName(sourceVertex);
+            LOG.warn("No edge found for inverse reference {} on vertex {} for entity instance {}:{} which points back to vertex {} for {}:{}",
+                inverseAttributeInfo.name, edgeAndVertex.right,
+                inverseTypeName, GraphHelper.getIdFromVertex(inverseTypeName, edgeAndVertex.right)._getId(), 
+                sourceVertex, sourceTypeName, GraphHelper.getIdFromVertex(sourceTypeName, sourceVertex)._getId());
+        }
+    }
+
+    /**
+     * Remove any unidirectional map or array reference to a class, struct, or trait vertex.
+     * This involves removing appropriate value from the vertex property which holds the
+     * reference values.
+     * 
+     * @param targetVertex a vertex which represents a class, struct, or trait instance
+     * @throws AtlasException
+     */
+    private void removeUnidirectionalReferences(Vertex targetVertex) throws AtlasException {
+    
+        // Search for any remaining incoming edges that represent unidirectional references
+        // to the target vertex.
+        Iterable<Edge> incomingEdges = targetVertex.getEdges(Direction.IN);
+        for (Edge edge : incomingEdges) {
+            String label = edge.getLabel();
+            AtlasEdgeLabel atlasEdgeLabel = new AtlasEdgeLabel(label);
+            Vertex referencingVertex = edge.getVertex(Direction.OUT);
+            String typeName = atlasEdgeLabel.getTypeName();
+            IConstructableType referencingType = typeSystem.getDataType(IConstructableType.class, typeName);
+            
+            AttributeInfo attributeInfo = referencingType.fieldMapping().fields.get(atlasEdgeLabel.getAttributeName());
+            if (attributeInfo == null) {
+                String instanceId = getInstanceName(referencingVertex, referencingType);
+                throw new AtlasException("Outgoing edge " + edge.getId().toString()  
+                    + " for " + instanceId + "(vertex " + referencingVertex + "): label " + label
+                    + " has an attribute name " + atlasEdgeLabel.getAttributeName() + " that is undefined on "
+                    + referencingType.getTypeCategory() + " " + typeName);
+            }
+            // Remove the appropriate value from the vertex property for this reference.
+            removeReferenceValue(edge, atlasEdgeLabel, referencingVertex, referencingType, attributeInfo.dataType().getTypeCategory());
+        }
+    }
+
+    private Pair<String, Boolean> removeReferenceValue(Edge edge, AtlasEdgeLabel atlasEdgeLabel,
+            Vertex referencingVertex, IConstructableType referencingType, TypeCategory attrTypeCategory) 
+        throws AtlasException {
+    
+        graphHelper.removeEdge(edge);
+        if (attrTypeCategory != TypeCategory.ARRAY && attrTypeCategory != TypeCategory.MAP) {
+            // Multiplicity-one reference is represented by the edge,
+            // there is no vertex property to update. So just remove the edge.
+            return new Pair<String, Boolean>(edge.getId().toString(), Boolean.TRUE);
+        }
+        List<String> currentRefValues = referencingVertex.getProperty(atlasEdgeLabel.getQualifiedAttributeName());
+        List<String> newRefValues = new ArrayList<>(currentRefValues);
+        Pair<String, Boolean> refValueRemoved = null;
+        if (attrTypeCategory == TypeCategory.ARRAY) {
+            refValueRemoved = removeArrayReferenceValue(atlasEdgeLabel, referencingVertex, edge, newRefValues);
+        }
+        else {
+            refValueRemoved = removeMapReferenceValue(atlasEdgeLabel, referencingVertex, edge, newRefValues);
+        }
+        if (refValueRemoved.right) {
+            if (LOG.isDebugEnabled()) {
+                String instanceId = getInstanceName(referencingVertex, referencingType);
+                LOG.debug("Reference value {} removed from reference {} on vertex {} for instance of {} {}",
+                    refValueRemoved.left, atlasEdgeLabel.getAttributeName(), referencingVertex,
+                    referencingType.getTypeCategory(), instanceId);
+            }
+            // If the referencing instance is an entity, update the modification timestamp.
+            if (referencingType instanceof ClassType) {
+                GraphHelper.setProperty(referencingVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY, System.currentTimeMillis());
+            }
+        }
+        else {
+            // The expected value is missing from the reference property values - log a warning.
+            String instanceId = getInstanceName(referencingVertex, referencingType);
+            LOG.warn("Reference value {} expected but not found in array reference {} on vertex {} for instance of {} {}",
+                refValueRemoved.left, atlasEdgeLabel.getAttributeName(), referencingVertex,
+                referencingType.getTypeCategory(), instanceId);
+        }
+        return refValueRemoved;
+    }
+
+    private TypeUtils.Pair<String, Boolean> removeArrayReferenceValue(AtlasEdgeLabel atlasEdgeLabel, Vertex referencingVertex, 
+        Edge edge, List<String> newRefValues) {
+        
+        String refValueToRemove = edge.getId().toString();
+        boolean valueRemoved = newRefValues.remove(refValueToRemove);
+        if (valueRemoved) {
+            GraphHelper.setProperty(referencingVertex, atlasEdgeLabel.getQualifiedAttributeName(), newRefValues);
+        }
+        return new TypeUtils.Pair<String, Boolean>(refValueToRemove, Boolean.valueOf(valueRemoved));
+    }
+
+    private TypeUtils.Pair<String, Boolean>  removeMapReferenceValue(AtlasEdgeLabel atlasEdgeLabel, Vertex referencingVertex, 
+        Edge edge, List<String> newRefValues) throws AtlasException {
+        
+        String refValueToRemove = atlasEdgeLabel.getMapKey();
+        if (refValueToRemove == null) {
+            // Edge label is missing the map key - throw an exception.
+            String typeName = atlasEdgeLabel.getTypeName();
+            throw new AtlasException("Outgoing edge " + edge.getId().toString()  
+                + " for vertex " + referencingVertex + "): label " + atlasEdgeLabel.getEdgeLabel()
+                + " for map attribute " + atlasEdgeLabel.getAttributeName() + " on type "
+                + typeName + " is missing the map key");
+        }
+        boolean valueRemoved = newRefValues.remove(refValueToRemove);
+        if (valueRemoved) {
+            GraphHelper.setProperty(referencingVertex, atlasEdgeLabel.getQualifiedAttributeName(), newRefValues);
+            // For maps, also remove the key-value pair property value.
+            GraphHelper.setProperty(referencingVertex, atlasEdgeLabel.getQualifiedMapKey(), null);
+        }
+        return new TypeUtils.Pair<String, Boolean>(refValueToRemove, Boolean.valueOf(valueRemoved));
+    }
+
     void deleteEntity(String typeName, Vertex instanceVertex) throws AtlasException {
+        // Check if this entity has already been processed.
+        Id id = GraphHelper.getIdFromVertex(typeName, instanceVertex);
+        if (deletedEntityGuids.contains(id._getId())) {
+            return;
+        }
+        deletedEntityGuids.add(id._getId());
+        
         // Remove traits owned by this entity.
         deleteAllTraits(instanceVertex);
         
         // Create an empty instance to use for clearing all attributes.
-        Id id = GraphHelper.getIdFromVertex(typeName, instanceVertex);
         ClassType classType = typeSystem.getDataType(ClassType.class, typeName);
         ITypedReferenceableInstance typedInstance = classType.createInstance(id);
         
         //  Remove any underlying structs and composite entities owned by this entity.
         mapInstanceToVertex(typedInstance, instanceVertex, classType.fieldMapping().fields, false, Operation.DELETE);
-        deletedEntityGuids.add(id._getId());
         deletedEntities.add(typedInstance);
     }
 

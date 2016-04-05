@@ -19,6 +19,7 @@
 package org.apache.atlas.web.resources;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -190,7 +191,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
     public void testEntityDefinitionAcrossTypeUpdate() throws Exception {
         //create type
         HierarchicalTypeDefinition<ClassType> typeDefinition = TypesUtil
-                .createClassTypeDef(randomString(), ImmutableList.<String>of(),
+                .createClassTypeDef(randomString(), ImmutableSet.<String>of(),
                         TypesUtil.createUniqueRequiredAttrDef("name", DataTypes.STRING_TYPE));
         serviceClient.createType(TypesSerialization.toJson(typeDefinition, false));
 
@@ -200,7 +201,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         String guid = serviceClient.createEntity(instance).getString(0);
 
         //update type - add attribute
-        typeDefinition = TypesUtil.createClassTypeDef(typeDefinition.typeName, ImmutableList.<String>of(),
+        typeDefinition = TypesUtil.createClassTypeDef(typeDefinition.typeName, ImmutableSet.<String>of(),
                 TypesUtil.createUniqueRequiredAttrDef("name", DataTypes.STRING_TYPE),
                 TypesUtil.createOptionalAttrDef("description", DataTypes.STRING_TYPE));
         TypesDef typeDef = TypesUtil.getTypesDef(ImmutableList.<EnumTypeDefinition>of(),
@@ -423,7 +424,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
     private String addNewType() throws Exception {
         String typeName = "test" + randomString();
         HierarchicalTypeDefinition<ClassType> testTypeDefinition = TypesUtil
-                .createClassTypeDef(typeName, ImmutableList.<String>of(),
+                .createClassTypeDef(typeName, ImmutableSet.<String>of(),
                         TypesUtil.createRequiredAttrDef("name", DataTypes.STRING_TYPE),
                         TypesUtil.createRequiredAttrDef("description", DataTypes.STRING_TYPE));
 
@@ -455,7 +456,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
     public void testAddTrait() throws Exception {
         traitName = "PII_Trait" + randomString();
         HierarchicalTypeDefinition<TraitType> piiTrait =
-                TypesUtil.createTraitTypeDef(traitName, ImmutableList.<String>of());
+                TypesUtil.createTraitTypeDef(traitName, ImmutableSet.<String>of());
         String traitDefinitionAsJSON = TypesSerialization$.MODULE$.toJson(piiTrait, true);
         LOG.debug("traitDefinitionAsJSON = " + traitDefinitionAsJSON);
         createType(traitDefinitionAsJSON);
@@ -499,7 +500,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
     public void testAddTraitWithAttribute() throws Exception {
         final String traitName = "PII_Trait" + randomString();
         HierarchicalTypeDefinition<TraitType> piiTrait = TypesUtil
-                .createTraitTypeDef(traitName, ImmutableList.<String>of(),
+                .createTraitTypeDef(traitName, ImmutableSet.<String>of(),
                         TypesUtil.createRequiredAttrDef("type", DataTypes.STRING_TYPE));
         String traitDefinitionAsJSON = TypesSerialization$.MODULE$.toJson(piiTrait, true);
         LOG.debug("traitDefinitionAsJSON = " + traitDefinitionAsJSON);
@@ -544,7 +545,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
     public void testAddTraitWithNoRegistration() throws Exception {
         final String traitName = "PII_Trait" + randomString();
         HierarchicalTypeDefinition<TraitType> piiTrait =
-                TypesUtil.createTraitTypeDef(traitName, ImmutableList.<String>of());
+                TypesUtil.createTraitTypeDef(traitName, ImmutableSet.<String>of());
         String traitDefinitionAsJSON = TypesSerialization$.MODULE$.toJson(piiTrait, true);
         LOG.debug("traitDefinitionAsJSON = " + traitDefinitionAsJSON);
 
@@ -601,7 +602,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         final String guid = tableId._getId();
         final String traitName = "PII_Trait" + randomString();
         HierarchicalTypeDefinition<TraitType> piiTrait = TypesUtil
-                .createTraitTypeDef(traitName, ImmutableList.<String>of(),
+                .createTraitTypeDef(traitName, ImmutableSet.<String>of(),
                         TypesUtil.createRequiredAttrDef("type", DataTypes.STRING_TYPE));
         String traitDefinitionAsJSON = TypesSerialization$.MODULE$.toJson(piiTrait, true);
         createType(traitDefinitionAsJSON);
@@ -632,7 +633,7 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
         String attrValue = random();
 
         HierarchicalTypeDefinition<ClassType> classTypeDefinition = TypesUtil
-                .createClassTypeDef(classType, ImmutableList.<String>of(),
+                .createClassTypeDef(classType, ImmutableSet.<String>of(),
                         TypesUtil.createUniqueRequiredAttrDef(attrName, DataTypes.STRING_TYPE));
         TypesDef typesDef = TypesUtil.getTypesDef(ImmutableList.<EnumTypeDefinition>of(), ImmutableList.<StructTypeDefinition>of(),
                 ImmutableList.<HierarchicalTypeDefinition<TraitType>>of(),
@@ -799,6 +800,36 @@ public class EntityJerseyResourceIT extends BaseResourceIT {
                 serviceClient.getEntity(guid);
                 Assert.fail(AtlasServiceException.class.getSimpleName() + 
                     " was expected but not thrown.  The entity with guid " + guid + 
+                    " still exists in the repository after being deleted.");
+            }
+            catch (AtlasServiceException e) {
+                Assert.assertTrue(e.getMessage().contains(Integer.toString(Response.Status.NOT_FOUND.getStatusCode())));
+            }
+        }
+    }
+
+    @Test
+    public void testDeleteEntityByUniqAttribute() throws Exception {
+        // Create database entity
+        Referenceable db1 = new Referenceable(DATABASE_TYPE);
+        String dbName = randomString();
+        db1.set("name", dbName);
+        db1.set("description", randomString());
+        Id db1Id = createInstance(db1);
+
+        // Delete the database entity
+        List<String> deletedGuidsList = serviceClient.deleteEntity(DATABASE_TYPE, "name", dbName);
+
+        // Verify that deleteEntities() response has database entity guids
+        Assert.assertEquals(deletedGuidsList.size(), 1);
+        Assert.assertTrue(deletedGuidsList.contains(db1Id._getId()));
+
+        // Verify entities were deleted from the repository.
+        for (String guid : deletedGuidsList) {
+            try {
+                serviceClient.getEntity(guid);
+                Assert.fail(AtlasServiceException.class.getSimpleName() +
+                    " was expected but not thrown.  The entity with guid " + guid +
                     " still exists in the repository after being deleted.");
             }
             catch (AtlasServiceException e) {
