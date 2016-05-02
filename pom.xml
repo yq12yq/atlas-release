@@ -472,8 +472,8 @@
         <module>client</module>
         <module>titan</module>
         <module>repository</module>
-        <module>dashboard</module>
-        <!-- <module>dashboardv2</module> -->
+        <!-- <module>dashboard</module> -->
+        <module>dashboardv2</module>
         <module>webapp</module>
         <module>docs</module>
         <module>addons/hdfs-model</module>
@@ -1053,12 +1053,12 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <dependency>
+            <!-- <dependency>
                 <groupId>org.apache.atlas</groupId>
                 <artifactId>atlas-dashboard</artifactId>
                 <version>${project.version}</version>
                 <type>war</type>
-            </dependency>
+            </dependency> -->
 
             <dependency>
                 <groupId>org.apache.atlas</groupId>
@@ -1664,7 +1664,7 @@
                         <exclude>**/maven-eclipse.xml</exclude>
                         <exclude>**/.externalToolBuilders/**</exclude>
                         <exclude>**/build.log</exclude>
-                        <exclude>.bowerrc</exclude>
+                        <exclude>**/.bowerrc</exclude>
                         <exclude>*.json</exclude>
                         <exclude>**/overlays/**</exclude>
                         <exclude>dev-support/**</exclude>
