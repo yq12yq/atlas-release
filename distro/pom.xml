@@ -30,9 +30,10 @@
     <name>Apache Atlas Distribution</name>
 
     <properties>
+        <hbase.pkg.version>1.1.2</hbase.pkg.version>
         <hbase.dir>${project.build.directory}/hbase</hbase.dir>
-        <hbase.tar>http://archive.apache.org/dist/hbase/${hbase.version}/hbase-${hbase.version}-bin.tar.gz</hbase.tar>
-        <hbase.folder>hbase-${hbase.version}</hbase.folder>
+        <hbase.tar>http://archive.apache.org/dist/hbase/${hbase.pkg.version}/hbase-${hbase.pkg.version}-bin.tar.gz</hbase.tar>
+        <hbase.folder>hbase-${hbase.pkg.version}</hbase.folder>
 
         <solr.dir>${project.build.directory}/solr</solr.dir>
         <solr.tar>http://archive.apache.org/dist/lucene/solr/${solr.version}/solr-${solr.version}.tgz</solr.tar>
