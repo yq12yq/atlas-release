@@ -40,6 +40,7 @@ define(['require',
                 RSchemaTableLayoutView: "#r_schemaTableLayoutView",
                 RTagTableLayoutView: "#r_tagTableLayoutView",
                 RLineageLayoutView: "#r_lineageLayoutView",
+                RAuditTableLayoutView: "#r_auditTableLayoutView",
                 RTermTableLayoutView: "#r_termTableLayoutView"
 
             },
@@ -111,22 +112,7 @@ define(['require',
              */
             initialize: function(options) {
                 _.extend(this, _.pick(options, 'globalVent', 'collection', 'vent', 'id'));
-                this.key = 'branchDetail';
-                //this.updateValue();
                 this.bindEvents();
-                this.commonTableOptions = {
-                    collection: this.collection,
-                    includeFilter: false,
-                    includePagination: false,
-                    includePageSize: false,
-                    includeFooterRecords: true,
-                    gridOpts: {
-                        className: "table table-striped table-condensed backgrid table-quickMenu",
-                        emptyText: 'No records found!'
-                    },
-                    filterOpts: {},
-                    paginatorOpts: {}
-                };
             },
             bindEvents: function() {
                 var that = this;
@@ -162,20 +148,13 @@ define(['require',
                     this.renderTagTableLayoutView(tagGuid);
                     this.renderLineageLayoutView(tagGuid);
                     this.renderSchemaLayoutView(tagGuid);
+                    this.renderAuditTableLayoutView(tagGuid);
                     this.renderTermTableLayoutView(tagGuid);
                 }, this);
             },
             onRender: function() {
                 var that = this;
                 this.ui.editBox.hide();
-                /*    this.ui.appendList.on('click', 'div', function(e) {
-                        if (e.target.nodeName == "INPUT") {
-                            return false;
-                        }
-                        that.ui.addTagtext.hide();
-                        that.ui.addTagPlus.show();
-                        that.saveTagFromList($(this));
-                    });*/
             },
             fetchCollection: function() {
                 this.collection.fetch({ reset: true });
@@ -308,6 +287,15 @@ define(['require',
                 var that = this;
                 require(['views/schema/SchemaLayoutView'], function(SchemaLayoutView) {
                     that.RSchemaTableLayoutView.show(new SchemaLayoutView({
+                        globalVent: that.globalVent,
+                        guid: tagGuid
+                    }));
+                });
+            },
+            renderAuditTableLayoutView: function(tagGuid) {
+                var that = this;
+                require(['views/audit/AuditTableLayoutView'], function(AuditTableLayoutView) {
+                    that.RAuditTableLayoutView.show(new AuditTableLayoutView({
                         globalVent: that.globalVent,
                         guid: tagGuid
                     }));

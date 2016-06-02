@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,18 @@
  * limitations under the License.
  */
 
-'use strict';
+package org.apache.atlas.catalog.projection;
 
-angular.module('dgc.home', []);
+import com.tinkerpop.blueprints.Vertex;
+import org.apache.atlas.repository.Constants;
+import org.apache.atlas.typesystem.persistence.Id;
+
+/**
+ * Provides functionality common across implementations.
+ */
+public abstract class BaseRelation implements Relation {
+    protected boolean isDeleted(Vertex v) {
+        return ! Id.EntityState.ACTIVE.name().equals(
+                v.<String>getProperty(Constants.STATE_PROPERTY_KEY));
+    }
+}

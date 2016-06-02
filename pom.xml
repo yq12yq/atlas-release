@@ -477,7 +477,6 @@
         <module>repository</module>
         <module>authorization</module>
         <module>catalog</module>
-        <!-- <module>dashboard</module> -->
         <module>dashboardv2</module>
         <module>webapp</module>
 	
@@ -1063,13 +1062,6 @@
                 <artifactId>atlas-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
-            <!-- <dependency>
-                <groupId>org.apache.atlas</groupId>
-                <artifactId>atlas-dashboard</artifactId>
-                <version>${project.version}</version>
-                <type>war</type>
-            </dependency> -->
 
             <dependency>
                 <groupId>org.apache.atlas</groupId>

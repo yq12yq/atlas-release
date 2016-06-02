@@ -51,6 +51,7 @@ import org.apache.hadoop.hive.ql.metadata.Partition;
 import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.log4j.LogManager;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,8 +74,8 @@ import java.util.concurrent.TimeUnit;
  * AtlasHook sends lineage information to the AtlasSever.
  */
 public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
-
     private static final Logger LOG = LoggerFactory.getLogger(HiveHook.class);
+
 
     public static final String CONF_PREFIX = "atlas.hook.hive.";
     private static final String MIN_THREADS = CONF_PREFIX + "minThreads";
@@ -153,36 +154,39 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
     @Override
     public void run(final HookContext hookContext) throws Exception {
         // clone to avoid concurrent access
+        try {
+            final HiveConf conf = new HiveConf(hookContext.getConf());
 
-        final HiveConf conf = new HiveConf(hookContext.getConf());
+            final HiveEventContext event = new HiveEventContext();
+            event.setInputs(hookContext.getInputs());
+            event.setOutputs(hookContext.getOutputs());
+            event.setJsonPlan(getQueryPlan(hookContext.getConf(), hookContext.getQueryPlan()));
+            event.setHookType(hookContext.getHookType());
+            event.setUgi(hookContext.getUgi());
+            event.setUser(getUser(hookContext.getUserName()));
+            event.setOperation(OPERATION_MAP.get(hookContext.getOperationName()));
+            event.setQueryId(hookContext.getQueryPlan().getQueryId());
+            event.setQueryStr(hookContext.getQueryPlan().getQueryStr());
+            event.setQueryStartTime(hookContext.getQueryPlan().getQueryStartTime());
+            event.setQueryType(hookContext.getQueryPlan().getQueryPlan().getQueryType());
 
-        final HiveEventContext event = new HiveEventContext();
-        event.setInputs(hookContext.getInputs());
-        event.setOutputs(hookContext.getOutputs());
-        event.setJsonPlan(getQueryPlan(hookContext.getConf(), hookContext.getQueryPlan()));
-        event.setHookType(hookContext.getHookType());
-        event.setUgi(hookContext.getUgi());
-        event.setUser(getUser(hookContext.getUserName()));
-        event.setOperation(OPERATION_MAP.get(hookContext.getOperationName()));
-        event.setQueryId(hookContext.getQueryPlan().getQueryId());
-        event.setQueryStr(hookContext.getQueryPlan().getQueryStr());
-        event.setQueryStartTime(hookContext.getQueryPlan().getQueryStartTime());
-        event.setQueryType(hookContext.getQueryPlan().getQueryPlan().getQueryType());
-
-        boolean sync = conf.get(CONF_SYNC, "false").equals("true");
-        if (sync) {
-            fireAndForget(event);
-        } else {
-            executor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        fireAndForget(event);
-                    } catch (Throwable e) {
-                        LOG.info("Atlas hook failed", e);
+            boolean sync = conf.get(CONF_SYNC, "false").equals("true");
+            if (sync) {
+                fireAndForget(event);
+            } else {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            fireAndForget(event);
+                        } catch (Throwable e) {
+                            LOG.error("Atlas hook failed due to error ", e);
+                        }
                     }
-                }
-            });
+                });
+            }
+        } catch(Throwable t) {
+            LOG.error("Submitting to thread pool failed due to error ", t);
         }
     }
 
@@ -406,7 +410,9 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
         final Referenceable newEntity = new Referenceable(HiveDataTypes.HIVE_TABLE.getName());
         newEntity.set(HiveDataModelGenerator.NAME, newTableQFName);
         newEntity.set(HiveDataModelGenerator.TABLE_NAME, newTable.getTableName().toLowerCase());
-
+        ArrayList<String> alias_list = new ArrayList<>();
+        alias_list.add(oldTable.getTableName().toLowerCase());
+        newEntity.set(HiveDataModelGenerator.TABLE_ALIAS_LIST, alias_list);
         messages.add(new HookNotification.EntityPartialUpdateRequest(event.getUser(),
             HiveDataTypes.HIVE_TABLE.getName(), HiveDataModelGenerator.NAME,
             oldTableQFName, newEntity));
