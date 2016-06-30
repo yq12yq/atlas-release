@@ -650,7 +650,6 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-hdfs</artifactId>
                 <version>${hadoop.version}</version>
-                <scope>test</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>javax.servlet</groupId>
