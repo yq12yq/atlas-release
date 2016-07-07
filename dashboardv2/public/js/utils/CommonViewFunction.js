@@ -144,7 +144,8 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
                 });
             }
         _.keys(valueObject).map(function(key) {
-            var keyValue = valueObject[key];
+            var keyValue = valueObject[key],
+                valueOfArray = [];
             if (_.isArray(keyValue)) {
                 var subLink = "";
                 for (var i = 0; i < keyValue.length; i++) {
@@ -152,14 +153,27 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
                         id = undefined,
                         tempLink = "",
                         readOnly = false;
-                    if (_.isObject(inputOutputField.id)) {
-                        id = inputOutputField.id.id;
-                        if (Globals.entityStateReadOnly[inputOutputField.id.state]) {
-                            readOnly = inputOutputField.id.state
+                    if (inputOutputField) {
+                        if (_.isObject(inputOutputField.id)) {
+                            id = inputOutputField.id.id;
+                            if (Globals.entityStateReadOnly[inputOutputField.id.state]) {
+                                readOnly = inputOutputField.id.state
+                            }
+                        } else if (inputOutputField.id) {
+                            id = inputOutputField.id;
+                        } else if (_.isString(inputOutputField) || _.isBoolean(inputOutputField) || _.isNumber(inputOutputField)) {
+                            valueOfArray.push('<span>' + inputOutputField + '</span>');
+                        } else if (_.isObject(inputOutputField)) {
+                            _.each(inputOutputField, function(objValue, objKey) {
+                                var value = objValue;
+                                if (_.isObject(value)) {
+                                    value = JSON.stringify(value);
+                                }
+                                valueOfArray.push('<span>' + objKey + ':' + value + '</span>');
+                            });
                         }
-                    } else {
-                        id = inputOutputField.id;
                     }
+
                     if (id) {
                         if (inputOutputField.values) {
                             if (inputOutputField.values.name) {
@@ -175,7 +189,6 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
                             fetchInputOutputValue(id);
                             tempLink += '<div data-id="' + id + '"></div>';
                         }
-
                     }
                     if (readOnly) {
                         tempLink += '<button title="Deleted" class="btn btn-atlasAction btn-atlas deleteBtn"><i class="fa fa-trash"></i></button>';
@@ -183,10 +196,13 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
                     } else {
                         if (tempLink.search('href') != -1) {
                             subLink += '<div>' + tempLink + '</div>'
-                        } else {
+                        } else if (tempLink.length) {
                             subLink += tempLink
                         }
                     }
+                }
+                if (valueOfArray.length) {
+                    subLink = valueOfArray.join(', ');
                 }
                 table += '<tr><td>' + key + '</td><td>' + subLink + '</td></tr>';
             } else if (_.isObject(keyValue)) {
@@ -403,7 +419,6 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
                 return "api/atlas/v1/entities/" + options.guid + "/tags/" + name;
             };
             VCatalog.save(null, {
-                beforeSend: function() {},
                 success: function(data) {
                     Utils.notifySuccess({
                         content: "Term " + name + Messages.addTermToEntitySuccessMessage
@@ -419,7 +434,7 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
                     if (data && data.responseText) {
                         var data = JSON.parse(data.responseText);
                         Utils.notifyError({
-                            content: data.message
+                            content: data.message || data.msgDesc
                         });
                         if (options.callback) {
                             options.callback();
@@ -430,13 +445,63 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
             });
         })
     }
+    CommonViewFunction.addRestCsrfCustomHeader = function(xhr, settings) {
+        //    if (settings.url == null || !settings.url.startsWith('/webhdfs/')) {
+        if (settings.url == null) {
+            return;
+        }
+        var method = settings.type;
+        if (CommonViewFunction.restCsrfCustomHeader != null && !CommonViewFunction.restCsrfMethodsToIgnore[method]) {
+            // The value of the header is unimportant.  Only its presence matters.
+            xhr.setRequestHeader(CommonViewFunction.restCsrfCustomHeader, '""');
+        }
+    }
+    CommonViewFunction.restCsrfCustomHeader = null;
+    CommonViewFunction.restCsrfMethodsToIgnore = null;
     CommonViewFunction.userDataFetch = function(options) {
+        var csrfEnabled = false,
+            header = null,
+            methods = [];
+
+        function getTrimmedStringArrayValue(string) {
+            var str = string,
+                array = [];
+            if (str) {
+                var splitStr = str.split(',');
+                for (var i = 0; i < splitStr.length; i++) {
+                    array.push(splitStr[i].trim());
+                }
+            }
+            return array;
+        }
         if (options.url) {
             $.ajax({
                 url: options.url,
                 success: function(response) {
+                    if (response) {
+                        if (response['atlas.rest-csrf.enabled']) {
+                            var str = "" + response['atlas.rest-csrf.enabled'];
+                            csrfEnabled = (str.toLowerCase() == 'true');
+                        }
+                        if (response['atlas.rest-csrf.custom-header']) {
+                            header = response['atlas.rest-csrf.custom-header'].trim();
+                        }
+                        if (response['atlas.rest-csrf.methods-to-ignore']) {
+                            methods = getTrimmedStringArrayValue(response['atlas.rest-csrf.methods-to-ignore']);
+                        }
+                        if (csrfEnabled) {
+                            CommonViewFunction.restCsrfCustomHeader = header;
+                            CommonViewFunction.restCsrfMethodsToIgnore = {};
+                            methods.map(function(method) { CommonViewFunction.restCsrfMethodsToIgnore[method] = true; });
+                            Backbone.$.ajaxSetup({
+                                beforeSend: CommonViewFunction.addRestCsrfCustomHeader
+                            });
+                        }
+                    }
+                },
+                complete: function(response) {
                     if (options.callback) {
-                        options.callback(response);
+                        options.callback(response.responseJSON);
                     }
                 }
             });
