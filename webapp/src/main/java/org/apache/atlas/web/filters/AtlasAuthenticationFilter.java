@@ -30,6 +30,7 @@ import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.authentication.client.AuthenticatedURL;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.hadoop.security.authentication.client.KerberosAuthenticator;
 import org.apache.hadoop.security.authentication.server.AuthenticationFilter;
@@ -37,6 +38,7 @@ import org.apache.hadoop.security.authentication.server.AuthenticationToken;
 import org.apache.hadoop.security.authentication.server.KerberosAuthenticationHandler;
 import org.apache.hadoop.security.authentication.server.AuthenticationHandler;
 import org.apache.hadoop.security.authentication.util.Signer;
+import org.apache.hadoop.security.authentication.util.SignerException;
 import org.apache.hadoop.security.authentication.util.SignerSecretProvider;
 import org.apache.log4j.NDC;
 import org.slf4j.Logger;
@@ -55,6 +57,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
@@ -478,7 +481,7 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
     }
 
     public static void createAuthCookie(HttpServletResponse resp, String token, String domain, String path, long expires, boolean isSecure) {
-        StringBuilder sb = (new StringBuilder("hadoop.auth")).append("=");
+        StringBuilder sb = (new StringBuilder(AuthenticatedURL.AUTH_COOKIE)).append("=");
         if(token != null && token.length() > 0) {
             sb.append("\"").append(token).append("\"");
         }
@@ -505,6 +508,46 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
 
         sb.append("; HttpOnly");
         resp.addHeader("Set-Cookie", sb.toString());
+    }
+
+    protected AuthenticationToken getToken(HttpServletRequest request) throws IOException, AuthenticationException {
+        AuthenticationToken token = null;
+        String tokenStr = null;
+        Cookie[] cookies = request.getCookies();
+
+        if(cookies != null) {
+            Cookie[] arr$ = cookies;
+            int len$ = cookies.length;
+
+            for(int i$ = 0; i$ < len$; ++i$) {
+                Cookie cookie = arr$[i$];
+                if(cookie.getName().equals(AuthenticatedURL.AUTH_COOKIE)) {
+                    tokenStr = cookie.getValue();
+                    try {
+                        tokenStr = this.signer.verifyAndExtract(tokenStr);
+                        break;
+                    } catch (SignerException var10) {
+                        throw new AuthenticationException(var10);
+                    }
+                }
+            }
+        }
+
+        if(tokenStr != null) {
+            token = AuthenticationToken.parse(tokenStr);
+            if(token != null) {
+                AuthenticationHandler authHandler = getAuthenticationHandler();
+                if (!token.getType().equals(authHandler.getType())) {
+
+                    throw new AuthenticationException("Invalid AuthenticationToken type");
+                }
+                if (token.isExpired()) {
+                    throw new AuthenticationException("AuthenticationToken expired");
+                }
+            }
+        }
+
+        return token;
     }
 
 }
