@@ -1,43 +1,32 @@
-Changes only in Hortonworks github and not in atlas-2.5.0 and hence not covered by CHANGES.txt.
-BUG-57634 Enable storm hook build in Erie builds
-ATLAS-448 Hive IllegalArgumentException with Atlas hook enabled on SHOW TRANSACTIONS AND SHOW COMPACTIONS
-ATLAS-16 jersey jaxb exception
-ATLAS-373 Renew TGT from KeyTab for ATLAS service principal
-ATLAS-361 Add validation when index backends are switched in ATLAS configuration
-ATLAS-355 Kerberized cluster: client.properties does not have correct values for the properties
-ATLAS-351 Solr as indexing backend is not picked up by titan when storage backend is set to hbase
-ATLAS-350 Document jaas config details for atlas
-ATLAS-344 Document HBase permissions for secure cluster
-ATLAS-279 UI not displaying results for certain successful "select" search queries
-ATLAS-335 Kerberized cluster: Atlas fails to come up with hbase as backend
-ATLAS-334 Update documentation to reflect copying required atlas file on solr installation
-ATLAS-352 Fix performance issues with type and entity creation with Hbase as storage backend
-ATLAS-238 atlas_start.py- the Atlas server won’t restart after improper shutdown
-ATLAS-198 Atlas UI Requires Internet Access
-ATLAS-128 DSL - Add support for comparisions on list type
-ATLAS-168 Atlas UI - Max column in hive 4
-ATLAS-114 Upgrade hbase client to 1.1.2
-ATLAS-86 Jenkins build failing as of build #41
-ATLAS-67 Validate with secure zookeeper server for titan interaction with hbase and solr
-ATLAS-180 Cleanup atlas doc packaging
-ATLAS-117 Build fails on the latest commit
-ATLAS-196 Fix solr documentation
-ATLAS-195 Document Hbase configs
-ATLAS-102 Issue with SolrIndex
-ATLAS-91 Add solr configuration and documentation
-ATLAS-37 atlas repository, webapp, hive-bridge tests fails with Hbase and Solr as Titan storage backend
-ATLAS-92 import-hive.sh failed to find HiveMetaStoreBridge
-ATLAS-179 Atlas hook causes mem leak and hive server 2 crashes
-ATLAS-36 Need separate persisted properties for HTTP and HTTPS ports
-ATLAS-118 rename atlas log4j configuration files to avoid config collisions with other projects
-ATLAS-81 atlas debian packaing fails in maven build
-ATLAS-54 Rename configs in hive hook
-ATLAS-45 Entity submit fails
-ATLAS-32 create HTTP connection in context of invoking user in secure cluster
-ATLAS-31. Fixed Mixed Index creation fails with Date types
-ATLAS-31 Fixed ATLAS build fails with clean repo
-ATLAS-33 Atlas restart fails
-ATLAS-29 create configuration that inherits existing hadoop config
-ATLAS-17 Parameterize schema API query per typeName
-ATLAS-15 remove specific version string as default property value
-ATLAS-19 remove unnecessary docs dir​
+Changes only in Hortonworks github and not in Apache Atlas release 0.7.0 and hence not covered by release-log.txt:
+
+INCOMPATIBLE CHANGES:
+
+
+ALL CHANGES:
+ATLAS-996 DSL queries with comparsions of many primitive types fail (jnhagelb via shwethags)
+ATLAS-971 UI not displaying results for this query - Eg: "hive_table as t where qualifiedName = 'default.input@cl1' select t" (kevalbhatt18 via shwethags)
+ATLAS-1010 Atlas allows recreation of tags with same name (shwethags)
+ATLAS-990 Hive Import metadata script fails with auth exception (nixonrodrigues via shwethags)
+ATLAS-998 determine HA mode from property atlas.server.ids, instead of atlas.server.ha.enabled (madhan.neethiraj via shwethags)
+ATLAS-986 Ability to differentiate business catalog terms from traits (sumasai,svimal2106 via shwethags)
+ATLAS-1025 Set HIVE_HOME if hive is available in relative path to import hive script (svimal2106 via shwethags)
+ATLAS-1009 Source HIVE_HOME and HIVE_CONF_DIR from hive_env.sh (svimal2106 via shwethags)
+ATLAS-847 UI: Audit versioning does not paginate details from Atlas server (Kalyanikashikar via shwethags)
+ATLAS-1004 Option to enable taxonomy feature (kevalbhatt18 via shwethags)
+ATLAS-1003 DataSetLineageServiceTest, GraphBackedDiscoveryServiceTest, and GraphRepoMapperScaleTest failing in some environments (dkantor via shwethags)
+ATLAS-1002 Create default user rangertagsync in atlas file authentication for Ranger tag sync module (nixonrodrigues via shwethags)
+ATLAS-949 UI improvement for modal and tag styling in table (Kalyanikashikar via shwethags)
+ATLAS-936 Update atlas website for 0.7 release (shwethags)
+ATLAS-995 Atlas to setup ldap authentication type as either LDAP / AD or None (nixonrodrigues via shwethags)
+ATLAS-902 Atlas throws exception due to null definition in Hive create table statement (svimal2106 via shwethags)
+ATLAS-987 Atlas hooks should avoid adding dependent libraries to component CLASSPATH (madhan.neethiraj via shwethags)
+ATLAS-993 If condition in DSL order by clause is not defined then dsl query fails (guptaneeru via shwethags)
+ATLAS-968 Set group information from UGI for Ldap authentication (nixonrodrigues via shwethags)
+ATLAS-584 Integrate CSRF prevention filter (kevalbhatt18 via shwethags)
+ATLAS-963 UI: Entity details is not display String array attribute values correctly (kevalbhatt18 via shwethags)
+ATLAS-988 HiveHookIT.testInsertIntoTable is broken (svimal2106 via shwethags)
+ATLAS-655 Please delete old releases from mirroring system (shwethags)
+ATLAS-970 Remove glyphicon from login.jsp (kevalbhatt18 via shwethags)
+ATLAS-966 Exit execution of import_hive.sh if HIVE_HOME is not set (svimal2106 via sumasai)
+ATLAS-917 Add hdfs paths to process qualified name for non-partition based queries (sumasai)
