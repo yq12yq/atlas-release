@@ -23,6 +23,7 @@ import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.BaseRepositoryTest;
 import org.apache.atlas.RepositoryMetadataModule;
+import org.apache.atlas.query.QueryParams;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.Struct;
@@ -117,7 +118,7 @@ public class DataSetLineageServiceTest extends BaseRepositoryTest {
     @Test(dataProvider = "dslQueriesProvider")
     public void testSearchByDSLQueries(String dslQuery) throws Exception {
         System.out.println("Executing dslQuery = " + dslQuery);
-        String jsonResults = discoveryService.searchByDSL(dslQuery);
+        String jsonResults = discoveryService.searchByDSL(dslQuery, new QueryParams(100, 0));
         assertNotNull(jsonResults);
 
         JSONObject results = new JSONObject(jsonResults);
@@ -170,6 +171,22 @@ public class DataSetLineageServiceTest extends BaseRepositoryTest {
 
         final JSONObject vertices = values.getJSONObject("vertices");
         Assert.assertEquals(vertices.length(), 4);
+
+        final JSONObject edges = values.getJSONObject("edges");
+        Assert.assertEquals(edges.length(), 4);
+    }
+
+    @Test
+    public void testCircularLineage() throws Exception{
+        JSONObject results = new JSONObject(lineageService.getInputsGraph("table2"));
+        assertNotNull(results);
+        System.out.println("inputs graph = " + results);
+
+        JSONObject values = results.getJSONObject("values");
+        assertNotNull(values);
+
+        final JSONObject vertices = values.getJSONObject("vertices");
+        Assert.assertEquals(vertices.length(), 2);
 
         final JSONObject edges = values.getJSONObject("edges");
         Assert.assertEquals(edges.length(), 4);
