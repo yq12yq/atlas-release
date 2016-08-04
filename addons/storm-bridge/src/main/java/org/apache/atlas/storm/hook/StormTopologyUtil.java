@@ -136,8 +136,7 @@ public final class StormTopologyUtil {
 
         Map<String, String> output = new HashMap<>();
 
-        if (!objectsToSkip.add(instance)) {
-            objectsToSkip.add(instance);
+        if (objectsToSkip.add(instance)) {
 
             Class clazz = instance.getClass();
             for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
