@@ -4,6 +4,9 @@ INCOMPATIBLE CHANGES:
 
 
 ALL CHANGES:
+ATLAS-1092 Add Table.CreateTime to process qualified Name for all hive_process for lineage to work on dropped/recreated tables (sumasai via shwethags)
+ATLAS-1090 UI: Multi-Select Tagging. (Kalyanikashikar via kevalbhatt)
+ATLAS-1091 Improvement in DSL search functionality. (kevalbhatt)
 ATLAS-1080 Regression - UI - hive_storagedesc is shown as "undefined" in UI (kevalbhatt18)
 ATLAS-1086 Build failure in hive-bridge after security fixes in ATLAS-762 (sumasai)
 ATLAS-1088 Fix /search api to default to fulltext on dsl failure (sumasai)
