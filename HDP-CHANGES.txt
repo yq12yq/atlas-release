@@ -4,6 +4,7 @@ INCOMPATIBLE CHANGES:
 
 
 ALL CHANGES:
+ATLAS-1096 Modify HiveMetaStoreBridge.import to use getEntity instead of DSL (sumasai via shwethags)
 ATLAS-1092 Add Table.CreateTime to process qualified Name for all hive_process for lineage to work on dropped/recreated tables (sumasai via shwethags)
 ATLAS-1090 UI: Multi-Select Tagging. (Kalyanikashikar via kevalbhatt)
 ATLAS-1091 Improvement in DSL search functionality. (kevalbhatt)
