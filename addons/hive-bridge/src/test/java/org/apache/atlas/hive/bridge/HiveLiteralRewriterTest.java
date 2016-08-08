@@ -31,7 +31,7 @@ public class HiveLiteralRewriterTest {
 
     private HiveConf conf;
 
-    @BeforeClass
+    @BeforeClass(enabled=false)
     public void setup() {
         conf = new HiveConf();
         conf.addResource("/hive-site.xml");
