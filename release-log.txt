@@ -7,6 +7,7 @@ ATLAS-1060 Add composite indexes for exact match performance improvements for al
 
 
 ALL CHANGES:
+ATLAS-1103 UI: Search type list is not refreshed (Kalyanikashikar via sumasai)
 ATLAS-1105 Disable HiveLiteralRewriterTest since its not used currently (sumasai)
 ATLAS-1099 UI : multiple tag assign button hides wrongly (Kalyanikashikar via sumasai)
 ATLAS-1087 Provide an option to turn off persisting entity definition in audits	(sumasai, shwethags)
