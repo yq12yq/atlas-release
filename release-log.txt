@@ -7,6 +7,7 @@ ATLAS-1060 Add composite indexes for exact match performance improvements for al
 
 
 ALL CHANGES:
+ATLAS-1111 Data loss is observed when atlas is restarted while hive_table metadata ingestion into kafka topic is in-progress(shwethags via sumasai)
 ATLAS-1115 Show Tag / Taxonomy Listing in sorted order (Kalyanikashikar via sumasai)
 ATLAS-1112 Hive table GET response from atlas server had duplicate column entries (ayubkhan, mneethiraj via sumasai)
 ATLAS-1108 In Atlas HA mode , import-hive.sh in Passive instance fails.(ayubkhan via sumasai)
