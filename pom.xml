@@ -437,7 +437,7 @@
         <skipCheck>false</skipCheck>
         <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
         <skipUTs>false</skipUTs>
-        <skipITs>false</skipITs>
+        <skipITs>true</skipITs>
         <skipDocs>true</skipDocs>
         <skipSite>true</skipSite>
         <projectBaseDir>${project.basedir}</projectBaseDir>
