@@ -1,10 +1,12 @@
 Changes only in Hortonworks github and not in Apache Atlas release 0.7.0 and hence not covered by release-log.txt:
 
+
 INCOMPATIBLE CHANGES:
 ATLAS-1060 Add composite indexes for exact match performance improvements for all attributes (sumasai via shwethgs)
 
 
 ALL CHANGES:
+ATLAS-1121 NPE while submitting topology in StormHook (ayubkhan via sumasai)
 ATLAS-1119 Add retries for edge label creation (sumasai via shwethags)
 ATLAS-1111 Data loss is observed when atlas is restarted while hive_table metadata ingestion into kafka topic is in-progress(shwethags via sumasai)
 ATLAS-1115 Show Tag / Taxonomy Listing in sorted order (Kalyanikashikar via sumasai)
