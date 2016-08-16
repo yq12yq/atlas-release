@@ -133,8 +133,8 @@ public class GraphBackedMetadataRepositoryTest {
         }
     }
 
-    @Test
     //In some cases of parallel APIs, the edge is added, but get edge by label doesn't return the edge. ATLAS-1104
+    @Test
     public void testConcurrentCalls() throws Exception {
         Referenceable dbInstance = new Referenceable(TestUtils.DATABASE_TYPE);
         dbInstance.set("name", randomString());
