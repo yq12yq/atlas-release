@@ -3,6 +3,7 @@ Changes only in Hortonworks github and not in Apache Atlas release 0.7.0 and hen
 
 INCOMPATIBLE CHANGES:
 ATLAS-1060 Add composite indexes for exact match performance improvements for all attributes (sumasai via shwethgs)
+ATLAS-1122 Change trait edge labels to have trait name alone (sumasai)
 
 
 ALL CHANGES:
