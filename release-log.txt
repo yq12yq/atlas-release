@@ -3,6 +3,7 @@ Apache Atlas Release Notes
 
 --trunk - unreleased
 INCOMPATIBLE CHANGES:
+ATLAS-1127 Modify creation and modification timestamps to Date instead of Long (sumasai)
 ATLAS-674 Falcon Hook should use timestamps instead of long(ayubkhan via sumasai)
 ATLAS-675 Storm Hook should use timetsamps as Date type instead of Long (ayubkhan via sumasai)
 ATLAS-1122 Change trait edge labels to have trait name alone (sumasai)
