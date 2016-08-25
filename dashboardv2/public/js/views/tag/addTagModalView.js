@@ -56,6 +56,14 @@ define(['require',
                 allowCancel: true,
             }).open();
             this.on('ok', function() {
+		var tagName = this.ui.addTagOptions.val();
+                var tagAttributes = {};
+                var tagAttributeNames = this.$(".attrName");
+                tagAttributeNames.each(function(i, item) {
+	          var selection = $(item).data("key");
+	          tagAttributes[selection] = $(item).val();
+	        });
+
                 if (that.multiple) {
                     that.asyncFetchCounter = 0;
                     for (var i = 0; i < that.multiple.length; i++) {
@@ -63,7 +71,8 @@ define(['require',
                             that.showLoader();
                         }
                         var obj = {
-                            tagName: this.ui.addTagOptions.val(),
+                            tagName: tagName,
+                            tagAttributes: tagAttributes,
                             guid: that.multiple[i].id.id
                         }
                         that.saveTagData(obj);
@@ -71,7 +80,8 @@ define(['require',
                 } else {
                     that.asyncFetchCounter = 0;
                     that.saveTagData({
-                        tagName: that.ui.addTagOptions.val(),
+                        tagName: tagName,
+                        tagAttributes: tagAttributes,
                         guid: that.guid
                     });
                 }
@@ -141,16 +151,15 @@ define(['require',
             }
         },
         saveTagData: function(options) {
-            var that = this,
-                values = {};
+            var that = this;
             ++this.asyncFetchCounter;
             this.entityModel = new VEntity();
-            var name = options.tagName;
-            var tagName = this.ui.addTagOptions.val();
+            var tagName = options.tagName;
+            var tagAttributes = options.tagAttributes;
             var json = {
                 "jsonClass": "org.apache.atlas.typesystem.json.InstanceSerialization$_Struct",
-                "typeName": name,
-                "values": values
+                "typeName": tagName,
+                "values": tagAttributes
             };
             that.entityModel.saveEntity(options.guid, {
                 data: JSON.stringify(json),
