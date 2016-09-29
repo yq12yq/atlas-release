@@ -11,6 +11,7 @@ ATLAS-1060 Add composite indexes for exact match performance improvements for al
 
 ALL CHANGES:
 ATLAS-1206 Atlas UI not working with IE or Chrome on Windows OS in Kerberos mode (nixonrodrigues via sumasai)
+ATLAS-1199 Atlas UI not loading after fresh build due to jquery-asBreadcrumbs plugin upgrade (kevalbhatt via shwethags)
 ATLAS-1162 Register shutdown hooks with Hadoop's ShutdownHookManager, instead of directly with Java Runtime (mneethiraj via sumasai)
 ATLAS-1160 Update Atlas hive hook to read configuration from atlas-application.properties instead of hive-site.xml (mneethiraj via kevalbhatt)
 ATLAS-1147 UI: column name doesn't show up in schema tab for hive table (Kalyanikashikar via kevalbhatt)
