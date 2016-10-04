@@ -10,6 +10,7 @@ ATLAS-1122 Change trait edge labels to have trait name alone (sumasai)
 ATLAS-1060 Add composite indexes for exact match performance improvements for all attributes (sumasai via shwethags)
 
 ALL CHANGES:
+ATLAS-1206 Atlas UI not working with IE or Chrome on Windows OS in Kerberos mode (nixonrodrigues via sumasai)
 ATLAS-1162 Register shutdown hooks with Hadoop's ShutdownHookManager, instead of directly with Java Runtime (mneethiraj via sumasai)
 ATLAS-1160 Update Atlas hive hook to read configuration from atlas-application.properties instead of hive-site.xml (mneethiraj via kevalbhatt)
 ATLAS-1147 UI: column name doesn't show up in schema tab for hive table (Kalyanikashikar via kevalbhatt)
