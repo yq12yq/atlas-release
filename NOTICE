@@ -20,3 +20,6 @@ Titan includes software developed by Aurelius (http://thinkaurelius.com/) and th
  * Marko A. Rodriguez
  * Stephen Mallette
  * Pavel Yaskevich
+
+This product bundles pNotify 3.0.0  (https://github.com/sciactive/pnotify - Apache License 2.0),
+Copyright 2009-2015 Hunter Perrin, Copyright 2015 Google, Inc.
