@@ -730,7 +730,10 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
             final String location = lower(hiveTable.getDataLocation().toString());
             final ReadEntity dfsEntity = new ReadEntity();
             dfsEntity.setTyp(Type.DFS_DIR);
-            dfsEntity.setName(location);
+            Path p = new Path(location);
+            dfsEntity.setD(p);
+            hiveEntity.setD(hiveTable.getPath());
+            //dfsEntity.setName(location);
 
             SortedMap<ReadEntity, Referenceable> hiveInputsMap = new TreeMap<ReadEntity, Referenceable>(entityComparator) {{
                 put(dfsEntity, dgiBridge.fillHDFSDataSet(location));
