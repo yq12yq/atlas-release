@@ -100,6 +100,16 @@ require.config({
         },
         'jquery-placeholder': {
             'deps': ['jquery']
+        },
+        'nvd3': {
+            'deps': ['d3']
+        },
+        'moment': {
+            'exports': ['moment']
+        },
+        'sparkline': {
+            'deps': ['jquery'],
+            'exports': ['sparkline']
         }
     },
 
@@ -132,7 +142,10 @@ require.config({
         'moment': 'libs/moment/js/moment.min',
         'pnotify': 'external_lib/pnotify.custom.min',
         'jquery-placeholder': 'libs/jquery-placeholder/js/jquery.placeholder',
-        'platform': 'libs/platform/platform'
+        'platform': 'libs/platform/platform',
+        'nvd3': 'libs/nvd3/nv.d3.min',
+        'sparkline': 'external_lib/jquery.sparkline.min'
+
     },
 
     /**

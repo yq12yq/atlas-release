@@ -49,7 +49,7 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
     };
 
     var notify = function(options) {
-        new pnotify(_.extend({ icon: true, hide: true, delay: 3000,remove:true }, options));
+        new pnotify(_.extend({ icon: true, hide: true, delay: 3000, remove: true }, options));
     }
     Utils.notifyInfo = function(options) {
         notify({
@@ -282,6 +282,88 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
                     tag: true,
                     name: name[name.length - 1],
                     fullName: name.join('.')
+                }
+            }
+        }
+    }
+    Utils.getProfileTabType = function(profileData) {
+        var createData = function(type) {
+            var orderValue = [],
+                sort = false,
+                monthsKey = {
+                    "1": "Jan",
+                    "2": "Feb",
+                    "3": "Mar",
+                    "4": "Apr",
+                    "5": "May",
+                    "6": "Jun",
+                    "7": "Jul",
+                    "8": "Aug",
+                    "9": "Sep",
+                    "10": "Oct",
+                    "11": "Nov",
+                    "12": "Dec"
+                };
+            if (type === "date") {
+                var dateObj = {}
+                _.keys(profileData.distributionData).map(function(key) {
+                    var splitValue = key.split(":");
+                    if (splitValue[1] === "count" && !dateObj[splitValue[0]]) {
+                        dateObj[splitValue[0]] = {
+                            value: splitValue[0],
+                            monthlyCounts: {},
+                            count: profileData.distributionData[key]
+                        }
+                    } else if (dateObj[splitValue[0]] && splitValue[1] !== "count") {
+                        dateObj[splitValue[0]].monthlyCounts[splitValue[1]] = profileData.distributionData[key];
+                    }
+                });
+                return _.toArray(dateObj);
+            } else {
+                if (profileData.distributionKeyOrder) {
+                    orderValue = profileData.distributionKeyOrder;
+                } else {
+                    sort = true;
+                    orderValue = _.keys(profileData.distributionData);
+                }
+                var data = orderValue.map(function(key) {
+                    return {
+                        value: key,
+                        count: profileData.distributionData[key]
+                    }
+                });
+                if (sort) {
+                    data = _.sortBy(data, function(o) {
+                        return o.value.toLowerCase()
+                    });
+                }
+                return data;
+            }
+        }
+        if (profileData && profileData.distributionType) {
+            if (profileData.distributionType === "count-frequency") {
+                return {
+                    type: "string",
+                    label: Globals.profileTabType[profileData.distributionType],
+                    actualObj: createData("string"),
+                    xAxisLabel: "FREQUENCY",
+                    yAxisLabel: "COUNT"
+                }
+            } else if (profileData.distributionType === "decile-frequency") {
+                return {
+                    label: Globals.profileTabType[profileData.distributionType],
+                    type: "numeric",
+                    xAxisLabel: "DECILE RANGE",
+                    actualObj: createData("numeric"),
+                    yAxisLabel: "FREQUENCY"
+                }
+            } else if (profileData.distributionType === "annual") {
+                return {
+                    label: Globals.profileTabType[profileData.distributionType],
+                    type: "date",
+                    xAxisLabel: "",
+                    actualObj: createData("date"),
+                    yAxisLabel: "COUNT"
                 }
             }
         }

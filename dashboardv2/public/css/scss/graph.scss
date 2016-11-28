@@ -95,3 +95,30 @@ g.type-TK > rect {
     top: 4px;
     right: 5px;
 }
+
+// Profile Tab css
+.graphkey {
+    font-size: 12px;
+    color: $action_gray;
+}
+
+.graphval {
+    font-size: 15px;
+}
+
+.nv-axislabel {
+    fill: $action_gray;
+}
+
+.profileGraphDetail hr {
+    margin: 3px;
+}
+
+svg.dateType .nv-bar {
+    cursor: pointer;
+}
+
+.jqstooltip {
+    height: auto !important;
+    width: auto !important;
+}

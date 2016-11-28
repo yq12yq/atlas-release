@@ -42,7 +42,8 @@ define(['require',
                 RTagTableLayoutView: "#r_tagTableLayoutView",
                 RLineageLayoutView: "#r_lineageLayoutView",
                 RAuditTableLayoutView: "#r_auditTableLayoutView",
-                RTermTableLayoutView: "#r_termTableLayoutView"
+                RTermTableLayoutView: "#r_termTableLayoutView",
+                RProfileLayoutView: "#r_profileLayoutView"
 
             },
             /** ui selector cache */
@@ -136,6 +137,16 @@ define(['require',
                     }
                     if (collectionJSON && collectionJSON.length) {
                         if (collectionJSON[0].values) {
+                            if (!_.isUndefined(collectionJSON[0].values['profileData'])) {
+                                this.$('.profileTab').show();
+                                this.renderProfileLayoutView({
+                                    guid: tagGuid,
+                                    entityDetail: collectionJSON[0].values,
+                                    systemAttributes: collectionJSON[0].systemAttributes,
+                                    profileData: collectionJSON[0].values.profileData,
+                                    type: collectionJSON[0].typeName === "hive_table" ? "Table" : "Column"
+                                });
+                            }
                             if (collectionJSON[0].values.name) {
                                 this.name = collectionJSON[0].values.name;
                             }
@@ -170,18 +181,25 @@ define(['require',
                             this.addTagToTerms(collectionJSON[0].traits);
                         }
                     }
-
                     this.renderEntityDetailTableLayoutView();
                     this.renderTagTableLayoutView(tagGuid);
-                    this.renderLineageLayoutView(tagGuid);
-                    this.renderSchemaLayoutView(tagGuid);
-                    this.renderAuditTableLayoutView(tagGuid);
                     this.renderTermTableLayoutView(tagGuid);
                 }, this);
             },
             onRender: function() {
                 var that = this;
+                this.renderAuditTableLayoutView(this.id);
+                this.renderSchemaLayoutView(this.id);
+                this.renderLineageLayoutView(this.id);
                 this.ui.editBox.hide();
+            },
+            onShow: function() {
+                var params = Utils.getUrlState.getQueryParams();
+                if (params && params.profile) {
+                    this.$('.nav.nav-tabs').find('.profileTab').addClass('active').siblings().removeClass('active');
+                    this.$('.tab-content').find('#tab-profile').addClass('active').siblings().removeClass('active');
+                    $("html, body").animate({ scrollTop: (this.$('.tab-content').offset().top + 1200) }, 1000);
+                }
             },
             fetchCollection: function() {
                 this.collection.fetch({ reset: true });
@@ -356,6 +374,12 @@ define(['require',
                         assetName: that.name,
                         term: true
                     }));
+                });
+            },
+            renderProfileLayoutView: function(obj) {
+                var that = this;
+                require(['views/profile/ProfileLayoutView'], function(ProfileLayoutView) {
+                    that.RProfileLayoutView.show(new ProfileLayoutView(obj));
                 });
             }
         });

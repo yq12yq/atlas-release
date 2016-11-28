@@ -118,6 +118,9 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
                 });
             }
         _.keys(valueObject).map(function(key) {
+            if (key == "profileData") {
+                return;
+            }
             var keyValue = valueObject[key],
                 valueOfArray = [];
             if (_.isArray(keyValue)) {

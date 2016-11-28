@@ -126,6 +126,7 @@ module.exports = function(grunt) {
                     'd3': 'd3/d3.min.js',
                     'd3/': 'd3-tip/index.js',
                     'dagre-d3': 'dagre-d3/dist/dagre-d3.min.js',
+                    'nvd3': 'nvd3/build/nv.d3.min.js',
                     'select2': 'select2/dist/js/select2.min.js',
                     'backgrid-select-all': 'backgrid-select-all/backgrid-select-all.min.js',
                     'moment/js': 'moment/min/moment.min.js',
@@ -148,7 +149,8 @@ module.exports = function(grunt) {
                     'select2/css': 'select2/dist/css/select2.min.css',
                     'backgrid-select-all': 'backgrid-select-all/backgrid-select-all.min.css',
                     'font-awesome/css': 'font-awesome/css/font-awesome.min.css',
-                    'font-awesome/fonts': 'font-awesome/fonts'
+                    'font-awesome/fonts': 'font-awesome/fonts',
+                    'nvd3/css': 'nvd3/build/nv.d3.min.css',
                 }
 
             },
@@ -176,7 +178,8 @@ module.exports = function(grunt) {
                     'dagre-d3': 'dagre-d3/LICENSE',
                     'backgrid-select-all': 'backgrid-select-all/LICENSE-MIT',
                     'jquery-placeholder': 'jquery-placeholder/LICENSE.txt',
-                    'platform/': 'platform/LICENSE'
+                    'platform/': 'platform/LICENSE',
+                    'nvd3/': 'nvd3/LICENSE.md'
                 }
             }
         },

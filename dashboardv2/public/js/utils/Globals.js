@@ -41,6 +41,11 @@ define(['require'], function(require) {
         TAG_ADD: "Tag Added",
         TAG_DELETE: "Tag Deleted"
     }
+    Globals.profileTabType = {
+        'count-frequency': "Count Frequency Distribution",
+        'decile-frequency': "Decile Frequency Distribution",
+        'annual': "Annual Distribution"
+    }
     Globals.entityStateReadOnly = {
         ACTIVE: false,
         DELETED: true
