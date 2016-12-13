@@ -55,9 +55,10 @@ define(['require',
                 _.extend(this, _.pick(options, 'profileData', 'guid', 'entityDetail', 'systemAttributes'));
                 var that = this;
                 this.profileCollection = new VCommonList([], {});
-
                 _.each(this.entityDetail.columns, function(obj) {
-                    that.profileCollection.add(_.extend({}, obj.values, obj.values.profileData.values, obj.id));
+                    if(obj.values.profileData !== null){
+                      that.profileCollection.add(_.extend({}, obj.values, obj.values.profileData.values, obj.id));   
+                    }
                 });
             },
             onRender: function() {
@@ -137,9 +138,11 @@ define(['require',
                             fromRaw: function(rawValue, model) {
                                 var sparkarray = [];
                                 var distibutionObj = Utils.getProfileTabType(model.toJSON());
-                                _.each(distibutionObj.actualObj, function(obj) {
-                                    sparkarray.push(obj.count);
-                                })
+                                if (distibutionObj) {
+                                    _.each(distibutionObj.actualObj, function(obj) {
+                                        sparkarray.push(obj.count);
+                                    })
+                                }
 
                                 return '<span data-guid="' + model.get('id') + '" class="sparklines" sparkType="bar" sparkBarColor="#38BB9B" values="' + sparkarray.join(',') + '"></span>'
                             }

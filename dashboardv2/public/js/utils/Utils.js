@@ -287,6 +287,10 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
         }
     }
     Utils.getProfileTabType = function(profileData) {
+        var parseData = profileData.distributionData;
+        if (_.isString(parseData)) {
+            parseData = JSON.parse(parseData);
+        }
         var createData = function(type) {
             var orderValue = [],
                 sort = false,
@@ -306,16 +310,16 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
                 };
             if (type === "date") {
                 var dateObj = {}
-                _.keys(profileData.distributionData).map(function(key) {
+                _.keys(parseData).map(function(key) {
                     var splitValue = key.split(":");
                     if (splitValue[1] === "count" && !dateObj[splitValue[0]]) {
                         dateObj[splitValue[0]] = {
                             value: splitValue[0],
                             monthlyCounts: {},
-                            count: profileData.distributionData[key]
+                            count: parseData[key]
                         }
                     } else if (dateObj[splitValue[0]] && splitValue[1] !== "count") {
-                        dateObj[splitValue[0]].monthlyCounts[splitValue[1]] = profileData.distributionData[key];
+                        dateObj[splitValue[0]].monthlyCounts[splitValue[1]] = parseData[key];
                     }
                 });
                 return _.toArray(dateObj);
@@ -324,12 +328,12 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
                     orderValue = profileData.distributionKeyOrder;
                 } else {
                     sort = true;
-                    orderValue = _.keys(profileData.distributionData);
+                    orderValue = _.keys(parseData);
                 }
                 var data = orderValue.map(function(key) {
                     return {
                         value: key,
-                        count: profileData.distributionData[key]
+                        count: parseData[key]
                     }
                 });
                 if (sort) {

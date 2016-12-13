@@ -62,8 +62,11 @@ define(['require',
              */
             initialize: function(options) {
                 _.extend(this, _.pick(options, 'profileData', 'guid', 'entityDetail', 'systemAttributes'));
-                if (this.systemAttributes && this.systemAttributes.createdTime) {
-                    this.systemAttributes['formatedTime'] = moment(this.systemAttributes.createdTime).format("LL");
+                if (this.systemAttributes) {
+                    this.systemAttributes['formatedTime'] = this.systemAttributes.createdTime ? moment(this.systemAttributes.createdTime).format("LL") : "--";
+                }else{
+                    this.systemAttributes = {};
+                    this.systemAttributes['formatedTime'] = "--";
                 }
                 this.typeObject = Utils.getProfileTabType(this.profileData.values);
                 this.entityModel = new VEntity();
@@ -87,12 +90,15 @@ define(['require',
             onRender: function() {
                 this.renderGraph();
                 this.fetchEntity();
-                if (this.typeObject.type === "date") {
+                if (this.typeObject && this.typeObject.type === "date") {
                     this.$('svg').addClass('dateType');
                 }
 
             },
             renderGraph: function(argument) {
+                if (!this.typeObject) {
+                    return;
+                }
                 var that = this,
                     profileData = this.profileData.values;
                 this.data = [{
