@@ -97,6 +97,8 @@ public class HiveDataModelGenerator {
         // structs
         createSerDeStruct();
         createOrderStruct();
+        createTableProfileDataStruct();
+        createColumnProfileDataStruct();
         createStorageDescClass();
 
         // classes
@@ -147,7 +149,9 @@ public class HiveDataModelGenerator {
                 new AttributeDefinition(AtlasClient.NAME, DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
                 new AttributeDefinition("serializationLib", DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL,
                         false, null),
-                new AttributeDefinition(HiveDataModelGenerator.PARAMETERS, STRING_MAP_TYPE.getName(), Multiplicity.OPTIONAL, false, null),};
+                new AttributeDefinition(HiveDataModelGenerator.PARAMETERS, STRING_MAP_TYPE.getName(), Multiplicity.OPTIONAL, false, null)
+        };
+
         StructTypeDefinition definition =
                 new StructTypeDefinition(HiveDataTypes.HIVE_SERDE.getName(), attributeDefinitions);
         structTypeDefinitionMap.put(HiveDataTypes.HIVE_SERDE.getName(), definition);
@@ -165,7 +169,41 @@ public class HiveDataModelGenerator {
         LOG.debug("Created definition for " + HiveDataTypes.HIVE_ORDER.getName());
     }
 
-    private void createStorageDescClass() throws AtlasException {
+    private void createTableProfileDataStruct() throws AtlasException {
+        AttributeDefinition[] attributeDefinitions = new AttributeDefinition[]{
+                new AttributeDefinition("rowCount", DataTypes.LONG_TYPE.getName(), Multiplicity.OPTIONAL, false, null)
+        };
+
+        StructTypeDefinition definition =
+                new StructTypeDefinition(HiveDataTypes.HIVE_TABLE_PROFILE_DATA.getName(), attributeDefinitions);
+        structTypeDefinitionMap.put(HiveDataTypes.HIVE_TABLE_PROFILE_DATA.getName(), definition);
+        LOG.debug("Created definition for " + HiveDataTypes.HIVE_TABLE_PROFILE_DATA.getName());
+    }
+
+    private void createColumnProfileDataStruct() throws AtlasException {
+        AttributeDefinition[] attributeDefinitions = new AttributeDefinition[]{
+                new AttributeDefinition("nonNullData", DataTypes.INT_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("cardinality", DataTypes.LONG_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("minValue", DataTypes.LONG_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("maxValue", DataTypes.LONG_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("meanValue", DataTypes.LONG_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("medianValue", DataTypes.LONG_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("averageLength", DataTypes.LONG_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("maxLength", DataTypes.LONG_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("minDate", DataTypes.DATE_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("maxDate", DataTypes.DATE_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("distributionType", DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("distributionData", DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
+                new AttributeDefinition("distributionKeyOrder", String.format("array<%s>", DataTypes.STRING_TYPE.getName()), Multiplicity.OPTIONAL, false, null),
+        };
+
+        StructTypeDefinition definition =
+                new StructTypeDefinition(HiveDataTypes.HIVE_COLUMN_PROFILE_DATA.getName(), attributeDefinitions);
+        structTypeDefinitionMap.put(HiveDataTypes.HIVE_COLUMN_PROFILE_DATA.getName(), definition);
+        LOG.debug("Created definition for " + HiveDataTypes.HIVE_COLUMN_PROFILE_DATA.getName());
+    }
+
+        private void createStorageDescClass() throws AtlasException {
         AttributeDefinition[] attributeDefinitions = new AttributeDefinition[]{
                 //Optional to keep it backward-compatible
                 new AttributeDefinition(TABLE, HiveDataTypes.HIVE_TABLE.getName(), Multiplicity.OPTIONAL, false,
@@ -224,7 +262,9 @@ public class HiveDataModelGenerator {
                 new AttributeDefinition(COMMENT, DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL, false, null),
                 //Making this optional since this is an incompatible change
                 //Reverse attribute to 'columns' in Table
-                new AttributeDefinition(TABLE, HiveDataTypes.HIVE_TABLE.getName(), Multiplicity.OPTIONAL, false, COLUMNS),};
+                new AttributeDefinition(TABLE, HiveDataTypes.HIVE_TABLE.getName(), Multiplicity.OPTIONAL, false, COLUMNS),
+                new AttributeDefinition("profileData", HiveDataTypes.HIVE_COLUMN_PROFILE_DATA.getName(), Multiplicity.OPTIONAL, false, null),
+        };
 
         HierarchicalTypeDefinition<ClassType> definition =
                 new HierarchicalTypeDefinition<>(ClassType.class, HiveDataTypes.HIVE_COLUMN.getName(), null,
@@ -258,7 +298,12 @@ public class HiveDataModelGenerator {
                 new AttributeDefinition(HiveDataModelGenerator.TABLE_TYPE_ATTR, DataTypes.STRING_TYPE.getName(), Multiplicity.OPTIONAL, false,
                         null),
                 new AttributeDefinition("temporary", DataTypes.BOOLEAN_TYPE.getName(), Multiplicity.OPTIONAL, false,
-                        false, true, null),};
+                        false, true, null),
+                new AttributeDefinition("profileData", HiveDataTypes.HIVE_TABLE_PROFILE_DATA.getName(), Multiplicity.OPTIONAL, false,
+                        false, true, null),
+
+        };
+
         HierarchicalTypeDefinition<ClassType> definition =
                 new HierarchicalTypeDefinition<>(ClassType.class, HiveDataTypes.HIVE_TABLE.getName(), null,
                     ImmutableSet.of(AtlasClient.DATA_SET_SUPER_TYPE), attributeDefinitions);

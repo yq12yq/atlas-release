@@ -31,6 +31,8 @@ public enum HiveDataTypes {
     // Structs
     HIVE_SERDE,
     HIVE_ORDER,
+    HIVE_TABLE_PROFILE_DATA,
+    HIVE_COLUMN_PROFILE_DATA,
     HIVE_RESOURCEURI,
 
     // Classes
@@ -42,9 +44,8 @@ public enum HiveDataTypes {
     HIVE_INDEX,
     HIVE_ROLE,
     HIVE_TYPE,
-    HIVE_PROCESS
-    // HIVE_VIEW,
-    ;
+    HIVE_PROCESS;
+    // HIVE_VIEW
 
     public String getName() {
         return name().toLowerCase();
