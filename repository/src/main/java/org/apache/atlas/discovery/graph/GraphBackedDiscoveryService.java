@@ -56,6 +56,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -130,7 +131,7 @@ public class GraphBackedDiscoveryService implements DiscoveryService {
     }
 
     public GremlinQueryResult evaluate(String dslQuery, QueryParams queryParams) throws DiscoveryException {
-        LOG.debug("Executing dsl query={}", dslQuery);
+        LOG.info("Executing dsl query={}", dslQuery);
         try {
             Either<Parsers.NoSuccess, Expressions.Expression> either = QueryParser.apply(dslQuery, queryParams);
             if (either.isRight()) {
@@ -150,14 +151,13 @@ public class GraphBackedDiscoveryService implements DiscoveryService {
         //If the final limit is 0, don't launch the query, return with 0 rows
         if (validatedExpression instanceof Expressions.LimitExpression
                 && ((Integer)((Expressions.LimitExpression) validatedExpression).limit().rawValue()) == 0) {
-            return new GremlinQueryResult(dslQuery, validatedExpression.dataType(),
-                    scala.collection.immutable.List.empty());
+            return new GremlinQueryResult(dslQuery, validatedExpression.dataType(), Collections.emptyList());
         }
 
         GremlinQuery gremlinQuery = new GremlinTranslator(validatedExpression, graphPersistenceStrategy).translate();
         LOG.debug("Query = {}", validatedExpression);
         LOG.debug("Expression Tree = {}", validatedExpression.treeString());
-        LOG.debug("Gremlin Query = {}", gremlinQuery.queryStr());
+        LOG.info("Gremlin Query = {}", gremlinQuery.queryStr());
         return new GremlinEvaluator(gremlinQuery, graphPersistenceStrategy, titanGraph).evaluate();
     }
 

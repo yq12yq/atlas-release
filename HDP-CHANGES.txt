@@ -10,6 +10,8 @@ ATLAS-1060 Add composite indexes for exact match performance improvements for al
 
 
 ALL CHANGES:
+Performance fixes in lineage and schema to use titan query wth guid and apply subsequent filters post query processing
+Performancy fixes in query translation to use tyepname checks instead of fill function
 ATLAS-1129 Remove notification failed logs on retry and add sleep between retries (svimal2106 via sumasai)
 ATLAS-1126 Fix NPE in getSchema calls (sumasai)
 ATLAS-1125 Enable compression on hbase audit table (shwethags via sumasai)
