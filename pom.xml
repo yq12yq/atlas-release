@@ -550,6 +550,7 @@
     </profiles>
 
     <modules>
+        <module>build-tools</module>
         <module>intg</module>
         <module>common</module>
         <module>typesystem</module>
@@ -578,7 +579,6 @@
         <module>addons/storm-bridge</module>
 	
         <module>distro</module>
-        <module>build-tools</module>
     </modules>
 
     <repositories>
@@ -1905,7 +1905,7 @@
                     <dependency>
                         <groupId>org.apache.atlas</groupId>
                         <artifactId>atlas-buildtools</artifactId>
-                        <version>${project.version}</version>
+                        <version>1.0</version>
                     </dependency>
                 </dependencies>
                 <executions>
