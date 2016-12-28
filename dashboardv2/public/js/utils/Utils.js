@@ -293,47 +293,48 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
         }
         var createData = function(type) {
             var orderValue = [],
-                sort = false,
-                monthsKey = {
-                    "1": "Jan",
-                    "2": "Feb",
-                    "3": "Mar",
-                    "4": "Apr",
-                    "5": "May",
-                    "6": "Jun",
-                    "7": "Jul",
-                    "8": "Aug",
-                    "9": "Sep",
-                    "10": "Oct",
-                    "11": "Nov",
-                    "12": "Dec"
-                };
+                sort = false;
             if (type === "date") {
-                var dateObj = {}
+                var dateObj = {};
                 _.keys(parseData).map(function(key) {
                     var splitValue = key.split(":");
-                    if (splitValue[1] === "count" && !dateObj[splitValue[0]]) {
+                    if (!dateObj[splitValue[0]]) {
                         dateObj[splitValue[0]] = {
                             value: splitValue[0],
                             monthlyCounts: {},
-                            count: parseData[key]
+                            totalCount: 0 // use when count is null
                         }
-                    } else if (dateObj[splitValue[0]] && splitValue[1] !== "count") {
+                    }
+                    if (dateObj[splitValue[0]] && splitValue[1] == "count") {
+                        dateObj[splitValue[0]].count = parseData[key];
+                    }
+                    if (dateObj[splitValue[0]] && splitValue[1] !== "count") {
                         dateObj[splitValue[0]].monthlyCounts[splitValue[1]] = parseData[key];
+                        if (!dateObj[splitValue[0]].count) {
+                            dateObj[splitValue[0]].totalCount += parseData[key]
+                        }
                     }
                 });
-                return _.toArray(dateObj);
+                return _.toArray(dateObj).map(function(obj) {
+                    if (!obj.count && obj.totalCount) {
+                        obj.count = obj.totalCount
+                    }
+                    return obj
+                });
             } else {
+                var data = [];
                 if (profileData.distributionKeyOrder) {
                     orderValue = profileData.distributionKeyOrder;
                 } else {
                     sort = true;
                     orderValue = _.keys(parseData);
                 }
-                var data = orderValue.map(function(key) {
-                    return {
-                        value: key,
-                        count: parseData[key]
+                _.each(orderValue, function(key) {
+                    if (parseData[key]) {
+                        data.push({
+                            value: key,
+                            count: parseData[key]
+                        });
                     }
                 });
                 if (sort) {

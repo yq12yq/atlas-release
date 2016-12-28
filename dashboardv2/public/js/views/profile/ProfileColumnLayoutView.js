@@ -64,7 +64,7 @@ define(['require',
                 _.extend(this, _.pick(options, 'profileData', 'guid', 'entityDetail', 'systemAttributes'));
                 if (this.systemAttributes) {
                     this.systemAttributes['formatedTime'] = this.systemAttributes.createdTime ? moment(this.systemAttributes.createdTime).format("LL") : "--";
-                }else{
+                } else {
                     this.systemAttributes = {};
                     this.systemAttributes['formatedTime'] = "--";
                 }
@@ -80,6 +80,12 @@ define(['require',
                         if (data.definition.values.profileData && data.definition.values.profileData.values.rowCount) {
                             that.$('.rowValue').show();
                             that.$('.rowValue .graphval').html('<b>' + that.formatValue(data.definition.values.profileData.values.rowCount).replace('G', 'B') + '</b>');
+                        }
+                        if (data.definition.values) {
+                            if (data.definition.id) {
+                                that.$('.table_name .graphval').html('<b><a href="#!/detailPage/' + data.definition.id.id + '">' + data.definition.values.name + '</a></b>');
+                            }
+                            that.$('.table_created .graphval').html('<b>' + moment(data.definition.values.createTime).format("LL") + '</b>');
                         }
                     },
                     error: function(error, data, status) {},

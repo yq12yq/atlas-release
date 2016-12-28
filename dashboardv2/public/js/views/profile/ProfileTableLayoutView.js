@@ -56,13 +56,19 @@ define(['require',
                 var that = this;
                 this.profileCollection = new VCommonList([], {});
                 _.each(this.entityDetail.columns, function(obj) {
-                    if(obj.values.profileData !== null){
-                      that.profileCollection.add(_.extend({}, obj.values, obj.values.profileData.values, obj.id));   
+                    if (obj.values.profileData !== null) {
+                        that.profileCollection.add(_.extend({}, obj.values, obj.values.profileData.values, obj.id));
                     }
                 });
+                this.bindEvents();
             },
             onRender: function() {
                 this.renderTableLayoutView();
+            },
+            bindEvents: function() {
+                this.listenTo(this.profileCollection, 'backgrid:refresh', function(model, checked) {
+                    this.renderGraphs();
+                }, this);
             },
             renderTableLayoutView: function() {
                 var that = this;
@@ -104,7 +110,8 @@ define(['require',
                         label: "Name",
                         cell: "Html",
                         editable: false,
-                        sortable: false,
+                        sortable: true,
+                        sortType: 'toggle',
                         formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
                             fromRaw: function(rawValue, model) {
                                 return '<div><a href="#!/detailPage/' + model.get('id') + '?profile=true">' + rawValue + '</a></div>';
@@ -115,7 +122,8 @@ define(['require',
                         label: "Type",
                         cell: "String",
                         editable: false,
-                        sortable: false,
+                        sortable: true,
+                        sortType: 'toggle',
                     },
                     nonNullData: {
                         label: "Data",
@@ -152,31 +160,36 @@ define(['require',
                         label: "Cardinality",
                         cell: "String",
                         editable: false,
-                        sortable: false,
+                        sortable: true,
+                        sortType: 'toggle',
                     },
                     minValue: {
                         label: "Min",
                         cell: "String",
                         editable: false,
-                        sortable: false,
+                        sortable: true,
+                        sortType: 'toggle',
                     },
                     maxValue: {
                         label: "Max",
                         cell: "String",
                         editable: false,
-                        sortable: false,
+                        sortable: true,
+                        sortType: 'toggle',
                     },
                     averageLength: {
                         label: "Average Length",
                         cell: "String",
                         editable: false,
-                        sortable: false,
+                        sortable: true,
+                        sortType: 'toggle',
                     },
                     maxLength: {
                         label: "Max Length",
                         cell: "String",
                         editable: false,
-                        sortable: false,
+                        sortable: true,
+                        sortType: 'toggle',
                     },
                 }, this.profileCollection);
 
