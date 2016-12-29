@@ -83,7 +83,7 @@ define(['require',
                         }
                         if (data.definition.values) {
                             if (data.definition.id) {
-                                that.$('.table_name .graphval').html('<b><a href="#!/detailPage/' + data.definition.id.id + '">' + data.definition.values.name + '</a></b>');
+                                that.$('.table_name .graphval').html('<b><a href="#!/detailPage/' + data.definition.id.id + "?profile=true" + '">' + data.definition.values.name + '</a></b>');
                             }
                             that.$('.table_created .graphval').html('<b>' + moment(data.definition.values.createTime).format("LL") + '</b>');
                         }

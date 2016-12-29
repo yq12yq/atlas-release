@@ -240,3 +240,19 @@
         }
     }
 }
+
+.progress.cstm_progress {
+    margin-bottom: 0px;
+    .progress-bar-success.cstm_success-bar {
+        background-color: $color_jungle_green_approx;
+    }
+    .progress-bar-success.cstm_success-bar:hover {
+        background-color: $color_puerto_rico_approx;
+    }
+}
+
+th.renderable.nonNullData {
+    a {
+        text-align: center;
+    }
+}

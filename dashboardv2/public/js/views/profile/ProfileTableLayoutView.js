@@ -129,10 +129,17 @@ define(['require',
                         label: "Data",
                         cell: "Html",
                         editable: false,
-                        sortable: false,
+                        sortable: true,
+                        sortType: 'toggle',
+                        width: "180",
                         formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
                             fromRaw: function(rawValue, model) {
-                                return rawValue + "%"
+                                if (rawValue < 50) {
+                                    var barClass = ((rawValue > 30) && (rawValue <= 50)) ? "progress-bar-warning" : "progress-bar-danger";
+                                }else{
+                                    var barClass = "progress-bar-success";
+                                }
+                                return '<div class="progress cstm_progress" title="' + rawValue + '%"><div class="progress-bar '+ barClass +' cstm_success-bar progress-bar-striped" style="width:' + rawValue + '%">'+rawValue +'%</div></div>'
                             }
                         })
                     },
