@@ -136,10 +136,10 @@ define(['require',
                             fromRaw: function(rawValue, model) {
                                 if (rawValue < 50) {
                                     var barClass = ((rawValue > 30) && (rawValue <= 50)) ? "progress-bar-warning" : "progress-bar-danger";
-                                }else{
+                                } else {
                                     var barClass = "progress-bar-success";
                                 }
-                                return '<div class="progress cstm_progress" title="' + rawValue + '%"><div class="progress-bar '+ barClass +' cstm_success-bar progress-bar-striped" style="width:' + rawValue + '%">'+rawValue +'%</div></div>'
+                                return '<div class="progress cstm_progress" title="' + rawValue + '%"><div class="progress-bar ' + barClass + ' cstm_success-bar progress-bar-striped" style="width:' + rawValue + '%">' + rawValue + '%</div></div>'
                             }
                         })
                     },
@@ -168,7 +168,7 @@ define(['require',
                         cell: "String",
                         editable: false,
                         sortable: true,
-                        sortType: 'toggle',
+                        sortType: 'toggle'
                     },
                     minValue: {
                         label: "Min",
@@ -176,6 +176,15 @@ define(['require',
                         editable: false,
                         sortable: true,
                         sortType: 'toggle',
+                        formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
+                            fromRaw: function(rawValue, model) {
+                                var profileObj = Utils.getProfileTabType(model.toJSON(), true);
+                                if (profileObj.type === "numeric") {
+                                    return rawValue;
+                                }
+                                return "-";
+                            }
+                        })
                     },
                     maxValue: {
                         label: "Max",
@@ -183,6 +192,15 @@ define(['require',
                         editable: false,
                         sortable: true,
                         sortType: 'toggle',
+                        formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
+                            fromRaw: function(rawValue, model) {
+                                var profileObj = Utils.getProfileTabType(model.toJSON(), true);
+                                if (profileObj.type === "numeric") {
+                                    return rawValue;
+                                }
+                                return "-";
+                            }
+                        })
                     },
                     averageLength: {
                         label: "Average Length",
@@ -190,6 +208,15 @@ define(['require',
                         editable: false,
                         sortable: true,
                         sortType: 'toggle',
+                        formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
+                            fromRaw: function(rawValue, model) {
+                                var profileObj = Utils.getProfileTabType(model.toJSON(), true);
+                                if (profileObj.type === "string") {
+                                    return rawValue;
+                                }
+                                return "-";
+                            }
+                        })
                     },
                     maxLength: {
                         label: "Max Length",
@@ -197,7 +224,48 @@ define(['require',
                         editable: false,
                         sortable: true,
                         sortType: 'toggle',
+                        formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
+                            fromRaw: function(rawValue, model) {
+                                var profileObj = Utils.getProfileTabType(model.toJSON(), true);
+                                if (profileObj.type === "string") {
+                                    return rawValue;
+                                }
+                                return "-";
+                            }
+                        })
                     },
+                    meanValue: {
+                        label: "Mean",
+                        cell: "String",
+                        editable: false,
+                        sortable: true,
+                        sortType: 'toggle',
+                        formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
+                            fromRaw: function(rawValue, model) {
+                                var profileObj = Utils.getProfileTabType(model.toJSON(), true);
+                                if (profileObj.type === "numeric") {
+                                    return rawValue;
+                                }
+                                return "-";
+                            }
+                        })
+                    },
+                    medianValue: {
+                        label: "Median",
+                        cell: "String",
+                        editable: false,
+                        sortable: true,
+                        sortType: 'toggle',
+                        formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
+                            fromRaw: function(rawValue, model) {
+                                var profileObj = Utils.getProfileTabType(model.toJSON(), true);
+                                if (profileObj.type === "numeric") {
+                                    return rawValue;
+                                }
+                                return "-";
+                            }
+                        })
+                    }
                 }, this.profileCollection);
 
             }

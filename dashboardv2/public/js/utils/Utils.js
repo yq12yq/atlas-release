@@ -286,7 +286,7 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
             }
         }
     }
-    Utils.getProfileTabType = function(profileData) {
+    Utils.getProfileTabType = function(profileData, skipData) {
         var parseData = profileData.distributionData;
         if (_.isString(parseData)) {
             parseData = JSON.parse(parseData);
@@ -350,7 +350,7 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
                 return {
                     type: "string",
                     label: Globals.profileTabType[profileData.distributionType],
-                    actualObj: createData("string"),
+                    actualObj: !skipData ? createData("string") : null,
                     xAxisLabel: "FREQUENCY",
                     yAxisLabel: "COUNT"
                 }
@@ -359,7 +359,7 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
                     label: Globals.profileTabType[profileData.distributionType],
                     type: "numeric",
                     xAxisLabel: "DECILE RANGE",
-                    actualObj: createData("numeric"),
+                    actualObj: !skipData ? createData("numeric") : null,
                     yAxisLabel: "FREQUENCY"
                 }
             } else if (profileData.distributionType === "annual") {
@@ -367,11 +367,27 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
                     label: Globals.profileTabType[profileData.distributionType],
                     type: "date",
                     xAxisLabel: "",
-                    actualObj: createData("date"),
+                    actualObj: !skipData ? createData("date") : null,
                     yAxisLabel: "COUNT"
                 }
             }
         }
+    }
+
+    Utils.showTitleLoader = function(loaderEl, titleBoxEl) {
+        loaderEl.css({
+            'display': 'block',
+            'position': 'relative',
+            'height': '85px',
+            'marginTop': '85px',
+            'marginLeft': '50%',
+            'left': '0%'
+        });
+        titleBoxEl.hide();
+    }
+    Utils.hideTitleLoader = function(loaderEl, titleBoxEl) {
+        loaderEl.hide();
+        titleBoxEl.fadeIn();
     }
     return Utils;
 });

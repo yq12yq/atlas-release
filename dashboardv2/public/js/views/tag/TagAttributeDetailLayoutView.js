@@ -41,7 +41,6 @@ define(['require',
                 addAttrBtn: '[data-id="addAttrBtn"]',
                 saveButton: "[data-id='saveButton']",
                 showAttribute: "[data-id='showAttribute']",
-                cancelButton: "[data-id='cancelButton']",
                 addTagListBtn: '[data-id="addTagListBtn"]',
                 addTagtext: '[data-id="addTagtext"]',
                 addTagPlus: '[data-id="addTagPlus"]',
@@ -67,7 +66,7 @@ define(['require',
                 this.tagCollection = new VCommonList();
                 this.tagCollection.url = "/api/atlas/types/" + this.tag;
                 this.tagCollection.modelAttrName = "definition";
-                this.tagCollection.fetch({ reset: true });
+                this.fetchCollection();
                 this.bindEvents();
             },
             bindEvents: function() {
@@ -79,18 +78,17 @@ define(['require',
                         if (traitTypes[0].typeDescription != null) {
                             var descriptionValue = traitTypes[0].typeDescription;
                             that.ui.description.html(descriptionValue);
+                            that.ui.title.html('<span>' + traitTypes[0].typeName + '</span>');
                         }
                         _.each(traitTypes[0].attributeDefinitions, function(value, key) {
                             attributeData += '<span class="inputAttribute">' + value.name + '</span>';
                         });
                     });
-                    if (attributeData.length) {
-                        that.ui.addTagtext.hide();
-                        that.ui.addTagPlus.show();
-                    }
                     that.ui.showAttribute.html(attributeData);
+                    Utils.hideTitleLoader(this.$('.fontLoader'), this.$('.tagDetail'));
                 }, this);
                 this.listenTo(this.tagCollection, 'error', function(error, response) {
+                    this.$('.fontLoader').hide();
                     if (response.responseJSON && response.responseJSON.error) {
                         Utils.notifyError({
                             content: response.responseJSON.error
@@ -99,25 +97,29 @@ define(['require',
 
                 }, this);
             },
+            fetchCollection: function() {
+                this.tagCollection.fetch({ reset: true });
+            },
             onRender: function() {
-                this.ui.title.html('<span>' + this.tag + '</span>');
+                Utils.showTitleLoader(this.$('.page-title .fontLoader'), this.$('.tagDetail'));
                 this.ui.saveButton.attr("disabled", "true");
                 this.ui.publishButton.prop('disabled', true);
             },
             onSaveButton: function(saveObject, message) {
+                Utils.showTitleLoader(this.$('.page-title .fontLoader'), this.$('.tagDetail'));
                 var that = this,
                     tagModel = new VTag();
                 tagModel.set(saveObject).save(null, {
                     type: "PUT",
                     success: function(model, response) {
-                        that.tagCollection.fetch({ reset: true });
+                        that.fetchCollection();
                         Utils.notifySuccess({
                             content: message
                         });
                     },
                     error: function(model, response) {
                         if (response.responseJSON && response.responseJSON.error) {
-                            that.tagCollection.fetch({ reset: true });
+                            that.fetchCollection();
                             Utils.notifyError({
                                 content: response.responseJSON.error
                             });
@@ -157,11 +159,6 @@ define(['require',
                         });
                     });
             },
-            onCancelButtonClick: function() {
-                this.ui.description.show();
-                this.ui.editButton.show();
-                this.ui.editBox.hide();
-            },
             textAreaChangeEvent: function(view, modal) {
                 if (view.tagCollection.first().get('traitTypes')[0].typeDescription == view.ui.description.val()) {
                     modal.$el.find('button.ok').prop('disabled', true);
@@ -172,7 +169,6 @@ define(['require',
             onPublishClick: function(view) {
                 view.tagCollection.first().get('traitTypes')[0].typeDescription = view.ui.description.val();
                 this.onSaveButton(this.tagCollection.first().toJSON(), Messages.updateTagDescriptionMessage);
-                this.ui.description.show();
             },
             onEditButton: function(e) {
                 var that = this;

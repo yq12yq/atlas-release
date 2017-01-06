@@ -70,7 +70,7 @@ define(['require',
                 }
                 this.typeObject = Utils.getProfileTabType(this.profileData.values);
                 this.entityModel = new VEntity();
-                this.formatValue = d3.format(".2s")
+                this.formatValue = d3.format("2s")
 
             },
             fetchEntity: function(argument) {
