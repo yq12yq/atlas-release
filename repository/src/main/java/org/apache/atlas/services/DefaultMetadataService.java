@@ -22,7 +22,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provider;
-
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasException;
@@ -33,6 +32,7 @@ import org.apache.atlas.ha.HAConfiguration;
 import org.apache.atlas.listener.ActiveStateChangeHandler;
 import org.apache.atlas.listener.EntityChangeListener;
 import org.apache.atlas.listener.TypesChangeListener;
+import org.apache.atlas.query.QueryParser;
 import org.apache.atlas.repository.MetadataRepository;
 import org.apache.atlas.repository.RepositoryException;
 import org.apache.atlas.repository.audit.EntityAuditRepository;
@@ -64,16 +64,17 @@ import org.apache.atlas.typesystem.types.ValueConversionException;
 import org.apache.atlas.typesystem.types.cache.TypeCache;
 import org.apache.atlas.typesystem.types.utils.TypesUtil;
 import org.apache.atlas.utils.ParamChecker;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.collection.Set;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -518,30 +519,30 @@ public class DefaultMetadataService implements MetadataService, ActiveStateChang
 
             DataTypes.TypeCategory attrTypeCategory = attributeInfo.dataType().getTypeCategory();
             Object value = updatedEntity.get(attributeName);
-            if (value != null) {
-                switch (attrTypeCategory) {
-                    case CLASS:
+            switch (attrTypeCategory) {
+                case CLASS:
+                    if (value != null) {
                         if (value instanceof Referenceable) {
                             newInstance.set(attributeName, value);
                         } else {
                             Id id = new Id((String) value, 0, attributeInfo.dataType().getName());
                             newInstance.set(attributeName, id);
                         }
-                        break;
+                    }
+                    break;
 
-                    case ENUM:
-                    case PRIMITIVE:
-                    case ARRAY:
-                    case STRUCT:
-                    case MAP:
-                        newInstance.set(attributeName, value);
-                        break;
+                case ENUM:
+                case PRIMITIVE:
+                case ARRAY:
+                case STRUCT:
+                case MAP:
+                    newInstance.set(attributeName, value);
+                    break;
 
-                    case TRAIT:
-                        //TODO - handle trait updates as well?
-                    default:
-                        throw new AtlasException("Update of " + attrTypeCategory + " is not supported");
-                }
+                case TRAIT:
+                    //TODO - handle trait updates as well?
+                default:
+                    throw new AtlasException("Update of " + attrTypeCategory + " is not supported");
             }
         }
 
