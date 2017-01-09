@@ -125,7 +125,6 @@ define(['require',
                                 this.renderProfileLayoutView({
                                     guid: tagGuid,
                                     entityDetail: collectionJSON[0].values,
-                                    systemAttributes: collectionJSON[0].systemAttributes,
                                     profileData: collectionJSON[0].values.profileData,
                                     type: collectionJSON[0].typeName === "hive_table" ? "Table" : "Column"
                                 });

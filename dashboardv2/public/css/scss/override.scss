@@ -256,3 +256,10 @@ th.renderable.nonNullData {
         text-align: center;
     }
 }
+
+.profileGraphDetail > div div {
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

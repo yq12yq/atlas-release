@@ -42,7 +42,6 @@ define(['require',
                 return {
                     profileData: this.profileData.values ? this.profileData.values : this.profileData,
                     entityDetail: this.entityDetail,
-                    systemAttributes: this.systemAttributes,
                     typeObject: this.typeObject
                 };
             },
@@ -61,13 +60,7 @@ define(['require',
              * @constructs
              */
             initialize: function(options) {
-                _.extend(this, _.pick(options, 'profileData', 'guid', 'entityDetail', 'systemAttributes'));
-                if (this.systemAttributes) {
-                    this.systemAttributes['formatedTime'] = this.systemAttributes.createdTime ? moment(this.systemAttributes.createdTime).format("LL") : "--";
-                } else {
-                    this.systemAttributes = {};
-                    this.systemAttributes['formatedTime'] = "--";
-                }
+                _.extend(this, _.pick(options, 'profileData', 'guid', 'entityDetail'));
                 this.typeObject = Utils.getProfileTabType(this.profileData.values);
                 this.entityModel = new VEntity();
                 this.formatValue = d3.format("2s")
@@ -166,6 +159,7 @@ define(['require',
             },
             backToYear: function() {
                 this.ui.backToYear.hide();
+                this.$('.profileGraphDetail').show();
                 this.monthsData = null;
                 this.updateGraph(this.data);
             },
@@ -199,6 +193,7 @@ define(['require',
                     i++;
                 }
                 this.ui.backToYear.show();
+                this.$('.profileGraphDetail').hide();
                 this.updateGraph(this.monthsData);
 
             },

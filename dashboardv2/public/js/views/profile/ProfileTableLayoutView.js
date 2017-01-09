@@ -23,9 +23,10 @@ define(['require',
     'utils/Utils',
     'utils/Messages',
     'utils/Globals',
+    'moment',
     'collection/VCommonList',
     'sparkline'
-], function(require, Backbone, ProfileTableLayoutViewTmpl, VProfileList, Utils, Messages, Globals, VCommonList, sparkline) {
+], function(require, Backbone, ProfileTableLayoutViewTmpl, VProfileList, Utils, Messages, Globals, moment, VCommonList, sparkline) {
     'use strict';
 
     var ProfileTableLayoutView = Backbone.Marionette.LayoutView.extend(
@@ -41,6 +42,7 @@ define(['require',
             },
             /** ui selector cache */
             ui: {},
+
             /** ui events hash */
             events: function() {
                 var events = {};
@@ -52,7 +54,7 @@ define(['require',
              * @constructs
              */
             initialize: function(options) {
-                _.extend(this, _.pick(options, 'profileData', 'guid', 'entityDetail', 'systemAttributes'));
+                _.extend(this, _.pick(options, 'profileData', 'guid', 'entityDetail'));
                 var that = this;
                 this.profileCollection = new VCommonList([], {});
                 _.each(this.entityDetail.columns, function(obj) {
@@ -64,6 +66,16 @@ define(['require',
             },
             onRender: function() {
                 this.renderTableLayoutView();
+                if (this.entityDetail) {
+                    if (this.guid && this.entityDetail.name) {
+                        this.$('.table_name .graphval').html('<b><a href="#!/detailPage/' + this.guid + "?profile=true" + '">' + this.entityDetail.name + '</a></b>');
+                    }
+                    var profileData = this.entityDetail.profileData;
+                    if (profileData && profileData.values && profileData.values.rowCount) {
+                        this.$('.rowValue .graphval').html('<b>' + d3.format("2s")(profileData.values.rowCount).replace('G', 'B') + '</b>');
+                    }
+                    this.$('.table_created .graphval').html('<b>' + (this.entityDetail.createTime ? moment(this.entityDetail.createTime).format("LL") : "--") + '</b>');
+                }
             },
             bindEvents: function() {
                 this.listenTo(this.profileCollection, 'backgrid:refresh', function(model, checked) {
@@ -126,7 +138,7 @@ define(['require',
                         sortType: 'toggle',
                     },
                     nonNullData: {
-                        label: "Data",
+                        label: "% NonNull",
                         cell: "Html",
                         editable: false,
                         sortable: true,
@@ -165,14 +177,14 @@ define(['require',
                     },
                     cardinality: {
                         label: "Cardinality",
-                        cell: "String",
+                        cell: "Number",
                         editable: false,
                         sortable: true,
                         sortType: 'toggle'
                     },
                     minValue: {
                         label: "Min",
-                        cell: "String",
+                        cell: "Number",
                         editable: false,
                         sortable: true,
                         sortType: 'toggle',
@@ -188,7 +200,7 @@ define(['require',
                     },
                     maxValue: {
                         label: "Max",
-                        cell: "String",
+                        cell: "Number",
                         editable: false,
                         sortable: true,
                         sortType: 'toggle',
@@ -204,7 +216,7 @@ define(['require',
                     },
                     averageLength: {
                         label: "Average Length",
-                        cell: "String",
+                        cell: "Number",
                         editable: false,
                         sortable: true,
                         sortType: 'toggle',
@@ -220,7 +232,7 @@ define(['require',
                     },
                     maxLength: {
                         label: "Max Length",
-                        cell: "String",
+                        cell: "Number",
                         editable: false,
                         sortable: true,
                         sortType: 'toggle',
@@ -236,7 +248,7 @@ define(['require',
                     },
                     meanValue: {
                         label: "Mean",
-                        cell: "String",
+                        cell: "Number",
                         editable: false,
                         sortable: true,
                         sortType: 'toggle',
@@ -252,7 +264,7 @@ define(['require',
                     },
                     medianValue: {
                         label: "Median",
-                        cell: "String",
+                        cell: "Number",
                         editable: false,
                         sortable: true,
                         sortType: 'toggle',

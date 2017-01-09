@@ -47,42 +47,42 @@
             {{#if profileData}}
             <div class="">
                 <div><span class="graphkey">Cardinality</span></div>
-                <div><span class="graphval"><b>{{profileData.cardinality}}</b></span></div>
+                <div title="{{profileData.cardinality}}"><span class="graphval text-right"><b>{{profileData.cardinality}}</b></span></div>
             </div>
             <hr/>
             <div class="">
-                <div><span class="graphkey">Data</span></div>
-                <div><span class="graphval"><b>{{profileData.nonNullData}}%</b></span></div>
+                <div><span class="graphkey">% NonNull</span></div>
+                <div title="{{profileData.nonNullData}}%"><span class="graphval text-right"><b>{{profileData.nonNullData}}%</b></span></div>
             </div>
             <hr/> {{#ifCond typeObject.type "==" "string"}}
             <div class="">
                 <div><span class="graphkey">Average Length</span></div>
-                <div><span class="graphval"><b>{{profileData.averageLength}}</b></span></div>
+                <div title="{{profileData.averageLength}}"><span class="graphval text-right"><b>{{profileData.averageLength}}</b></span></div>
             </div>
             <hr/>
             <div class="">
                 <div><span class="graphkey">Max Length</span></div>
-                <div><span class="graphval"><b>{{profileData.maxLength}}</b></span></div>
+                <div title="{{profileData.maxLength}}"><span class="graphval text-right"><b>{{profileData.maxLength}}</b></span></div>
             </div>
             <hr/> {{/ifCond}} {{#ifCond typeObject.type "==" "numeric"}}
             <div class="">
                 <div><span class="graphkey">Min</span></div>
-                <div><span class="graphval"><b>{{profileData.minValue}}</b></span></div>
+                <div title="{{profileData.minValue}}"><span class="graphval text-right"><b>{{profileData.minValue}}</b></span></div>
             </div>
             <hr/>
             <div class="">
                 <div><span class="graphkey">Max</span></div>
-                <div><span class="graphval"><b>{{profileData.maxValue}}</b></span></div>
+                <div title="{{profileData.maxValue}}"><span class="graphval text-right"><b>{{profileData.maxValue}}</b></span></div>
             </div>
             <hr/>
             <div class="">
                 <div><span class="graphkey">Mean</span></div>
-                <div><span class="graphval"><b>{{profileData.meanValue}}</b></span></div>
+                <div title="{{profileData.meanValue}}"><span class="graphval text-right"><b>{{profileData.meanValue}}</b></span></div>
             </div>
             <hr/>
             <div class="">
                 <div><span class="graphkey">Median</span></div>
-                <div><span class="graphval"><b>{{profileData.medianValue}}</b></span></div>
+                <div title="{{profileData.medianValue}}"><span class="graphval text-right"><b>{{profileData.medianValue}}</b></span></div>
             </div>
             {{/ifCond}} {{/if}}
         </div>
