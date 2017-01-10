@@ -10,6 +10,13 @@ ATLAS-1122 Change trait edge labels to have trait name alone (sumasai)
 ATLAS-1060 Add composite indexes for exact match performance improvements for all attributes (sumasai via shwethags)
 
 ALL CHANGES:
+ATLAS-1403 and Performance fixes for search, lineage (sumasai)
+ATLAS-1342 Titan Solrclient - Add timeouts for zookeeper connect and session (sumasai)
+ATLAS-1155 Errors in Eclipse when I bring in the latest code (davidrad via shwethags)
+ATLAS-1427 Support an option to exclude protocols in SSL mode (nixonrodrigues via mneethiraj)
+ATLAS-1424 Avoid stack-trace in REST API error response
+ATLAS-1364 HiveHook : Fix Auth issue with doAs (sumasai)
+Atlas web server allows user to browse webapp directory (vrathor-hw via shwethags)
 ATLAS-1215 Atlas UI not working in firefox due to fix in ATLAS-1199 (kevalbhatt)
 ATLAS-1206 Atlas UI not working with IE or Chrome on Windows OS in Kerberos mode (nixonrodrigues via sumasai)
 ATLAS-1199 Atlas UI not loading after fresh build due to jquery-asBreadcrumbs plugin upgrade (kevalbhatt via shwethags)

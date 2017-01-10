@@ -29,10 +29,12 @@ import org.json4s._
 import org.json4s.native.Serialization._
 import scala.language.existentials
 import org.apache.atlas.query.Expressions._
+import scala.collection.JavaConversions._
+
 
 case class GremlinQueryResult(query: String,
                               resultDataType: IDataType[_],
-                              rows: List[_]) {
+                              rows: java.util.List[_]) {
     def toJson = JsonHelper.toJson(this)
 }
 
