@@ -10,6 +10,8 @@ ATLAS-1122 Change trait edge labels to have trait name alone (sumasai)
 ATLAS-1060 Add composite indexes for exact match performance improvements for all attributes (sumasai via shwethags)
 
 ALL CHANGES:
+ATLAS-1419 fix entity-update to retain value of attributes when not provided (sumasai)
+ATLAS-1417 HIveHook: synchronous execution fails to notify (sumasai)
 ATLAS-1403 and Performance fixes for search, lineage (sumasai)
 ATLAS-1342 Titan Solrclient - Add timeouts for zookeeper connect and session (sumasai)
 ATLAS-1155 Errors in Eclipse when I bring in the latest code (davidrad via shwethags)
