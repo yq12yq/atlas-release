@@ -174,6 +174,7 @@ define(['require',
             onRender: function() {
                 var that = this;
                 Utils.showTitleLoader(this.$('.page-title .fontLoader'), this.$('.entityDetail'));
+                this.$('.fontLoader').show();
                 this.renderSchemaLayoutView(this.id);
                 this.renderLineageLayoutView(this.id);
             },

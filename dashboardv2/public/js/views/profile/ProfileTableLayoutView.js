@@ -90,9 +90,9 @@ define(['require',
                         columns: cols,
                         collection: that.profileCollection,
                         includeFilter: false,
-                        includePagination: false,
+                        includePagination: true,
                         includePageSize: false,
-                        includeFooterRecords: false,
+                        includeFooterRecords: true,
                         gridOpts: {
                             className: "table table-hover backgrid table-quickMenu",
                             emptyText: 'No records found!'
