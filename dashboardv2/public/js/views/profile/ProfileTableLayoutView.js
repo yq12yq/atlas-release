@@ -59,7 +59,30 @@ define(['require',
                 this.profileCollection = new VCommonList([], {});
                 _.each(this.entityDetail.columns, function(obj) {
                     if (obj.values.profileData !== null) {
-                        that.profileCollection.add(_.extend({}, obj.values, obj.values.profileData.values, obj.id));
+                        var profileObj = Utils.getProfileTabType(obj.values.profileData.values, true);
+                        var changeValueObj = {}
+                        if (profileObj && profileObj.type) {
+                            if (profileObj.type === "numeric") {
+                                changeValueObj['averageLength'] = 0;
+                                changeValueObj['maxLength'] = 0;
+                            }
+                            if (profileObj.type === "string") {
+                                changeValueObj['minValue'] = 0;
+                                changeValueObj['maxValue'] = 0;
+                                changeValueObj['meanValue'] = 0;
+                                changeValueObj['medianValue'] = 0;
+                            }
+                            if (profileObj.type === "date") {
+                                changeValueObj['averageLength'] = 0;
+                                changeValueObj['maxLength'] = 0;
+                                changeValueObj['minValue'] = 0;
+                                changeValueObj['maxValue'] = 0;
+                                changeValueObj['meanValue'] = 0;
+                                changeValueObj['medianValue'] = 0;
+                            }
+                        }
+
+                        that.profileCollection.add(_.extend({}, obj.values, obj.values.profileData.values, changeValueObj, obj.id));
                     }
                 });
                 this.bindEvents();
