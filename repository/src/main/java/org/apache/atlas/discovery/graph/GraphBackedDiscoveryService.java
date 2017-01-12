@@ -131,7 +131,7 @@ public class GraphBackedDiscoveryService implements DiscoveryService {
     }
 
     public GremlinQueryResult evaluate(String dslQuery, QueryParams queryParams) throws DiscoveryException {
-        LOG.info("Executing dsl query={}", dslQuery);
+        LOG.debug("Executing dsl query={}", dslQuery);
         try {
             Either<Parsers.NoSuccess, Expressions.Expression> either = QueryParser.apply(dslQuery, queryParams);
             if (either.isRight()) {
@@ -157,7 +157,7 @@ public class GraphBackedDiscoveryService implements DiscoveryService {
         GremlinQuery gremlinQuery = new GremlinTranslator(validatedExpression, graphPersistenceStrategy).translate();
         LOG.debug("Query = {}", validatedExpression);
         LOG.debug("Expression Tree = {}", validatedExpression.treeString());
-        LOG.info("Gremlin Query = {}", gremlinQuery.queryStr());
+        LOG.debug("Gremlin Query = {}", gremlinQuery.queryStr());
         return new GremlinEvaluator(gremlinQuery, graphPersistenceStrategy, titanGraph).evaluate();
     }
 
