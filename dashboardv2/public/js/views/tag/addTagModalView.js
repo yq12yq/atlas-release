@@ -22,8 +22,10 @@ define(['require',
     'collection/VCommonList',
     'modules/Modal',
     'models/VEntity',
-    'utils/Utils'
-], function(require, AddTagModalViewTmpl, VTagList, VCommonList, Modal, VEntity, Utils) {
+    'utils/Utils',
+    'utils/Globals',
+    'utils/Messages',
+], function(require, AddTagModalViewTmpl, VTagList, VCommonList, Modal, VEntity, Utils, Globals, Messages) {
     'use strict';
 
     var AddTagModel = Marionette.LayoutView.extend({
@@ -45,7 +47,7 @@ define(['require',
          */
         initialize: function(options) {
             var that = this;
-            _.extend(this, _.pick(options, 'vent', 'modalCollection', 'guid', 'callback', 'multiple', 'showLoader'));
+            _.extend(this, _.pick(options, 'vent', 'modalCollection', 'guid', 'callback', 'multiple', 'showLoader', 'hideLoader'));
             this.collection = new VTagList();
             this.commonCollection = new VCommonList();
             this.asyncAttrFetchCounter = 0;
@@ -74,9 +76,20 @@ define(['require',
                         var obj = {
                             tagName: tagName,
                             tagAttributes: tagAttributes,
-                            guid: that.multiple[i].id.id
+                            guid: that.multiple[i].id.id,
+                            deletedEntity: Globals.entityStateReadOnly[that.multiple[i].id.state],
+                            entityName: that.multiple[i].model.get('name')
                         }
-                        that.saveTagData(obj);
+                        if (obj.deletedEntity) {
+                            Utils.notifyError({
+                                content: obj.entityName + Messages.assignDeletedEntity
+                            });
+                            if (that.multiple.length === 1 || (that.multiple.length == (i + 1) && that.asyncFetchCounter == 0)) {
+                                that.hideLoader();
+                            }
+                        } else {
+                            that.saveTagData(obj);
+                        }
                     }
                 } else {
                     that.asyncFetchCounter = 0;

@@ -205,9 +205,7 @@ define(['require',
                 if (value && (value.query === undefined || value.query.trim() === "")) {
                     return;
                 }
-                this.$('.fontLoader').show();
-                this.$('.searchTable').hide();
-                this.$('.searchResult').hide();
+                this.showLoader();
                 if (Globals.searchApiCallRef) {
                     Globals.searchApiCallRef.abort();
                 }
@@ -307,9 +305,7 @@ define(['require',
             checkTableFetch: function() {
                 if (this.asyncFetchCounter <= 0) {
                     this.$('div[data-id="r_tableSpinner"]').removeClass('show');
-                    this.$('.fontLoader').hide();
-                    this.$('.searchTable').show();
-                    this.$('.searchResult').show();
+                    this.hideLoader();
                 }
             },
             getEntityTableColumns: function() {
@@ -558,10 +554,8 @@ define(['require',
                             that.fetchCollection();
                             that.arr = [];
                         },
-                        showLoader: function() {
-                            that.$('.fontLoader').show();
-                            that.$('.searchTable').hide();
-                        }
+                        showLoader: that.showLoader.bind(that),
+                        hideLoader: that.hideLoader.bind(that)
                     });
                     // view.saveTagData = function() {
                     //override saveTagData function 
@@ -600,12 +594,21 @@ define(['require',
                             that.fetchCollection();
                             that.arr = [];
                         },
-                        showLoader: function() {
-                            that.$('.fontLoader').show();
-                            that.$('.searchTable').hide();
-                        }
+                        showLoader: that.showLoader.bind(that),
+                        hideLoader: that.hideLoader.bind(that)
+
                     });
                 });
+            },
+            showLoader: function() {
+                this.$('.fontLoader').show();
+                this.$('.searchTable').hide();
+                this.$('.searchResult').hide();
+            },
+            hideLoader: function() {
+                this.$('.fontLoader').hide();
+                this.$('.searchTable').show();
+                this.$('.searchResult').show();
             },
             onClickTagCross: function(e) {
                 var tagName = $(e.target).data("name"),

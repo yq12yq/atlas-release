@@ -164,6 +164,7 @@ define(['require',
             onRender: function() {
                 var that = this;
                 Utils.showTitleLoader(this.$('.page-title .fontLoader'), this.$('.entityDetail'));
+                this.$('.fontLoader').show(); // to show tab loader
                 this.renderLineageLayoutView(this.id);
                 this.renderSchemaLayoutView(this.id);
             },
