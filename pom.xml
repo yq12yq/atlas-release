@@ -439,7 +439,7 @@
         <hadoop.version>2.7.3.2.6.0.0-SNAPSHOT</hadoop.version>
         <hbase.version>1.1.2.2.6.0.0-SNAPSHOT</hbase.version>
         <solr.version>5.5.1</solr.version>
-        <kafka.version>0.10.0.2.6.0.0-SNAPSHOT</kafka.version>
+        <kafka.version>0.10.1.1</kafka.version>
         <curator.version>2.11.0</curator.version>
         <zookeeper.version>3.4.6.2.6.0.0-SNAPSHOT</zookeeper.version>
 
