@@ -22,6 +22,7 @@ import com.google.inject.Singleton;
 import kafka.consumer.Consumer;
 import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ConsumerConnector;
+import kafka.metrics.KafkaMetricsReporter;
 import kafka.serializer.StringDecoder;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
@@ -47,6 +48,8 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Option;
+import scala.collection.Seq;
+import scala.collection.mutable.MutableList;
 
 import java.io.File;
 import java.io.IOException;
@@ -347,7 +350,7 @@ public class KafkaNotification extends AbstractNotification implements Service {
         brokerConfig.setProperty("log.flush.interval.messages", String.valueOf(1));
 
         kafkaServer = new KafkaServer(KafkaConfig.fromProps(brokerConfig), new SystemTime(),
-                Option.apply(this.getClass().getName()));
+                Option.apply(this.getClass().getName()), new MutableList<KafkaMetricsReporter>());
         kafkaServer.startup();
         LOG.debug("Embedded kafka server started with broker config {}", brokerConfig);
     }
@@ -373,6 +376,11 @@ public class KafkaNotification extends AbstractNotification implements Service {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        @Override
+        public long hiResClockMs() {
+            return nanoseconds();
         }
     }
 
