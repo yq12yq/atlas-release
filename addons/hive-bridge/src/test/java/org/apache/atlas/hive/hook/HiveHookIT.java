@@ -675,7 +675,7 @@ public class HiveHookIT extends HiveITBase {
 
         Set<ReadEntity> inputs = getInputs(tableName, Entity.Type.TABLE);
         Set<WriteEntity> outputs = getOutputs(insertTableName, Entity.Type.TABLE);
-        outputs.iterator().next().setName(getQualifiedTblName(insertTableName + HiveMetaStoreBridge.TEMP_TABLE_PREFIX + SessionState.get().getSessionId()));
+        // outputs.iterator().next().setName(getQualifiedTblName(insertTableName + HiveMetaStoreBridge.TEMP_TABLE_PREFIX + SessionState.get().getSessionId()));
         outputs.iterator().next().setWriteType(WriteEntity.WriteType.INSERT);
 
         validateProcess(constructEvent(query,  HiveOperation.QUERY, inputs, outputs));
