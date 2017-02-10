@@ -10,6 +10,7 @@ ATLAS-1122 Change trait edge labels to have trait name alone (sumasai)
 ATLAS-1060 Add composite indexes for exact match performance improvements for all attributes (sumasai via shwethags)
 
 ALL CHANGES:
+ATLAS-1542 Atlas server fails to start if duplicate types are found during Typesystem bootstrap (svimal2106)
 ATLAS-1546 Fixed CheckStyle Error for AtlasHook & InMemoryJAASConfiguration classes (nixonrodrigues)
 ATLAS-1546 Hive hook should choose appropriate JAAS config when host uses kerberos ticket-cache (nixonrodrigues via madhan)
 BUG-74097  Fix for ldap groups issue in Atlas AD authentication Active Directory (nixonrodrigues)
