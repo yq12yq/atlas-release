@@ -37,7 +37,6 @@ import org.apache.atlas.repository.store.bootstrap.AtlasTypeDefStoreInitializer;
 import org.apache.atlas.store.AtlasTypeDefStore;
 import org.apache.atlas.type.AtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
-import org.apache.atlas.web.rest.EntitiesREST;
 
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.web.rest.EntityREST;
@@ -69,9 +68,6 @@ public class TestEntitiesREST {
 
     @Inject
     private AtlasTypeDefStore typeStore;
-
-    @Inject
-    private EntitiesREST entitiesREST;
 
     @Inject
     private EntityREST entityREST;
@@ -140,7 +136,7 @@ public class TestEntitiesREST {
     public void testTagToMultipleEntities() throws Exception{
         AtlasClassification tag = new AtlasClassification(TestUtilsV2.CLASSIFICATION, new HashMap<String, Object>() {{ put("tag", "tagName"); }});
         ClassificationAssociateRequest classificationAssociateRequest = new ClassificationAssociateRequest(createdGuids, tag);
-        entitiesREST.addClassification(classificationAssociateRequest);
+        entityREST.addClassification(classificationAssociateRequest);
         for (String guid : createdGuids) {
             final AtlasClassification result_tag = entityREST.getClassification(guid, TestUtilsV2.CLASSIFICATION);
             Assert.assertNotNull(result_tag);
