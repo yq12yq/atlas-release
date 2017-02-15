@@ -91,3 +91,4 @@ ATLAS-970 Remove glyphicon from login.jsp (kevalbhatt18 via shwethags)
 ATLAS-966 Exit execution of import_hive.sh if HIVE_HOME is not set (svimal2106 via sumasai)
 ATLAS-917 Add hdfs paths to process qualified name for non-partition based queries (sumasai)
 ATLAS-1508: Make AtlasADAuthenticationProvider like Ranger ADLdap Methods
+ATLAS-1508 : Fix for ldap groups issue in Atlas AD authentication Active Directory Authentication should authenticate on sAMAccountName attribute
