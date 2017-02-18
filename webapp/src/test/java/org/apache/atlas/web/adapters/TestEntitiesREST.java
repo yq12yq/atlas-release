@@ -18,6 +18,7 @@
 package org.apache.atlas.web.adapters;
 
 import org.apache.atlas.AtlasClient;
+import org.apache.atlas.RequestContextV1;
 import org.apache.atlas.RepositoryMetadataModule;
 import org.apache.atlas.RequestContext;
 import org.apache.atlas.TestUtilsV2;
@@ -38,6 +39,7 @@ import org.apache.atlas.type.AtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.web.rest.EntitiesREST;
 
+import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.web.rest.EntityREST;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,6 +107,7 @@ public class TestEntitiesREST {
     @AfterMethod
     public void cleanup() throws Exception {
         RequestContext.clear();
+        RequestContextV1.clear();
     }
 
     @AfterClass
@@ -267,7 +270,7 @@ public class TestEntitiesREST {
         List<AtlasObjectId> ret = new ArrayList<>();
 
         for (AtlasEntity entity : entities) {
-            ret.add(entity.getAtlasObjectId());
+            ret.add(AtlasTypeUtil.getAtlasObjectId(entity));
         }
 
         return ret;
