@@ -9,6 +9,7 @@ ATLAS-1060 Add composite indexes for exact match performance improvements for al
 ATLAS-1127 Modify creation and modification timestamps to Date instead of Long(sumasai)
 
 ALL CHANGES:
+ATLAS-1546 Changed to LOG.warn instead error in Hive hook should choose appropriate JAAS config if host uses kerberos ticket-cache (nixonrodrigues via kevalbhatt)
 ATLAS-1555 Move classification endpoint from Entities API to Entity API and remove Entities API (svimal2106)
 ATLAS-1568 moved helper methods from org.apache.atlas.model package classes into an utility class (mneethiraj)
 ATLAS-1566 replace GSON ser-de with ObjectMapper ser-de (svimal2016 via mneethiraj)
