@@ -9,6 +9,7 @@ ATLAS-1060 Add composite indexes for exact match performance improvements for al
 ATLAS-1127 Modify creation and modification timestamps to Date instead of Long(sumasai)
 
 ALL CHANGES:
+ATLAS-1590 UI : Edit Button is enabled for Deleted entities. (kevalbhatt)
 ATLAS-1502 Fix for not getting atlas application properties using PropertiesConfiguration sometimes, so changed to ApplicationProperties (nixonrodrigues via kevalbhatt)
 ATLAS-1546 Changed to LOG.warn instead error in Hive hook should choose appropriate JAAS config if host uses kerberos ticket-cache (nixonrodrigues via kevalbhatt)
 ATLAS-1555 Move classification endpoint from Entities API to Entity API and remove Entities API (svimal2106)
