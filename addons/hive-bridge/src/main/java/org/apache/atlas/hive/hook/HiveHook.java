@@ -248,7 +248,7 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
 
         case CREATETABLE:
             LinkedHashMap<Type, Referenceable> tablesCreated = handleEventOutputs(dgiBridge, event, Type.TABLE);
-            if (tablesCreated.size() > 0) {
+            if (tablesCreated != null && tablesCreated.size() > 0) {
                 handleExternalTables(dgiBridge, event, tablesCreated);
             }
             break;
@@ -730,10 +730,11 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
             final String location = lower(hiveTable.getDataLocation().toString());
             final ReadEntity dfsEntity = new ReadEntity();
             dfsEntity.setTyp(Type.DFS_DIR);
-            Path p = new Path(location);
-            dfsEntity.setD(p);
-            hiveEntity.setD(hiveTable.getPath());
-            //dfsEntity.setName(location);
+            dfsEntity.setD(new Path(location));
+
+            if (hiveEntity != null && hiveTable != null) {
+                hiveEntity.setD(hiveTable.getPath());
+            }
 
             SortedMap<ReadEntity, Referenceable> hiveInputsMap = new TreeMap<ReadEntity, Referenceable>(entityComparator) {{
                 put(dfsEntity, dgiBridge.fillHDFSDataSet(location));
