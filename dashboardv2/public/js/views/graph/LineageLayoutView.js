@@ -117,6 +117,7 @@ define(['require',
                             obj['label'] = values.name.trunc(20);
                             obj['toolTiplabel'] = values.name;
                             obj['id'] = data.GUID;
+                            obj['isLineage'] = type === 'input' ? true : false
                             if (values.queryText) {
                                 obj['queryText'] = values.queryText;
                             }
@@ -181,6 +182,7 @@ define(['require',
                             obj['id'] = val;
                             obj['class'] = "type-TOP";
                             obj['shape'] = "img";
+                            obj['isLineage'] = type === 'input' ? true : false
                             obj['typeName'] = vertices[val].values.vertexId.values.typeName;
                             if (vertices[val].values.state) {
                                 obj['state'] = vertices[val].values.state;
@@ -242,8 +244,15 @@ define(['require',
                     lastVal = "";
                 _.each(startingPoint, function(val, key, obj) {
                     _.each(edgesAndvertices.edges[val], function(val1) {
+                        var styleObj = {
+                            fill: 'none',
+                            stroke: '#fb4200'
+                        }
+                        if (that.g._nodes[val] && that.g._nodes[val].isLineage) {
+                            styleObj.stroke = '#8bc152';
+                        }
                         if (val && val1) {
-                            that.g.setEdge(val, val1, { 'arrowhead': "arrowPoint", lineInterpolate: 'basis' });
+                            that.g.setEdge(val, val1, { 'arrowhead': "arrowPoint", lineInterpolate: 'basis', "style": "fill:" + styleObj.fill + ";stroke:" + styleObj.stroke + "", 'styleObj': styleObj });
                         }
                         createRemaningEdge(edgesAndvertices.edges, val1);
                     });
@@ -252,8 +261,15 @@ define(['require',
                 function createRemaningEdge(obj, starting) {
                     if (obj[starting] && obj[starting].length) {
                         _.each(obj[starting], function(val, key) {
+                            var styleObj = {
+                                fill: 'none',
+                                stroke: '#fb4200'
+                            }
+                            if (that.g._nodes[starting] && that.g._nodes[starting].isLineage) {
+                                styleObj.stroke = '#8bc152';
+                            }
                             if (starting && val) {
-                                that.g.setEdge(starting, val, { 'arrowhead': "arrowPoint", lineInterpolate: 'basis' });
+                                that.g.setEdge(starting, val, { 'arrowhead': "arrowPoint", lineInterpolate: 'basis', "style": "fill:" + styleObj.fill + ";stroke:" + styleObj.stroke + "", 'styleObj': styleObj });
                             }
                             createRemaningEdge(obj, val);
                         });
@@ -286,8 +302,8 @@ define(['require',
                             .attr("d", "M 0 0 L 10 5 L 0 10 z")
                             .style("stroke-width", 1)
                             .style("stroke-dasharray", "1,0")
-                            .style("fill", "#cccccc")
-                            .style("stroke", "#cccccc");
+                            .style("fill", edge.styleObj.stroke)
+                            .style("stroke", edge.styleObj.stroke);
                         dagreD3.util.applyStyle(path, edge[type + "Style"]);
                     };
                     render.shapes().img = function circle(parent, bbox, node) {
@@ -388,9 +404,14 @@ define(['require',
                     d3.selectAll('button.zoomButton').on('click', zoomClick);
                     var tooltip = d3Tip()
                         .attr('class', 'd3-tip')
+                        .offset([-13, 0])
                         .html(function(d) {
                             var value = that.g.node(d);
-                            var htmlStr = "<h5>Name: <span style='color:#359f89'>" + value.toolTiplabel + "</span></h5> ";
+                            var htmlStr = "";
+                            if (value.id !== that.guid) {
+                                htmlStr = "<h5 style='text-align: center;'>" + (value.isLineage ? "Lineage" : "Impact") + "</h5>";
+                            }
+                            htmlStr += "<h5>Name: <span style='color:#359f89'>" + value.toolTiplabel + "</span></h5> ";
                             if (value.queryText) {
                                 htmlStr += "<h5>Query: <span style='color:#359f89'>" + value.queryText + "</span></h5> ";
                             }
