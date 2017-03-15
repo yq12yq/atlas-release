@@ -18,6 +18,7 @@
 
 package org.apache.atlas.repository;
 
+import org.apache.atlas.AtlasClient;
 import org.apache.atlas.typesystem.types.AttributeInfo;
 import org.apache.atlas.typesystem.types.DataTypes;
 import org.apache.atlas.typesystem.types.utils.TypesUtil;
@@ -65,6 +66,11 @@ public final class Constants {
 
     public static final String TIMESTAMP_PROPERTY_KEY = INTERNAL_PROPERTY_KEY_PREFIX + "timestamp";
     public static final String MODIFICATION_TIMESTAMP_PROPERTY_KEY = INTERNAL_PROPERTY_KEY_PREFIX + "modificationTimestamp";
+
+    public static final String NAME_PROPERTY_KEY           = AtlasClient.ASSET_TYPE + "." + AtlasClient.NAME;
+    public static final String DESCRIPTION_PROPERTY_KEY    = AtlasClient.ASSET_TYPE + "." + AtlasClient.DESCRIPTION;
+    public static final String OWNER_PROPERTY_KEY          = AtlasClient.ASSET_TYPE + "." + AtlasClient.OWNER;
+    public static final String QUALIFIED_NAME_PROPERTY_KEY = AtlasClient.REFERENCEABLE_SUPER_TYPE + "." + AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME;
 
     public static AttributeInfo getAttributeInfoForSystemAttributes(String field) {
         switch (field) {

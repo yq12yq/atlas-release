@@ -22,6 +22,7 @@ import com.thinkaurelius.titan.core.SchemaViolationException;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.RequestContext;
 import org.apache.atlas.repository.Constants;
@@ -47,6 +48,7 @@ import org.apache.atlas.typesystem.types.TypeUtils;
 import org.apache.atlas.utils.MD5Utils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +75,8 @@ public final class TypedInstanceToGraphMapper {
     private DeleteHandler deleteHandler;
     private GraphToTypedInstanceMapper graphToTypedInstanceMapper;
 
+    static Configuration APPLICATION_PROPERTIES = null;
+
     @Inject
     public TypedInstanceToGraphMapper(GraphToTypedInstanceMapper graphToTypedInstanceMapper, DeleteHandler deleteHandler) {
         this.graphToTypedInstanceMapper = graphToTypedInstanceMapper;
@@ -80,6 +84,7 @@ public final class TypedInstanceToGraphMapper {
     }
 
     private final String SIGNATURE_HASH_PROPERTY_KEY = Constants.INTERNAL_PROPERTY_KEY_PREFIX + "signature";
+    private final String FULLTEXT_INCLUDE_REFERENCES_PROPERTY_KEY = "atlas.fulltext.references.include";
 
     public enum Operation {
         CREATE,
@@ -295,9 +300,17 @@ public final class TypedInstanceToGraphMapper {
     }
 
     private void addFullTextProperty(List<ITypedReferenceableInstance> instances, FullTextMapper fulltextMapper) throws AtlasException {
+        boolean followReferences = true;
+
+        initApplicationProperties();
+
+        if (APPLICATION_PROPERTIES != null) {
+            followReferences = APPLICATION_PROPERTIES.getBoolean(FULLTEXT_INCLUDE_REFERENCES_PROPERTY_KEY, true);
+        }
+
         for (ITypedReferenceableInstance typedInstance : instances) { // Traverse
             Vertex instanceVertex = getClassVertex(typedInstance);
-            String fullText = fulltextMapper.mapRecursive(instanceVertex, true);
+            String fullText = fulltextMapper.mapRecursive(instanceVertex, followReferences);
             GraphHelper.setProperty(instanceVertex, Constants.ENTITY_TEXT_PROPERTY_KEY, fullText);
         }
     }
@@ -708,5 +721,15 @@ public final class TypedInstanceToGraphMapper {
         }
 
         GraphHelper.setProperty(instanceVertex, vertexPropertyName, propertyValue);
+    }
+
+    private void initApplicationProperties() {
+        if (APPLICATION_PROPERTIES == null) {
+            try {
+                APPLICATION_PROPERTIES = ApplicationProperties.get();
+            } catch (AtlasException ex) {
+                // ignore
+            }
+        }
     }
 }

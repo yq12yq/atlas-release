@@ -56,4 +56,15 @@ public interface DiscoveryService {
      * @throws org.apache.atlas.discovery.DiscoveryException
      */
     List<Map<String, String>> searchByGremlin(String gremlinQuery) throws DiscoveryException;
+
+    /**
+     *  Basic search using Full text query
+     * @param query query string
+     * @param typeName entity type
+     * @param trait name
+     * @param queryParams limit and offset
+     * @return
+     * @throws DiscoveryException
+     */
+    String basicSearchByFullText(String query, String typeName, String trait, QueryParams queryParams) throws DiscoveryException;
 }

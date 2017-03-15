@@ -59,6 +59,7 @@ public class MetadataDiscoveryResource {
     private static final String QUERY_TYPE_DSL = "dsl";
     private static final String QUERY_TYPE_GREMLIN = "gremlin";
     private static final String QUERY_TYPE_FULLTEXT = "full-text";
+    private static final String QUERY_TYPE_BASIC = "basic";
     private static final String LIMIT_OFFSET_DEFAULT = "-1";
 
     private final DiscoveryService discoveryService;
@@ -262,6 +263,52 @@ public class MetadataDiscoveryResource {
         }
     }
 
+    /**
+     * Search using full text search.
+     *
+     * @param query search query.
+     * @param limit number of rows to be returned in the result, used for pagination. maxlimit > limit > 0. -1 maps to atlas.search.defaultlimit property value
+     * @param offset offset to the results returned, used for pagination. offset >= 0. -1 maps to offset 0
+     * @return JSON representing the type and results.
+     */
+    @GET
+    @Path("search/basic")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Response basicSearchUsingFullText(@QueryParam("query") String query,
+                                             @QueryParam("typeName") String typeName,
+                                             @QueryParam("trait") String trait,
+                                             @DefaultValue(LIMIT_OFFSET_DEFAULT) @QueryParam("limit") int limit,
+                                             @DefaultValue(LIMIT_OFFSET_DEFAULT) @QueryParam("offset") int offset) {
+        AtlasPerfTracer perf = null;
+
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataDiscoveryResource.searchUsingFullText(" + query + ", " + limit + ", " + offset + ")");
+            }
+
+            QueryParams queryParams = validateQueryParams(limit, offset);
+
+            final String jsonResultStr = discoveryService.basicSearchByFullText(query, typeName, trait, queryParams);
+
+            JSONArray  rowsJsonArr = new JSONArray(jsonResultStr);
+            JSONObject response    = new BasicSearchJsonResponseBuilder().results(rowsJsonArr).query(query).build();
+
+            return Response.ok(response).build();
+
+        } catch (DiscoveryException | IllegalArgumentException e) {
+            LOG.error("Unable to get entity list for query {}", query, e);
+            throw new WebApplicationException(Servlets.getErrorResponse(e, Response.Status.BAD_REQUEST));
+
+        } catch (Throwable e) {
+            LOG.error("Unable to get entity list for query {}", query, e);
+            throw new WebApplicationException(Servlets.getErrorResponse(e, Response.Status.INTERNAL_SERVER_ERROR));
+
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
     private class JsonResponseBuilder {
 
         protected int count = 0;
@@ -289,10 +336,8 @@ public class MetadataDiscoveryResource {
         }
 
         protected JSONObject build() throws JSONException {
-
-            Preconditions.checkNotNull(query, "Query cannot be null");
             Preconditions.checkNotNull(queryType, "Query Type must be specified");
-            Preconditions.checkArgument(count >= 0, "Search Result count should be > 0");
+            Preconditions.checkArgument(count >= 0, "Search Result count should be >= 0");
 
             response.put(AtlasClient.REQUEST_ID, Servlets.getRequestId());
             response.put(AtlasClient.QUERY, query);
@@ -358,6 +403,35 @@ public class MetadataDiscoveryResource {
 
             JSONObject response = super.build();
             response.put(AtlasClient.RESULTS, fullTextResults);
+            return response;
+        }
+    }
+
+    private class BasicSearchJsonResponseBuilder extends JsonResponseBuilder {
+        private JSONArray basicSearchResults;
+
+        public BasicSearchJsonResponseBuilder results(JSONArray basicSearchResults) {
+            this.basicSearchResults = basicSearchResults;
+            return this;
+        }
+
+        public BasicSearchJsonResponseBuilder results(String results) throws JSONException {
+            return results(new JSONArray(results));
+        }
+
+        public BasicSearchJsonResponseBuilder() {
+            super();
+        }
+
+        @Override
+        public JSONObject build() throws JSONException {
+            Preconditions.checkNotNull(basicSearchResults);
+            count(basicSearchResults.length());
+            queryType(QUERY_TYPE_BASIC);
+
+            JSONObject response = super.build();
+            response.put(AtlasClient.RESULTS, basicSearchResults);
+
             return response;
         }
     }

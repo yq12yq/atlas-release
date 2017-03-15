@@ -49,6 +49,7 @@ import org.apache.atlas.typesystem.types.DataTypes;
 import org.apache.atlas.typesystem.types.HierarchicalType;
 import org.apache.atlas.typesystem.types.IDataType;
 import org.apache.atlas.typesystem.types.TypeSystem;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -369,6 +370,16 @@ public final class GraphHelper {
         String elementStr = string(element);
         String actualPropertyName = GraphHelper.encodePropertyKey(propertyName);
         LOG.debug("Reading property {} from {}", actualPropertyName, elementStr);
+        return element.getProperty(actualPropertyName);
+    }
+
+    public static <T> T getSingleValuedProperty(Element element, String propertyName) {
+        String actualPropertyName = GraphHelper.encodePropertyKey(propertyName);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Reading property {} from {}", actualPropertyName, string(element));
+        }
+
         return element.getProperty(actualPropertyName);
     }
 

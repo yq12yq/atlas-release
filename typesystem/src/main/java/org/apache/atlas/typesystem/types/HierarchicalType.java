@@ -27,9 +27,11 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.typesystem.IStruct;
 import org.apache.atlas.typesystem.persistence.DownCastStructInstance;
 import org.apache.atlas.typesystem.types.TypeUtils.Pair;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -59,6 +61,7 @@ public abstract class HierarchicalType<ST extends HierarchicalType, T> extends A
     public final ImmutableMap<String, String> attributeNameToType;
     protected ImmutableMap<String, List<Path>> superTypePaths;
     protected ImmutableMap<String, Path> pathNameToPathMap;
+    protected ImmutableSet<String> subTypes;
 
     HierarchicalType(TypeSystem typeSystem, Class<ST> superTypeClass, String name, ImmutableSet<String> superTypes,
         int numFields) {
@@ -151,6 +154,18 @@ public abstract class HierarchicalType<ST extends HierarchicalType, T> extends A
 
             ST superType = currentPath.typeName == getName() ? (ST) this :
                     (ST) typeSystem.getDataType(superTypeClass, currentPath.typeName);
+
+            if (currentPath.typeName != getName()) {
+                Set<String> subTypeList = new HashSet<>();
+
+                if (CollectionUtils.isNotEmpty(superType.subTypes)) {
+                    subTypeList.addAll(superType.subTypes);
+                }
+
+                subTypeList.add(getName());
+
+                superType.subTypes = ImmutableSet.copyOf(subTypeList);
+            }
 
             pathNameToPathMap.put(currentPath.pathName, currentPath);
             if (superType != this) {
@@ -427,6 +442,17 @@ public abstract class HierarchicalType<ST extends HierarchicalType, T> extends A
 
     public Set<String> getAllSuperTypeNames() {
         return superTypePaths.keySet();
+    }
+
+    public Set<String> getTypeAndAllSubTypes() throws AtlasException {
+        Set<String> ret = new HashSet<>();
+        ret.add(name);
+
+        if (CollectionUtils.isNotEmpty(subTypes)) {
+            ret.addAll(subTypes);
+        }
+
+        return Collections.unmodifiableSet(ret);
     }
 
     public Iterator<Path> pathIterator() {
