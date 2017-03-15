@@ -117,7 +117,7 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
                     }
                 });
             }
-        _.keys(valueObject).map(function(key) {
+         _.sortBy(_.keys(valueObject)).map(function(key) {
             var keyValue = valueObject[key],
                 valueOfArray = [];
             if (_.isArray(keyValue)) {
