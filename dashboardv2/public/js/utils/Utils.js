@@ -251,6 +251,11 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
                 fullName: value
             }
         }
+        if (_.isString(value)) {
+            value = {
+                typeName: value
+            }
+        }
         if (_.isObject(value)) {
             var name = "";
             if (value && value.$typeName$) {
@@ -266,6 +271,8 @@ define(['require', 'utils/Globals', 'pnotify'], function(require, Globals, pnoti
             if (value['taxonomy.namespace']) {
                 trem = true;
             } else if (value.values && value.values['taxonomy.namespace']) {
+                trem = true;
+            } else if (name.length > 1) {
                 trem = true;
             }
 

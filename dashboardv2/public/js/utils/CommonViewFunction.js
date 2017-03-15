@@ -386,11 +386,11 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
         }
     }
     CommonViewFunction.termTableBreadcrumbMaker = function(model) {
-        var traits = model.get('$traits$'),
+        var traits = model.get('$traits$') || model.get('terms'),
             url = "",
             deleteHtml = "",
             html = "",
-            id = model.get('$id$').id,
+            id = (model.get('$id$') ? model.get('$id$').id || model.get('$id$') : model.get('guid')),
             terms = [];
         _.keys(traits).map(function(key) {
             if (traits[key]) {
@@ -398,7 +398,7 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
             }
             if (tagName.term) {
                 terms.push({
-                    deleteHtml: '<a class="pull-left" title="Remove Term"><i class="fa fa-trash" data-id="tagClick" data-type="term" data-assetname="' + _.escape(model.get("name")) + '" data-name="' + tagName.fullName + '" data-guid="' + model.get('$id$').id + '" ></i></a>',
+                    deleteHtml: '<a class="pull-left" title="Remove Term"><i class="fa fa-trash" data-id="tagClick" data-type="term" data-assetname="' + _.escape(model.get("name")) + '" data-name="' + tagName.fullName + '" data-guid="' + id + '" ></i></a>',
                     url: _.unescape(tagName.fullName).split(".").join("/"),
                     name: tagName.fullName
                 });
@@ -415,8 +415,8 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
         if (terms.length > 1) {
             html += '<div><a  href="javascript:void(0)" data-id="showMoreLessTerm" class="inputTag inputTagGreen"><span>Show More </span><i class="fa fa-angle-right"></i></a></div>'
         }
-        if (model.get('$id$')) {
-            html += '<div><a href="javascript:void(0)" class="inputAssignTag" data-id="addTerm" data-guid="' + model.get('$id$').id + '"><i class="fa fa-folder-o"></i>' + " " + 'Assign Term</a></div>'
+        if (id) {
+            html += '<div><a href="javascript:void(0)" class="inputAssignTag" data-id="addTerm" data-guid="' + id + '"><i class="fa fa-folder-o"></i>' + " " + 'Assign Term</a></div>'
         } else {
             html += '<div><a href="javascript:void(0)" class="inputAssignTag" data-id="addTerm"><i class="fa fa-folder-o"></i>' + " " + 'Assign Term</a></div>'
         }
@@ -427,27 +427,28 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
 
     }
     CommonViewFunction.tagForTable = function(model) {
-        var traits = model.get('$traits$'),
+        var traits = model.get('$traits$') || model.get('traits'),
             atags = "",
             addTag = "",
             popTag = "",
+            id = (model.get('$id$') ? model.get('$id$').id || model.get('$id$') : model.get('guid')),
             count = 0;
-        _.keys(model.get('$traits$')).map(function(key) {
+        _.keys(traits).map(function(key) {
             if (traits[key]) {
                 var tagName = Utils.checkTagOrTerm(traits[key]);
             }
             var className = "inputTag";
             if (tagName.tag) {
                 if (count >= 1) {
-                    popTag += '<a class="' + className + '" data-id="tagClick"><span class="inputValue">' + tagName.fullName + '</span><i class="fa fa-times" data-id="delete"  data-assetname="' + model.get("name") + '"data-name="' + tagName.fullName + '" data-type="tag" data-guid="' + model.get('$id$').id + '" ></i></a>';
+                    popTag += '<a class="' + className + '" data-id="tagClick"><span class="inputValue">' + tagName.fullName + '</span><i class="fa fa-times" data-id="delete"  data-assetname="' + model.get("name") + '"data-name="' + tagName.fullName + '" data-type="tag" data-guid="' + id + '" ></i></a>';
                 } else {
-                    atags += '<a class="' + className + '" data-id="tagClick"><span class="inputValue">' + tagName.fullName + '</span><i class="fa fa-times" data-id="delete" data-assetname="' + model.get("name") + '" data-name="' + tagName.fullName + '"  data-type="tag" data-guid="' + model.get('$id$').id + '" ></i></a>';
+                    atags += '<a class="' + className + '" data-id="tagClick"><span class="inputValue">' + tagName.fullName + '</span><i class="fa fa-times" data-id="delete" data-assetname="' + model.get("name") + '" data-name="' + tagName.fullName + '"  data-type="tag" data-guid="' + id + '" ></i></a>';
                 }
                 ++count;
             }
         });
-        if (model.get('$id$')) {
-            addTag += '<a href="javascript:void(0)" data-id="addTag" class="inputTagAdd assignTag" data-guid="' + model.get('$id$').id + '" ><i class="fa fa-plus"></i></a>';
+        if (id) {
+            addTag += '<a href="javascript:void(0)" data-id="addTag" class="inputTagAdd assignTag" data-guid="' + id + '" ><i class="fa fa-plus"></i></a>';
         } else {
             addTag += '<a href="javascript:void(0)" data-id="addTag" class="inputTagAdd assignTag"><i style="right:0" class="fa fa-plus"></i></a>';
         }

@@ -159,12 +159,12 @@ define(['require',
                     if (searchString) {
                         if (model.get('tags').search(new RegExp(searchString, "i")) != -1) {
                             // data-name="<space>'<tagName>'"  Space is required for DSL search Input 
-                            str += '<li class="parent-node" data-id="tags"><div class="tools"><i class="fa fa-ellipsis-h tagPopover"></i></div><a href="#!/tag/tagAttribute/' + model.get('tags') + '"  data-name=" `' + model.get('tags') + '`" >' + model.get('tags') + '</a></li>';
+                            str += '<li class="parent-node" data-id="tags"><div class="tools"><i class="fa fa-ellipsis-h tagPopover"></i></div><a href="#!/tag/tagAttribute/' + model.get('tags') + '"  data-name="`' + model.get('tags') + '`" >' + model.get('tags') + '</a></li>';
                         } else {
                             return;
                         }
                     } else {
-                        str += '<li class="parent-node" data-id="tags"><div class="tools"><i class="fa fa-ellipsis-h tagPopover"></i></div><a href="#!/tag/tagAttribute/' + model.get('tags') + '"  data-name=" `' + model.get('tags') + '`">' + model.get('tags') + '</a></li>';
+                        str += '<li class="parent-node" data-id="tags"><div class="tools"><i class="fa fa-ellipsis-h tagPopover"></i></div><a href="#!/tag/tagAttribute/' + model.get('tags') + '"  data-name="`' + model.get('tags') + '`">' + model.get('tags') + '</a></li>';
                     }
                 });
                 this.ui.tagsParent.empty().html(str);
@@ -281,7 +281,7 @@ define(['require',
                     container: 'body',
                     content: function() {
                         return "<ul class='tagPopoverList'>" +
-                            "<li class='listTerm' ><i class='fa fa-search'></i> <a href='javascript:void(0)' data-fn='onSearchTerm'>Search Tag</a></li>" +
+                            "<li class='listTerm' ><i class='fa fa-search'></i> <a href='javascript:void(0)' data-fn='onSearchTag'>Search Tag</a></li>" +
                             "</ul>";
                     }
                 });
@@ -292,7 +292,7 @@ define(['require',
                     $(this).popover('toggle');
                 });
             },
-            onSearchTerm: function() {
+            onSearchTag: function() {
                 Utils.setUrl({
                     url: '#!/search/searchResult',
                     urlParams: {

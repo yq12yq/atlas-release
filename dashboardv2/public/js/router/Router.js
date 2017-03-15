@@ -27,7 +27,7 @@ define([
     var AppRouter = Backbone.Router.extend({
         routes: {
             // Define some URL routes
-            '': 'commonAction',
+            '': 'defaultAction',
             '!/': 'tagAttributePageLoad',
             '!/tag/tagAttribute/(*name)': 'tagAttributePageLoad',
             '!/taxonomy/detailCatalog/(*url)': 'detailCatalog',
@@ -226,31 +226,21 @@ define([
                 App.rSideNav.currentView.selectTab();
                 App.rNContent.show(new SearchDetailLayoutView({
                     'globalVent': that.globalVent,
-                    'value': paramObj
+                    'value': paramObj,
+                    'initialView': (paramObj.query.trim() || paramObj.type || (paramObj.dslChecked == "true" ? "" : paramObj.tag)).length === 0
                 }));
             });
         },
         defaultAction: function(actions) {
             // We have no matching route, lets just log what the URL was
-            if (Globals.taxonomy) {
-                Utils.setUrl({
-                    url: '#!/taxonomy',
-                    mergeBrowserUrl: false,
-                    updateTabState: function() {
-                        return { taxonomyUrl: this.url, stateChanged: false };
-                    },
-                    trigger: true
-                });
-            } else {
-                Utils.setUrl({
-                    url: '#!/tag',
-                    mergeBrowserUrl: false,
-                    updateTabState: function() {
-                        return { tagUrl: this.url, stateChanged: false };
-                    },
-                    trigger: true
-                });
-            }
+            Utils.setUrl({
+                url: '#!/search',
+                mergeBrowserUrl: false,
+                updateTabState: function() {
+                    return { searchUrl: this.url, stateChanged: false };
+                },
+                trigger: true
+            });
 
             console.log('No route:', actions);
         }

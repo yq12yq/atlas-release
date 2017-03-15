@@ -43,7 +43,7 @@ define(['require',
              * @constructs
              */
             initialize: function(options) {
-                _.extend(this, _.pick(options, 'globalVent', 'value'));
+                _.extend(this, _.pick(options, 'globalVent', 'initialView', 'value'));
             },
             bindEvents: function() {},
             onRender: function() {
@@ -53,17 +53,11 @@ define(['require',
                 var that = this;
 
                 require(['views/search/SearchResultLayoutView'], function(SearchResultLayoutView) {
-                    var value = {};
-                    if (that.value) {
-                        value = {
-                            'query': that.value.query,
-                            'searchType': that.value.searchType
-                        };
-                    }
                     if (that.RSearchResultLayoutView) {
                         that.RSearchResultLayoutView.show(new SearchResultLayoutView({
-                            value: value,
-                            tag: that.tag
+                            value: that.value,
+                            tag: that.tag,
+                            initialView: that.initialView
                         }));
                     }
                 });

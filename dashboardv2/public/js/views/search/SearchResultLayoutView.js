@@ -57,7 +57,11 @@ define(['require',
                 pageRecordText: "[data-id='pageRecordText']",
                 addAssignTag: "[data-id='addAssignTag']"
             },
-
+            templateHelpers: function() {
+                return {
+                    searchType: this.searchType
+                };
+            },
             /** ui events hash */
             events: function() {
                 var events = {};
@@ -112,7 +116,7 @@ define(['require',
              * @constructs
              */
             initialize: function(options) {
-                _.extend(this, _.pick(options, 'globalVent', 'vent', 'value'));
+                _.extend(this, _.pick(options, 'globalVent', 'vent', 'initialView', 'value'));
                 var pagination = "";
                 this.entityModel = new VEntity();
                 this.searchCollection = new VSearchList();
@@ -137,6 +141,10 @@ define(['require',
                 this.bindEvents();
                 this.bradCrumbList = [];
                 this.arr = [];
+                this.searchType = 'Basic Search';
+                if (this.value && this.value.searchType && this.value.searchType == 'dsl') {
+                    this.searchType = 'Advanced Search';
+                }
             },
             bindEvents: function() {
                 var that = this;
@@ -151,17 +159,21 @@ define(['require',
                         if (item.get('isEnable')) {
                             var term = [];
                             that.arr.push({
-                                id: item.get("$id$"),
+                                id: item.get("$id$") || item.get('guid'),
                                 model: item
                             });
                         }
                     });
                     if (this.arr.length > 0) {
-                        this.$('.searchResult').find(".inputAssignTag.multiSelect").show();
-                        this.$('.searchResult').find(".inputAssignTag.multiSelectTag").show();
+                        if (Globals.taxonomy) {
+                            this.$('.multiSelectTerm').show();
+                        }
+                        this.$('.multiSelectTag').show();
                     } else {
-                        this.$('.searchResult').find(".inputAssignTag.multiSelect").hide();
-                        this.$('.searchResult').find(".inputAssignTag.multiSelectTag").hide();
+                        if (Globals.taxonomy) {
+                            this.$('.multiSelectTerm').hide();
+                        }
+                        this.$('.multiSelectTag').hide();
                     }
                 });
                 this.listenTo(this.searchCollection, "error", function(value, responseData) {
@@ -179,32 +191,32 @@ define(['require',
                 }, this);
             },
             onRender: function() {
-                var value = {},
-                    that = this;
-                if (this.value) {
-                    value = this.value;
-                } else {
-                    value = {
-                        'query': '',
-                        'searchType': 'fulltext'
-                    };
-                }
-                this.fetchCollection(value);
-                $('body').click(function(e) {
-                    var iconEvnt = e.target.nodeName;
-                    if (that.$('.popoverContainer').length) {
-                        if ($(e.target).hasClass('tagDetailPopover') || iconEvnt == "I") {
-                            return;
-                        }
-                        that.$('.popover.popoverTag').hide();
+                if (!this.initialView) {
+                    var value = {},
+                        that = this;
+                    if (this.value) {
+                        value = this.value;
+                    } else {
+                        value = {
+                            'query': '',
+                            'searchType': 'basic'
+                        };
                     }
-                });
+
+                    this.fetchCollection(value);
+                    $('body').click(function(e) {
+                        var iconEvnt = e.target.nodeName;
+                        if (that.$('.popoverContainer').length) {
+                            if ($(e.target).hasClass('tagDetailPopover') || iconEvnt == "I") {
+                                return;
+                            }
+                            that.$('.popover.popoverTag').hide();
+                        }
+                    });
+                }
             },
             fetchCollection: function(value) {
                 var that = this;
-                if (value && (value.query === undefined || value.query.trim() === "")) {
-                    return;
-                }
                 this.showLoader();
                 if (Globals.searchApiCallRef) {
                     Globals.searchApiCallRef.abort();
@@ -219,7 +231,19 @@ define(['require',
                     if (Utils.getUrlState.isTagTab()) {
                         this.searchCollection.url = "/api/atlas/discovery/search/dsl";
                     }
-                    _.extend(this.searchCollection.queryParams, { 'query': value.query.trim() });
+                    var params = { query: (value.query.trim() || null) };
+                    if (this.searchType === 'Advanced Search' && value.type) {
+                        if (params.query) {
+                            params.query = value.type + " " + params.query;
+                        } else {
+                            params.query = value.type;
+                        }
+
+                    } else {
+                        params['typeName'] = value.type || null;
+                        params['trait'] = value.tag || null;
+                    }
+                    _.extend(this.searchCollection.queryParams, params);
                 }
                 Globals.searchApiCallRef = this.searchCollection.fetch({
                     success: function() {
@@ -263,15 +287,17 @@ define(['require',
                         if (that.searchCollection.models.length) {
                             that.startRenderTableProcess();
                         }
-                        var resultData = 'Results for <b>' + _.escape(that.searchCollection.queryParams.query) + '</b>';
-                        var multiAssignDataTag = '<a href="javascript:void(0)" class="inputAssignTag multiSelectTag assignTag" style="display:none" data-id="addAssignTag"><i class="fa fa-plus"></i>' + " " + 'Assign Tag</a>';
-                        if (Globals.taxonomy) {
-                            var multiAssignDataTerm = '<a href="javascript:void(0)" class="inputAssignTag multiSelect" style="display:none" data-id="addTerm"><i class="fa fa-folder-o"></i>' + " " + 'Assign Term</a>';
-                            that.$('.searchResult').html(resultData + multiAssignDataTerm + multiAssignDataTag);
-                        } else {
-                            that.$('.searchResult').html(resultData + multiAssignDataTag);
+                        var resultArr = [];
+                        if (that.searchCollection.queryParams.typeName) {
+                            resultArr.push(that.searchCollection.queryParams.typeName)
                         }
-
+                        if (that.searchCollection.queryParams.trait) {
+                            resultArr.push(that.searchCollection.queryParams.trait)
+                        }
+                        if (that.searchCollection.queryParams.query) {
+                            resultArr.push(that.searchCollection.queryParams.query)
+                        }
+                        that.$('.searchResult').html('Results for <b>' + _.escape(resultArr.join(" & ")) + '</b>');
                     },
                     silent: true
                 });
@@ -289,7 +315,7 @@ define(['require',
                         columns: columns
                     })));
                     that.ui.paginationDiv.show();
-                    that.$('.searchResult').find(".inputAssignTag.multiSelect").hide();
+                    that.$(".ellipsis .inputAssignTag").hide();
                     that.renderBreadcrumb();
                 });
             },
@@ -313,7 +339,7 @@ define(['require',
                     col = {};
                 var responseData = this.searchCollection.responseData;
                 if (this.searchCollection.responseData) {
-                    if (responseData.dataType && responseData.dataType.typeName.indexOf('_temp') == -1) {
+                    if (responseData.dataType && responseData.dataType.typeName.indexOf('_temp') == -1 || responseData.queryType == "basic") {
                         that.renderTableLayoutView(that.getFixedDslColumn());
                     } else {
                         var idFound = false,
@@ -401,13 +427,6 @@ define(['require',
             getFixedDslColumn: function() {
                 var that = this,
                     col = {};
-                for (var i = 0; i < this.searchCollection.models.length; i++) {
-                    var model = this.searchCollection.models[i];
-                    if (model && model.get('$id$') === undefined) {
-                        i = i > 0 ? (i - 1) : i;
-                        that.searchCollection.remove(model);
-                    }
-                }
                 col['Check'] = {
                     name: "selected",
                     label: "",
@@ -423,29 +442,33 @@ define(['require',
                     className: "searchTableName",
                     formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
                         fromRaw: function(rawValue, model) {
-                            var nameHtml = "";
+                            var nameHtml = "",
+                                id = (model.get('$id$') ? model.get('$id$').id || model.get('$id$') : model.get('guid')),
+                                state = (model.get('$id$') && model.get('$id$').state) || model.get('state');
+
                             if (rawValue === undefined) {
                                 if (model.get('qualifiedName')) {
                                     rawValue = model.get('qualifiedName');
                                 } else if (model.get('$id$') && model.get('$id$').qualifiedName) {
                                     rawValue = model.get('$id$').qualifiedName;
-                                } else if (model.get('$id$')) {
-                                    rawValue = model.get('$id$').id || model.get('$id$')
+                                } else if (id) {
+                                    rawValue = id
                                 } else {
                                     rawValue = "";
                                 }
                             }
-                            if (model.get('$id$') && model.get('$id$').id) {
-                                nameHtml = '<a href="#!/detailPage/' + model.get('$id$').id + '">' + rawValue + '</a>';
+                            if (id) {
+                                nameHtml = '<a href="#!/detailPage/' + id + '">' + rawValue + '</a>';
                             } else {
                                 nameHtml = '<a>' + rawValue + '</a>';
                             }
-                            if (model.get('$id$') && model.get('$id$').state && Globals.entityStateReadOnly[model.get('$id$').state]) {
+                            if (Globals.entityStateReadOnly[state]) {
                                 nameHtml += '<button type="button" title="Deleted" class="btn btn-atlasAction btn-atlas deleteBtn"><i class="fa fa-trash"></i></button>';
                                 return '<div class="readOnly readOnlyLink">' + nameHtml + '</div>';
                             } else {
                                 return nameHtml;
                             }
+
                         }
                     })
                 };
@@ -469,7 +492,15 @@ define(['require',
                     sortable: false,
                     formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
                         fromRaw: function(rawValue, model) {
-                            var typeName = model.get('typeName') || model.get('$typeName$')
+                            var typeName = "";
+
+                            var instanceInfo = model.get('instanceInfo');
+                            if (instanceInfo && instanceInfo.typeName) {
+                                typeName = instanceInfo.typeName;
+                            } else {
+                                typeName = model.get('typeName') || model.get('$typeName$')
+                            }
+
                             if (typeName) {
                                 return '<a title="Search ' + typeName + '" href="#!/search/searchResult?query=' + typeName + ' &searchType=dsl&dslChecked=true">' + typeName + '</a>';
                             }
@@ -485,7 +516,9 @@ define(['require',
                     className: 'searchTag',
                     formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
                         fromRaw: function(rawValue, model) {
-                            if (model.get('$id$') && model.get('$id$').state && Globals.entityStateReadOnly[model.get('$id$').state]) {
+                            var id = (model.get('$id$') ? model.get('$id$').id || model.get('$id$') : model.get('guid')),
+                                state = (model.get('$id$') && model.get('$id$').state) || model.get('state');
+                            if (Globals.entityStateReadOnly[state]) {
                                 return '<div class="readOnly">' + CommonViewFunction.tagForTable(model); + '</div>';
                             } else {
                                 return CommonViewFunction.tagForTable(model);
@@ -504,11 +537,13 @@ define(['require',
                         className: 'searchTerm',
                         formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
                             fromRaw: function(rawValue, model) {
-                                var returnObject = CommonViewFunction.termTableBreadcrumbMaker(model);
+                                var id = (model.get('$id$') ? model.get('$id$').id || model.get('$id$') : model.get('guid')),
+                                    state = (model.get('$id$') && model.get('$id$').state) || model.get('state'),
+                                    returnObject = CommonViewFunction.termTableBreadcrumbMaker(model);
                                 if (returnObject.object) {
                                     that.bradCrumbList.push(returnObject.object);
                                 }
-                                if (model.get('$id$') && model.get('$id$').state && Globals.entityStateReadOnly[model.get('$id$').state]) {
+                                if (Globals.entityStateReadOnly[state]) {
                                     return '<div class="readOnly">' + returnObject.html + '</div>';
                                 } else {
                                     return returnObject.html;
@@ -579,12 +614,12 @@ define(['require',
             showLoader: function() {
                 this.$('.fontLoader').show();
                 this.$('.searchTable').hide();
-                this.$('.searchResult').hide();
+                this.$('.ellipsis').hide();
             },
             hideLoader: function() {
                 this.$('.fontLoader').hide();
                 this.$('.searchTable').show();
-                this.$('.searchResult').show();
+                this.$('.ellipsis').show();
             },
             onClickTagCross: function(e) {
                 var tagName = $(e.target).data("name"),
