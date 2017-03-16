@@ -22,6 +22,8 @@ package org.apache.atlas.sqoop.hook;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasConstants;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.hive.bridge.HiveMetaStoreBridge;
 import org.apache.atlas.hive.model.HiveDataTypes;
 import org.apache.atlas.hook.AtlasHook;
@@ -71,8 +73,7 @@ public class SqoopHook extends SqoopJobDataPublisher {
         org.apache.hadoop.conf.Configuration.addDefaultResource("sqoop-site.xml");
     }
 
-    public Referenceable createHiveDatabaseInstance(String clusterName, String dbName)
-            throws Exception {
+    public Referenceable createHiveDatabaseInstance(String clusterName, String dbName) {
         Referenceable dbRef = new Referenceable(HiveDataTypes.HIVE_DB.getName());
         dbRef.set(AtlasConstants.CLUSTER_NAME_ATTRIBUTE, clusterName);
         dbRef.set(AtlasClient.NAME, dbName);
@@ -82,14 +83,14 @@ public class SqoopHook extends SqoopJobDataPublisher {
     }
 
     public Referenceable createHiveTableInstance(String clusterName, Referenceable dbRef,
-                                             String tableName, String dbName) throws Exception {
-        Referenceable tableRef = new Referenceable(HiveDataTypes.HIVE_TABLE.getName());
-        tableRef.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME,
-                HiveMetaStoreBridge.getTableQualifiedName(clusterName, dbName, tableName));
-        tableRef.set(AtlasClient.NAME, tableName.toLowerCase());
-        tableRef.set(HiveMetaStoreBridge.DB, dbRef);
-        return tableRef;
-    }
+                                                 String tableName, String dbName) {
+            Referenceable tableRef = new Referenceable(HiveDataTypes.HIVE_TABLE.getName());
+            tableRef.set(AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME,
+                    HiveMetaStoreBridge.getTableQualifiedName(clusterName, dbName, tableName));
+            tableRef.set(AtlasClient.NAME, tableName.toLowerCase());
+            tableRef.set(HiveMetaStoreBridge.DB, dbRef);
+            return tableRef;
+        }
 
     private Referenceable createDBStoreInstance(SqoopJobDataPublisher.Data data)
             throws ImportException {
@@ -173,19 +174,24 @@ public class SqoopHook extends SqoopJobDataPublisher {
     }
 
     @Override
-    public void publish(SqoopJobDataPublisher.Data data) throws Exception {
-        Configuration atlasProperties = ApplicationProperties.get();
-        String clusterName = atlasProperties.getString(ATLAS_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
+    public void publish(SqoopJobDataPublisher.Data data) throws AtlasBaseException {
+        try {
+            Configuration atlasProperties = ApplicationProperties.get();
+            String clusterName = atlasProperties.getString(ATLAS_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
 
-        Referenceable dbStoreRef = createDBStoreInstance(data);
-        Referenceable dbRef = createHiveDatabaseInstance(clusterName, data.getHiveDB());
-        Referenceable hiveTableRef = createHiveTableInstance(clusterName, dbRef,
-                data.getHiveTable(), data.getHiveDB());
-        Referenceable procRef = createSqoopProcessInstance(dbStoreRef, hiveTableRef, data, clusterName);
+            Referenceable dbStoreRef = createDBStoreInstance(data);
+            Referenceable dbRef = createHiveDatabaseInstance(clusterName, data.getHiveDB());
+            Referenceable hiveTableRef = createHiveTableInstance(clusterName, dbRef,
+                    data.getHiveTable(), data.getHiveDB());
+            Referenceable procRef = createSqoopProcessInstance(dbStoreRef, hiveTableRef, data, clusterName);
 
-        int maxRetries = atlasProperties.getInt(HOOK_NUM_RETRIES, 3);
-        HookNotification.HookNotificationMessage message =
-                new HookNotification.EntityCreateRequest(AtlasHook.getUser(), dbStoreRef, dbRef, hiveTableRef, procRef);
-        AtlasHook.notifyEntities(Arrays.asList(message), maxRetries);
+            int maxRetries = atlasProperties.getInt(HOOK_NUM_RETRIES, 3);
+            HookNotification.HookNotificationMessage message =
+                    new HookNotification.EntityCreateRequest(AtlasHook.getUser(), dbStoreRef, dbRef, hiveTableRef, procRef);
+            AtlasHook.notifyEntities(Arrays.asList(message), maxRetries);
+        }
+        catch(Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.SQOOP_HOOK, e, "publish");
+        }
     }
 }
