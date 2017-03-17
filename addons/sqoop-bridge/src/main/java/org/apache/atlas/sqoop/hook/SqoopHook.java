@@ -22,11 +22,10 @@ package org.apache.atlas.sqoop.hook;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasConstants;
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.hive.bridge.HiveMetaStoreBridge;
 import org.apache.atlas.hive.model.HiveDataTypes;
 import org.apache.atlas.hook.AtlasHook;
+import org.apache.atlas.hook.AtlasHookException;
 import org.apache.atlas.notification.hook.HookNotification;
 import org.apache.atlas.sqoop.model.SqoopDataTypes;
 import org.apache.atlas.typesystem.Referenceable;
@@ -174,7 +173,7 @@ public class SqoopHook extends SqoopJobDataPublisher {
     }
 
     @Override
-    public void publish(SqoopJobDataPublisher.Data data) throws AtlasBaseException {
+    public void publish(SqoopJobDataPublisher.Data data) throws AtlasHookException {
         try {
             Configuration atlasProperties = ApplicationProperties.get();
             String clusterName = atlasProperties.getString(ATLAS_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
@@ -191,7 +190,7 @@ public class SqoopHook extends SqoopJobDataPublisher {
             AtlasHook.notifyEntities(Arrays.asList(message), maxRetries);
         }
         catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.SQOOP_HOOK, e, "publish");
+            throw new AtlasHookException("SqoopHook.publish() failed.", e);
         }
     }
 }

@@ -23,11 +23,10 @@ import com.sun.jersey.api.client.ClientResponse;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasConstants;
-import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasServiceException;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.hive.hook.HiveHook;
 import org.apache.atlas.hive.model.HiveDataTypes;
+import org.apache.atlas.hook.AtlasHookException;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.Struct;
 import org.apache.atlas.typesystem.json.InstanceSerialization;
@@ -421,7 +420,7 @@ public class HiveMetaStoreBridge {
      * @throws Exception
      */
     public Referenceable createTableInstance(Referenceable dbReference, Table hiveTable)
-            throws AtlasBaseException {
+            throws AtlasHookException {
         return createOrUpdateTableInstance(dbReference, null, hiveTable);
     }
 
@@ -430,7 +429,7 @@ public class HiveMetaStoreBridge {
     }
 
     private Referenceable createOrUpdateTableInstance(Referenceable dbReference, Referenceable tableReference,
-                                                      final Table hiveTable) throws AtlasBaseException {
+                                                      final Table hiveTable) throws AtlasHookException {
         LOG.info("Importing objects from {}.{}", hiveTable.getDbName(), hiveTable.getTableName());
 
         if (tableReference == null) {
@@ -495,7 +494,7 @@ public class HiveMetaStoreBridge {
         return entityQualifiedName + "_storage";
     }
 
-    private Referenceable registerTable(Referenceable dbReference, Table table) throws AtlasBaseException {
+    private Referenceable registerTable(Referenceable dbReference, Table table) throws AtlasHookException {
         try {
             String dbName = table.getDbName();
             String tableName = table.getTableName();
@@ -513,7 +512,7 @@ public class HiveMetaStoreBridge {
             }
             return tableReference;
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.HIVE_HOOK_METASTORE_BRIDGE, e, "getStorageDescQFName");
+            throw new AtlasHookException("HiveMetaStoreBridge.getStorageDescQFName() failed.", e);
         }
     }
 
@@ -528,7 +527,7 @@ public class HiveMetaStoreBridge {
     }
 
     public Referenceable fillStorageDesc(StorageDescriptor storageDesc, String tableQualifiedName,
-        String sdQualifiedName, Id tableId) throws AtlasBaseException {
+        String sdQualifiedName, Id tableId) throws AtlasHookException {
         LOG.debug("Filling storage descriptor information for {}", storageDesc);
 
         Referenceable sdReferenceable = new Referenceable(HiveDataTypes.HIVE_STORAGEDESC.getName());
@@ -595,7 +594,7 @@ public class HiveMetaStoreBridge {
         return String.format("%s.%s@%s", tableName, colName.toLowerCase(), clusterName);
     }
 
-    public List<Referenceable> getColumns(List<FieldSchema> schemaList, Referenceable tableReference) throws AtlasBaseException {
+    public List<Referenceable> getColumns(List<FieldSchema> schemaList, Referenceable tableReference) throws AtlasHookException {
         List<Referenceable> colList = new ArrayList<>();
         int columnPosition = 0;
         for (FieldSchema fs : schemaList) {
@@ -617,7 +616,7 @@ public class HiveMetaStoreBridge {
     }
 
 
-    public static void main(String[] args) throws AtlasBaseException {
+    public static void main(String[] args) throws AtlasHookException {
         try {
         Configuration atlasConf = ApplicationProperties.get();
         String[] atlasEndpoint = atlasConf.getStringArray(ATLAS_ENDPOINT);
@@ -647,7 +646,7 @@ public class HiveMetaStoreBridge {
         hiveMetaStoreBridge.importHiveMetadata(failOnError);
         }
         catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.HIVE_HOOK_METASTORE_BRIDGE, e, "main");
+            throw new AtlasHookException("HiveMetaStoreBridge.main() failed.", e);
         }
     }
 }

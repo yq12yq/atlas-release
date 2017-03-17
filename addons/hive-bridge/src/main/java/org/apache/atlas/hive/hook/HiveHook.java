@@ -23,12 +23,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasConstants;
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.hive.bridge.ColumnLineageUtils;
 import org.apache.atlas.hive.bridge.HiveMetaStoreBridge;
 import org.apache.atlas.hive.model.HiveDataTypes;
 import org.apache.atlas.hook.AtlasHook;
+import org.apache.atlas.hook.AtlasHookException;
 import org.apache.atlas.notification.hook.HookNotification;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.commons.lang.StringUtils;
@@ -383,7 +382,7 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
         return Pair.of(changedColStringOldName, changedColStringNewName);
     }
 
-    private void renameColumn(HiveMetaStoreBridge dgiBridge, HiveEventContext event) throws AtlasBaseException {
+    private void renameColumn(HiveMetaStoreBridge dgiBridge, HiveEventContext event) throws AtlasHookException {
         try {
             assert event.getInputs() != null && event.getInputs().size() == 1;
             assert event.getOutputs() != null && event.getOutputs().size() > 0;
@@ -417,11 +416,11 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
             handleEventOutputs(dgiBridge, event, Type.TABLE);
         }
         catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.HIVE_HOOK, e, "renameColumn failed!");
+            throw new AtlasHookException("HiveHook.renameColumn() failed.", e);
         }
     }
 
-    private void renameTable(HiveMetaStoreBridge dgiBridge, HiveEventContext event) throws AtlasBaseException {
+    private void renameTable(HiveMetaStoreBridge dgiBridge, HiveEventContext event) throws AtlasHookException {
         try {
             //crappy, no easy of getting new name
             assert event.getInputs() != null && event.getInputs().size() == 1;
@@ -462,7 +461,7 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
             }
         }
         catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.HIVE_HOOK, e, "renameTable");
+            throw new AtlasHookException("HiveHook.renameTable() failed.", e);
         }
     }
 
@@ -522,7 +521,7 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
         return newSDEntity;
     }
 
-    private LinkedHashMap<Type, Referenceable> createOrUpdateEntities(HiveMetaStoreBridge dgiBridge, HiveEventContext event, Entity entity, boolean skipTempTables, Table existTable) throws AtlasBaseException {
+    private LinkedHashMap<Type, Referenceable> createOrUpdateEntities(HiveMetaStoreBridge dgiBridge, HiveEventContext event, Entity entity, boolean skipTempTables, Table existTable) throws AtlasHookException {
         try {
             Database db = null;
             Table table = null;
@@ -587,19 +586,19 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
             return result;
         }
         catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.HIVE_HOOK, e, "createOrUpdateEntities");
+            throw new AtlasHookException("HiveHook.createOrUpdateEntities() failed.", e);
         }
     }
 
-    private LinkedHashMap<Type, Referenceable> createOrUpdateEntities(HiveMetaStoreBridge dgiBridge, HiveEventContext event, Entity entity, boolean skipTempTables) throws AtlasBaseException {
+    private LinkedHashMap<Type, Referenceable> createOrUpdateEntities(HiveMetaStoreBridge dgiBridge, HiveEventContext event, Entity entity, boolean skipTempTables) throws AtlasHookException {
         try {
             return createOrUpdateEntities(dgiBridge, event, entity, skipTempTables, null);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.HIVE_HOOK, e, "createOrUpdateEntities");
+            throw new AtlasHookException("HiveHook.createOrUpdateEntities() failed.", e);
         }
     }
 
-    private LinkedHashMap<Type, Referenceable> handleEventOutputs(HiveMetaStoreBridge dgiBridge, HiveEventContext event, Type entityType) throws AtlasBaseException {
+    private LinkedHashMap<Type, Referenceable> handleEventOutputs(HiveMetaStoreBridge dgiBridge, HiveEventContext event, Type entityType) throws AtlasHookException {
         try {
             for (Entity entity : event.getOutputs()) {
                 if (entity.getType() == entityType) {
@@ -609,7 +608,7 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
             return null;
         }
         catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.HIVE_HOOK, e, "handleEventOutputs");
+            throw new AtlasHookException("HiveHook.handleEventOutputs() failed.", e);
         }
     }
 
@@ -629,7 +628,7 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
         return str.toLowerCase().trim();
     }
 
-    private void registerProcess(HiveMetaStoreBridge dgiBridge, HiveEventContext event) throws AtlasBaseException {
+    private void registerProcess(HiveMetaStoreBridge dgiBridge, HiveEventContext event) throws AtlasHookException {
         try {
             Set<ReadEntity> inputs = event.getInputs();
             Set<WriteEntity> outputs = event.getOutputs();
@@ -699,12 +698,12 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
             }
         }
         catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.HIVE_HOOK, e, "registerProcess");
+            throw new AtlasHookException("HiveHook.registerProcess() failed.", e);
         }
     }
 
     private  <T extends Entity> void processHiveEntity(HiveMetaStoreBridge dgiBridge, HiveEventContext event, T entity, Set<String> dataSetsProcessed,
-        SortedMap<T, Referenceable> dataSets, Set<Referenceable> entities) throws AtlasBaseException {
+        SortedMap<T, Referenceable> dataSets, Set<Referenceable> entities) throws AtlasHookException {
         try {
             if (entity.getType() == Type.TABLE || entity.getType() == Type.PARTITION) {
                 final String tblQFName = HiveMetaStoreBridge.getTableQualifiedName(dgiBridge.getClusterName(), entity.getTable());
@@ -729,7 +728,7 @@ public class HiveHook extends AtlasHook implements ExecuteWithHookContext {
             }
         }
         catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.HIVE_HOOK, e, "processHiveEntity");
+            throw new AtlasHookException("HiveHook.processHiveEntity() failed.", e);
         }
     }
 
