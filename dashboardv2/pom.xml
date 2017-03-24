@@ -42,6 +42,7 @@
                     <configuration>
                         <phase>validate</phase>
                         <workingDirectory>${project.build.directory}</workingDirectory>
+                        <npmInheritsProxyConfigFromMaven>false</npmInheritsProxyConfigFromMaven>
                     </configuration>
                 </plugin>
             </plugins>
