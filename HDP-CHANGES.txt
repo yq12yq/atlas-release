@@ -1,16 +1,29 @@
 HDP Changes
 
+ATLAS-1333: fix for incorrect json4s library version in Atlas Storm hook
 ATLAS-1469: User provided values for tag attributes should be evaluated for its data type.
+ATLAS-1470: Tag is not associated to an entity when incorrect value for byte type is provided
 ATLAS-1503: optimization of export implementation
 ATLAS-1611: incorrect error code for negative tests (#2)
 ATLAS-1630: basic search performance improvement (#3)
 ATLAS-1659: Update full-text search string when traits/tags are added/removed from entity
+ATLAS-1664: Able to add already added tag to an entity through REST API
+ATLAS-1665: export optimization to reduce file-size and export-time
+ATLAS-1666: Updated exception handling to avoid use of generic exceptions
+ATLAS-1666: fix for IT failures caused by earlier commit
+ATLAS-1667: Atlas UI cleanup for lineage
+ATLAS-1669: Removed Unused class.
+ATLAS-1670: fix for IT failures introduced due to ATLAS-1664
+ATLAS-1671: fix for missing client IP in Ranger audit log for Atlas authorizations
+ATLAS-1675: type-registry re-initialization failure when instance goes from passive to active state
+ATLAS-1676: update Hive hook to set hdfs_path.clusterName attribute
+ATLAS-1682: UI update to add new overlay loader to tables; fix incorrect state while switching between basic and Advance search
+ATLAS-1687: hbase_column_family and hbase_column are not loaded after upgrade
+
 BUG-69358: ignore sign files in shaded jar.
 BUG-69414: atlas fix to consume latest hive change.
-ATLAS-1333: fix for incorrect json4s library version in Atlas Storm hook
 BUG-71219: fix the checktyle multimodule configuration.
 BUG-74353: Kafka server startup fix
-ATLAS-1669: Removed Unused class.
-ATLAS-1666: Updated exception handling to avoid use of generic exceptions
-ATLAS-1470: Tag is not associated to an entity when incorrect value for byte type is provided
+BUG-76279: Remove problematic tests
 BUG-77446: fix Atlas hook to resolve Hive service check failure with NoClassDefFound exception
+BUG-77993: upgrade frontend-maven-plugin to latest
