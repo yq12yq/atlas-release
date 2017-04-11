@@ -93,4 +93,12 @@ ATLAS-970 Remove glyphicon from login.jsp (kevalbhatt18 via shwethags)
 ATLAS-966 Exit execution of import_hive.sh if HIVE_HOME is not set (svimal2106 via sumasai)
 ATLAS-917 Add hdfs paths to process qualified name for non-partition based queries (sumasai)
 ATLAS-1351 HiveHook fails with NPE for hive process registration
-
+ATLAS-1403 - BUG-70525 - Aetna DataProfiler changes not showing the profile information
+ATLAS-1443 - BUG-77275 - Regression: Default values are not returned for optional attributes, these are actually ignored in the response.
+ATLAS-1508 - BUG-74097 - Atlas AD authentication Active Directory Authentication should authenticate on sAMAccountName attribute
+ATLAS-1546 - BUG-74657 - Hive hook should choose appropriate JAAS config if host uses kerberos ticket-cache
+ATLAS-1585 - BUG-77234 - Display Entity Type on ATLAS search results (list)
+ATLAS-1596 - BUG-77235 - Show Properties in a Alphabetical order (sorting)
+ATLAS-1630 - BUG-77233 - Basic search implementation using fulltext
+ATLAS-1630 - BUG-77237 - Change ATLAS Search behavior to improve the search results for end-user
+ATLAS-1667 - BUG-77298 - Atlas UI Cleanup for lineage
