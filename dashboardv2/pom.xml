@@ -42,7 +42,7 @@
                     <configuration>
                         <phase>validate</phase>
                         <workingDirectory>${project.build.directory}</workingDirectory>
-                        <npmInheritsProxyConfigFromMaven>false</npmInheritsProxyConfigFromMaven>
+                        <nodeDownloadRoot>${node.download.location}</nodeDownloadRoot>
                     </configuration>
                 </plugin>
             </plugins>
@@ -97,6 +97,7 @@
                         <configuration>
                             <nodeVersion>${node-for-v2.version}</nodeVersion>
                             <npmVersion>3.8.5</npmVersion>
+                            <nodeDownloadRoot>${node.download.location}</nodeDownloadRoot>
                         </configuration>
                     </execution>
                     <execution>
