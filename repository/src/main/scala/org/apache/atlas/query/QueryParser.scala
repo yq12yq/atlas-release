@@ -421,6 +421,7 @@ object QueryParser extends StandardTokenParsers with QueryKeywords with Expressi
       case g ~ ce => ce
     }
 
+    def isKeyword(s: String) = queryreservedWords.contains(s)
 }
 
 class QueryLexer(val keywords: Seq[String], val delims: Seq[String]) extends StdLexical with ImplicitConversions {
