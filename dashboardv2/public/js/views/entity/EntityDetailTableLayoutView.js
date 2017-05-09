@@ -47,9 +47,10 @@ define(['require',
              * @constructs
              */
             initialize: function(options) {
-                _.extend(this, _.pick(options, 'globalVent', 'collection'));
+                _.extend(this, _.pick(options, 'globalVent', 'collection', 'entityDef'));
                 this.collectionObject = this.collection.toJSON();
                 this.entityModel = new this.collection.model();
+
             },
             bindEvents: function() {},
             onRender: function() {
@@ -57,8 +58,13 @@ define(['require',
             },
             entityTableGenerate: function() {
                 var that = this,
-                    valueObject = this.collectionObject[0].values,
-                    table = CommonViewFunction.propertyTable(valueObject, this);
+                    valueObject = this.collectionObject[0].values;
+                if (valueObject.columns) {
+                    valueObject.columns = _.sortBy(valueObject.columns, function(val) {
+                        return val.values.position;
+                    });
+                }
+                var table = CommonViewFunction.propertyTable(this, valueObject, this.entityDef);
                 that.ui.detailValue.append(table);
             }
         });

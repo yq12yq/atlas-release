@@ -69,7 +69,7 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
             }
         });
     };
-    CommonViewFunction.propertyTable = function(valueObject, scope, searchTable) {
+    CommonViewFunction.propertyTable = function(scope, valueObject, entityDef, searchTable) {
         var table = "",
             fetchInputOutputValue = function(id) {
                 var that = this;
@@ -116,203 +116,122 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Glob
                         }
                     }
                 });
-            }
-        _.keys(valueObject).map(function(key) {
-            var keyValue = valueObject[key],
-                valueOfArray = [];
-            if (_.isArray(keyValue)) {
-                var subLink = "";
-                for (var i = 0; i < keyValue.length; i++) {
-                    var inputOutputField = keyValue[i],
-                        id = undefined,
-                        tempLink = "",
-                        readOnly = false;
-                    if (inputOutputField['$id$']) {
-                        inputOutputField.id = inputOutputField['$id$'];
-                    }
-                    if (inputOutputField) {
-                        if (_.isObject(inputOutputField.id)) {
-                            id = inputOutputField.id.id;
-                            if (Globals.entityStateReadOnly[inputOutputField.id.state]) {
-                                readOnly = inputOutputField.id.state
-                            }
-                        } else if (inputOutputField.id) {
-                            id = inputOutputField.id;
-                        } else if (_.isString(inputOutputField) || _.isBoolean(inputOutputField) || _.isNumber(inputOutputField)) {
-                            if (inputOutputField.indexOf("$") == -1) {
-                                valueOfArray.push('<span>' + inputOutputField + '</span>');
-                            }
-                        } else if (_.isObject(inputOutputField)) {
-                            _.each(inputOutputField, function(objValue, objKey) {
-                                var value = objValue;
-                                if (objKey.indexOf("$") == -1) {
-                                    if (_.isObject(value)) {
-                                        value = JSON.stringify(value);
-                                    }
-                                    valueOfArray.push('<span>' + objKey + ':' + value + '</span>');
+            },
+            extractObj = function(key, keyValue) {
+                var row = "",
+                    valueOfArray = [];
+                if (_.isObject(keyValue) && !_.isArray(keyValue)) {
+                    keyValue = [keyValue];
+                }
+                if (_.isArray(keyValue)) {
+                    var subLink = "";
+                    for (var i = 0; i < keyValue.length; i++) {
+                        var inputOutputField = keyValue[i],
+                            id = undefined,
+                            tempLink = "",
+                            readOnly = false;
+                        if (inputOutputField['$id$']) {
+                            inputOutputField.id = inputOutputField['$id$'];
+                        }
+                        if (inputOutputField) {
+                            if (_.isObject(inputOutputField.id)) {
+                                id = inputOutputField.id.id;
+                                if (Globals.entityStateReadOnly[inputOutputField.id.state]) {
+                                    readOnly = inputOutputField.id.state
                                 }
-                            });
-                        }
-                    }
-
-                    if (id) {
-                        if (inputOutputField.values) {
-                            if (inputOutputField.values.name) {
-                                tempLink += '<a href="#!/detailPage/' + id + '">' + inputOutputField.values.name + '</a>'
-                            } else if (inputOutputField.values.qualifiedName) {
-                                tempLink += '<a href="#!/detailPage/' + id + '">' + inputOutputField.values.qualifiedName + '</a>'
-                            } else if (inputOutputField.typeName) {
-                                tempLink += '<a href="#!/detailPage/' + id + '">' + inputOutputField.typeName + '</a>'
-                            } else {
-                                tempLink += '<a href="#!/detailPage/' + id + '">' + id + '</a>'
+                            } else if (inputOutputField.id) {
+                                id = inputOutputField.id;
+                            } else if (_.isString(inputOutputField) || _.isBoolean(inputOutputField) || _.isNumber(inputOutputField)) {
+                                if (inputOutputField.indexOf("$") == -1) {
+                                    valueOfArray.push('<span>' + inputOutputField + '</span>');
+                                }
+                            } else if (_.isObject(inputOutputField)) {
+                                _.each(inputOutputField, function(objValue, objKey) {
+                                    var value = objValue;
+                                    if (objKey.indexOf("$") == -1) {
+                                        if (_.isObject(value)) {
+                                            value = JSON.stringify(value);
+                                        }
+                                        valueOfArray.push('<span>' + objKey + ':' + value + '</span>');
+                                    }
+                                });
                             }
-                        } else if (inputOutputField.name) {
-                            tempLink += '<a href="#!/detailPage/' + id + '">' + inputOutputField.name + '</a>';
-                        } else if (inputOutputField.qualifiedName) {
-                            tempLink += '<a href="#!/detailPage/' + id + '">' + inputOutputField.qualifiedName + '</a>'
-                        } else {
-                            var fetch = true;
-                            fetchInputOutputValue(id);
-                            tempLink += '<div data-id="' + id + '"></div>';
-                        }
-                    }
-                    if (readOnly) {
-                        if (!fetch) {
-                            tempLink += '<button title="Deleted" class="btn btn-atlasAction btn-atlas deleteBtn"><i class="fa fa-trash"></i></button>';
-                            subLink += '<div class="block readOnlyLink">' + tempLink + '</div>';
-                        } else {
-                            fetch = false;
-                            subLink += tempLink;
                         }
 
-                    } else {
-                        if (tempLink.search('href') != -1) {
-                            subLink += '<div>' + tempLink + '</div>'
-                        } else if (tempLink.length) {
-                            subLink += tempLink
+                        if (id) {
+                            if (inputOutputField.values) {
+                                if (inputOutputField.values.name) {
+                                    tempLink += '<a href="#!/detailPage/' + id + '">' + inputOutputField.values.name + '</a>'
+                                } else if (inputOutputField.values.qualifiedName) {
+                                    tempLink += '<a href="#!/detailPage/' + id + '">' + inputOutputField.values.qualifiedName + '</a>'
+                                } else if (inputOutputField.typeName) {
+                                    tempLink += '<a href="#!/detailPage/' + id + '">' + inputOutputField.typeName + '</a>'
+                                } else {
+                                    tempLink += '<a href="#!/detailPage/' + id + '">' + id + '</a>'
+                                }
+                            } else if (inputOutputField.name) {
+                                tempLink += '<a href="#!/detailPage/' + id + '">' + inputOutputField.name + '</a>';
+                            } else if (inputOutputField.qualifiedName) {
+                                tempLink += '<a href="#!/detailPage/' + id + '">' + inputOutputField.qualifiedName + '</a>'
+                            } else {
+                                var fetch = true;
+                                fetchInputOutputValue(id);
+                                tempLink += '<div data-id="' + id + '"></div>';
+                            }
                         }
-                    }
-                }
-                if (valueOfArray.length) {
-                    subLink = valueOfArray.join(', ');
-                }
-                if (searchTable) {
-                    table = subLink;
-                } else {
-                    table += '<tr><td>' + key + '</td><td>' + subLink + '</td></tr>';
-                }
-            } else if (_.isObject(keyValue)) {
-                var id = undefined,
-                    tempLink = "",
-                    readOnly = false;
-                if (keyValue['$id$']) {
-                    keyValue.id = keyValue['$id$'];
-                }
-                if (_.isObject(keyValue.id)) {
-                    id = keyValue.id.id;
-                    if (Globals.entityStateReadOnly[keyValue.id.state]) {
-                        readOnly = keyValue.id.state
-                    }
-                } else {
-                    id = keyValue.id;
-                }
-                if (id) {
-                    if (keyValue.values) {
-                        if (keyValue.values.name) {
-                            tempLink += '<a href="#!/detailPage/' + id + '">' + keyValue.values.name + '</a>';
-                        } else if (keyValue.values.qualifiedName) {
-                            tempLink += '<a href="#!/detailPage/' + id + '">' + keyValue.values.qualifiedName + '</a>'
-                        } else if (keyValue.typeName) {
-                            tempLink += '<a href="#!/detailPage/' + id + '">' + keyValue.typeName + '</a>'
-                        } else {
-                            tempLink += '<a href="#!/detailPage/' + id + '">' + id + '</a>';
-                        }
-                    } else if (keyValue.name) {
-                        tempLink += '<a href="#!/detailPage/' + id + '">' + keyValue.name + '</a>';
-                    } else if (keyValue.qualifiedName) {
-                        tempLink += '<a href="#!/detailPage/' + id + '">' + keyValue.qualifiedName + '</a>'
-                    } else {
-                        var fetch = true;
-                        fetchInputOutputValue(id);
-                        tempLink += '<div data-id="' + id + '"></div>';
-                    }
-                    if (readOnly) {
-                        if (!fetch) {
-                            tempLink += '<button title="Deleted" class="btn btn-atlasAction btn-atlas deleteBtn"><i class="fa fa-trash"></i></button>';
-                        }
-
-                        if (searchTable) {
+                        if (readOnly) {
                             if (!fetch) {
-                                table = '<div class="block readOnlyLink">' + tempLink + '</div>';
+                                tempLink += '<button title="Deleted" class="btn btn-atlasAction btn-atlas deleteBtn"><i class="fa fa-trash"></i></button>';
+                                subLink += '<div class="block readOnlyLink">' + tempLink + '</div>';
                             } else {
-                                table = tempLink;
+                                fetch = false;
+                                subLink += tempLink;
                             }
-                        } else {
-                            if (!fetch) {
-                                table += '<tr><td>' + key + '</td><td><div class="block readOnlyLink">' + tempLink + '</div></td></tr>';
-                            } else {
-                                table += '<tr><td>' + key + '</td><td>' + tempLink + '</td></tr>';
-                            }
-                        }
-                    } else {
-                        if (searchTable) {
-                            table = tempLink;
-                        } else {
-                            table += '<tr><td>' + key + '</td><td>' + tempLink + '</td></tr>';
-                        }
-                    }
-                } else {
-                    var stringArr = [];
-                    _.each(keyValue, function(val, key) {
-                        var value = "";
-                        if (_.isObject(val)) {
-                            value = JSON.stringify(val);
-                        } else {
-                            value = val;
-                        }
-                        var attrName = "<span>" + key + " : " + value + "</span>";
-                        stringArr.push(attrName);
-                    });
-                    var jointValues = stringArr.join(", ");
-                    if (jointValues.length) {
-                        tempLink += '<div>' + jointValues + '</div>';
-                    }
-                    if (readOnly) {
-                        tempLink += '<button title="Deleted" class="btn btn-atlasAction btn-atlas deleteBtn"><i class="fa fa-trash"></i></button>';
-                        if (searchTable) {
-                            table = '<div class="block readOnlyLink">' + tempLink + '</div>';
-                        } else {
-                            table += '<tr><td>' + key + '</td><td><div class="block readOnlyLink">' + tempLink + '</div></td></tr>';
-                        }
 
-                    } else {
-                        if (searchTable) {
-                            table = tempLink;
                         } else {
-                            table += '<tr><td>' + key + '</td><td>' + tempLink + '</td></tr>';
+                            if (tempLink.search('href') != -1) {
+                                subLink += '<div>' + tempLink + '</div>'
+                            } else if (tempLink.length) {
+                                subLink += tempLink
+                            }
                         }
+                    }
+                    if (valueOfArray.length) {
+                        subLink = valueOfArray.join(', ');
+                    }
+                    if (searchTable) {
+                        row = subLink;
+                    } else {
+                        row += '<tr><td>' + key + '</td><td>' + subLink + '</td></tr>';
                     }
                 }
+                return row;
+            };
+        if (searchTable) {
+            if (_.isObject(valueObject)) {
+                table = extractObj(null, valueObject);
             } else {
-                if (key.indexOf("Time") !== -1 || key == "retention") {
-                    if (searchTable) {
-                        table = new Date(valueObject[key]);
-                    } else {
+                table = valueObject;
+            }
+        } else {
+            _.sortBy(_.keys(valueObject)).map(function(key) {
+                var defEntity = _.find(entityDef, { name: key });
+                if (defEntity) {
+                    var defEntityType = defEntity.dataTypeName.toLocaleLowerCase(),
+                        keyValue = valueObject[key];
+                    if (defEntityType && (defEntityType === "date" || defEntityType === "time")) {
                         table += '<tr><td>' + key + '</td><td>' + new Date(valueObject[key]) + '</td></tr>';
-                    }
-                } else {
-                    if (searchTable) {
-                        if (_.isBoolean(valueObject[key])) {
-                            table = valueObject[key].toString();
-                        } else {
-                            table = valueObject[key];
-                        }
+                    } else if (_.isObject(keyValue)) {
+                        table += extractObj(key, keyValue);
                     } else {
                         table += '<tr><td>' + key + '</td><td>' + valueObject[key] + '</td></tr>';
                     }
                 }
-            }
-        });
+            });
+        }
+        if (table.length === 0) {
+            table = '<tr class="empty"><td colspan="3" style="text-align: center;"><span>No records found!</span></td></tr>';
+        }
         return table;
     }
     CommonViewFunction.breadcrumbUrlMaker = function(url) {

@@ -52,6 +52,16 @@ define(['require',
 
             return this.constructor.nonCrudOperation.call(this, url, 'GET', options);
         },
+        getEntityType: function(typeName, options) {
+            var url = Globals.baseURL + '/api/atlas/types/' + typeName;
+
+            options = _.extend({
+                contentType: 'application/json',
+                dataType: 'json'
+            }, options);
+
+            return this.constructor.nonCrudOperation.call(this, url, 'GET', options);
+        },
         saveEntity: function(token, options) {
             var url = Globals.baseURL + '/api/atlas/entities/' + token + '/traits';
             options = _.extend({
