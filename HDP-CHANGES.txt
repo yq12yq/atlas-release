@@ -20,6 +20,56 @@ ATLAS-1676: update Hive hook to set hdfs_path.clusterName attribute
 ATLAS-1682: UI update to add new overlay loader to tables; fix incorrect state while switching between basic and Advance search
 ATLAS-1687: hbase_column_family and hbase_column are not loaded after upgrade
 
+ATLAS-1433 : Atlas allows creation of tag with attributes' name same as that of its parent tags.
+ATLAS-1611: Regression: Incorrect error code for the negative tests, returned: 500 server error, expected: 400 bad request
+ATLAS-1644 Taxonomy API /api/atlas/v1/taxonomies is broken.(sumasai)
+ATLAS-1660: Error code mismatch in while GETing a type that doesn't exist.
+ATLAS-1663: Fix defects reported by Coverity Scan
+ATLAS-1672: fix for issues flagged by Coverity scan
+ATLAS-1673: Type deletion should check for reference & instances
+ATLAS-1680- Support for browser login using kerberos keytab
+ATLAS-1681 - Added type validations for compatibility with legacy typesystem
+ATLAS-1684: export should include super-type definitions, import should preserve system attribute values
+ATLAS-1685: fix for issues flagged by coverity scan
+ATLAS-1686: fixed import to use the given guid, instead of looking into store with unique attribute
+ATLAS-1688: fix lineage UI resize issues
+ATLAS-1697: fix log4j configuration for import-hive.sh
+ATLAS-1707 : fix to remove external css reference for font file
+ATLAS-1707: Fix for missing font file
+ATLAS-1709: Unit tests for import and export APIs
+ATLAS-1710: added entity-lookup API for entity create/update UI
+ATLAS-1710: added entity-lookup API for entity create/update UI (#2)
+ATLAS-1714 : UI : Properties tab doesn't load when an entity has attribute of type array of integers
+ATLAS-1717-IX-Documentation
+ATLAS-1718: UI update to support enum-type attributes for tags
+ATLAS-1719: updated tag association UI to support enum-type attribute values from a drop-down
+ATLAS-1721: updated action-string in the audit logs generated during import
+ATLAS-1724, ATLAS-1722: fix export to report error while exporting a non-existing entity
+ATLAS-1726 : Creating type name with space causes exceptions while doing DSL search
+ATLAS-1727: Mask userdetails in quick Start utility
+ATLAS-1730,1736,1747: fixes in type validations and special character handling in attribute names
+ATLAS-1732 : After Zoom_out from Lineage view scroll stopped working
+ATLAS-1735: Coverity Scan Fixes for 4/13
+ATLAS-1737: UI - Delete tag(classification) from UI.
+ATLAS-1742: Provide option to exclude deleted entities in basic and fulltext search
+ATLAS-1744 Error when searching type with attribute name order , limit , offset (sumasai)
+ATLAS-1745: Add google fonts license information to 3party-licenses
+ATLAS-1750: type ahead for entity input in create/update entity UI
+ATLAS-1751: Implement REST endpoint to support update of classification attribute
+ATLAS-1752:- Fix for Atlas group for kerberos authentication
+ATLAS-1755: added checkbox to exclude deleted entities in basic and fulltext search
+ATLAS-1756: UI update to allow user to edit tag attribute values
+ATLAS-1759 : UI - Add checkbox to exclude deleted entities in schema table.
+ATLAS-1760: UI update to render property value per attribute type in entity definition
+ATLAS-1761: improve attribute search to enable search based on display text
+ATLAS-1762: updated error code returned by type create/updated APIs
+ATLAS-1767: Support KNOX SSO Token based authentication on Atlas REST API calls
+ATLAS-1771: confirmation dialog while deleting tag appears incorrectly in IE-9
+ATLAS-1776: UI fix to avoid error popup on clicling 'Include historical entities' checkbox text ATLAS-1777: UI fix to not hide 'Include historical entities' checkbox when searching a type with all DELETED entities
+ATLAS-1780: Type deletion should invalidate property keys in Titan to allow re-creation with different data type if needed
+ATLAS-855: Atlas logs contain stale transaction eviction message
+BUG-77993 upgrade frontend-maven-plugin to latest
+
 BUG-69358: ignore sign files in shaded jar.
 BUG-69414: atlas fix to consume latest hive change.
 BUG-71219: fix the checktyle multimodule configuration.
