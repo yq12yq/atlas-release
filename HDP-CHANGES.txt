@@ -68,7 +68,10 @@ ATLAS-1771: confirmation dialog while deleting tag appears incorrectly in IE-9
 ATLAS-1776: UI fix to avoid error popup on clicling 'Include historical entities' checkbox text ATLAS-1777: UI fix to not hide 'Include historical entities' checkbox when searching a type with all DELETED entities
 ATLAS-1780: Type deletion should invalidate property keys in Titan to allow re-creation with different data type if needed
 ATLAS-855: Atlas logs contain stale transaction eviction message
-BUG-77993 upgrade frontend-maven-plugin to latest
+ATLAS-1812: On browser refresh if, tag is doesn't exist, then URL should update with the first tag.
+ATLAS-1815: Basic search API might return fewer entities when excludeDeletedEntities=true
+ATLAS-1816: button to navigate to next page in search-result is disabled incorrectly
+ATLAS-1818: basic-search enhancements to improve search performance
 
 BUG-69358: ignore sign files in shaded jar.
 BUG-69414: atlas fix to consume latest hive change.
@@ -76,4 +79,5 @@ BUG-71219: fix the checktyle multimodule configuration.
 BUG-74353: Kafka server startup fix
 BUG-76279: Remove problematic tests
 BUG-77446: fix Atlas hook to resolve Hive service check failure with NoClassDefFound exception
+
 BUG-77993: upgrade frontend-maven-plugin to latest
