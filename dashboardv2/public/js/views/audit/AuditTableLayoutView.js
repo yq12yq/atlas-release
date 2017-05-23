@@ -57,7 +57,7 @@ define(['require',
              * @constructs
              */
             initialize: function(options) {
-                _.extend(this, _.pick(options, 'globalVent', 'guid'));
+                _.extend(this, _.pick(options, 'globalVent', 'guid', 'entityName', 'entityDef'));
                 this.entityCollection = new VEntityList();
                 this.count = 26;
                 this.entityCollection.url = "/api/atlas/entities/" + this.guid + "/audit";
@@ -93,28 +93,34 @@ define(['require',
             getToOffset: function() {
                 var toOffset = 0;
                 if (this.entityCollection.models.length < this.count) {
-                    toOffset = ((this.currPage - 1) * (this.count - 1) + (this.entityCollection.models.length));
+                    toOffset = (this.getFromOffset() + (this.entityCollection.models.length));
                 } else {
-                    toOffset = ((this.currPage - 1) * (this.count - 1) + (this.entityCollection.models.length - 1));
+                    toOffset = (this.getFromOffset() + (this.entityCollection.models.length - 1));
                 }
                 return toOffset;
             },
+            getFromOffset: function(options) {
+                var count = (this.currPage - 1) * (this.count - 1);
+                if (options && (options.nextClick || options.previousClick || this.entityCollection.models.length)) {
+                    return count + 1;
+                } else {
+                    return count;
+                }
+            },
             renderOffset: function(options) {
-                var that = this;
                 if (options.nextClick) {
                     options.previous.removeAttr("disabled");
-                    if (that.entityCollection.length != 0) {
-                        that.currPage++;
-                        that.ui.pageRecordText.html("Showing " + ((that.currPage - 1) * (that.count - 1) + 1) + " - " + that.getToOffset());
+                    if (this.entityCollection.length != 0) {
+                        this.currPage++;
+
                     }
-                }
-                if (options.previousClick) {
+                } else if (options.previousClick) {
                     options.next.removeAttr("disabled");
-                    if (that.currPage > 1 && that.entityCollection.models.length) {
-                        that.currPage--;
-                        that.ui.pageRecordText.html("Showing " + ((that.currPage - 1) * (that.count - 1) + 1) + " - " + that.getToOffset());
+                    if (this.currPage > 1 && this.entityCollection.models.length) {
+                        this.currPage--;
                     }
                 }
+                this.ui.pageRecordText.html("Showing " + this.getFromOffset(options) + " - " + this.getToOffset());
             },
             fetchCollection: function(options) {
                 var that = this;
@@ -127,28 +133,28 @@ define(['require',
                 }
                 this.entityCollection.fetch({
                     success: function() {
+                        if (!(that.ui.pageRecordText instanceof jQuery)) {
+                            return;
+                        }
                         if (that.entityCollection.models.length < that.count) {
                             options.previous.attr('disabled', true);
                             options.next.attr('disabled', true);
                         }
-                        if (!options.nextClick && !options.previousClick) {
-                            that.ui.pageRecordText.html("Showing " + ((that.currPage - 1) * (that.count - 1) + 1) + " - " + that.getToOffset());
-                        }
-                        that.$('.fontLoader').hide();
-                        that.$('.auditTable').show();
                         that.renderOffset(options);
-                        if ((that.entityCollection.models.length < that.count && that.currPage == 1) && that.next == that.entityCollection.last().get('eventKey')) {
-                            options.next.attr('disabled', true);
-                            options.previous.removeAttr("disabled");
-                        } else {
-                            if (that.entityCollection.models.length > 0) {
+                        if (that.entityCollection.models.length) {
+                            if (that.entityCollection && (that.entityCollection.models.length < that.count && that.currPage == 1) && that.next == that.entityCollection.last().get('eventKey')) {
+                                options.next.attr('disabled', true);
+                                options.previous.removeAttr("disabled");
+                            } else {
                                 that.next = that.entityCollection.last().get('eventKey');
                                 if (that.pervOld.length === 0) {
                                     options.previous.attr('disabled', true);
                                 }
+                                that.renderTableLayoutView();
                             }
-                            that.renderTableLayoutView();
                         }
+                        that.$('.fontLoader').hide();
+                        that.$('.auditTable').show();
                     },
                     silent: true
                 });
@@ -225,7 +231,7 @@ define(['require',
                     that.action = $(e.target).data("action");
                     var eventModel = that.entityCollection.findWhere({ 'eventKey': $(e.currentTarget).data('modalid') }).toJSON(),
                         collectionModel = new that.entityCollection.model(eventModel),
-                        view = new CreateAuditTableLayoutView({ guid: that.guid, entityModel: collectionModel, action: that.action });
+                        view = new CreateAuditTableLayoutView({ guid: that.guid, entityModel: collectionModel, action: that.action, entityName: that.entityName, entityDef: that.entityDef });
                     var modal = new Modal({
                         title: that.action,
                         content: view,

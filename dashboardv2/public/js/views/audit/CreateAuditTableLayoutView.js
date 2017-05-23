@@ -53,7 +53,7 @@ define(['require',
              * @constructs
              */
             initialize: function(options) {
-                _.extend(this, _.pick(options, 'globalVent', 'guid', 'entityModel', 'action'));
+                _.extend(this, _.pick(options, 'guid', 'entityModel', 'action', 'entityName', 'entityDef'));
             },
             bindEvents: function() {},
             onRender: function() {
@@ -62,18 +62,28 @@ define(['require',
             auditTableGenerate: function() {
                 var that = this,
                     table = "";
-                if (this.entityModel.get('details').search('{') >= 0) {
-                    var appendedString = "{" + this.entityModel.get('details') + "}";
-                    var auditData = appendedString.split('"')[0].split(':')[0].split("{")[1];
-                    var detailsObject = JSON.parse(appendedString.replace("{" + auditData + ":", '{"' + auditData + '":'))[auditData];
-                    //Append string for JSON parse
-                    var valueObject = detailsObject.values;
-                    if (this.action == Globals.auditAction.TAG_ADD) {
-                        this.ui.auditHeaderValue.html('<th>Tag</th>');
-                        this.ui.auditValue.html("<tr><td>" + _.escape(detailsObject.typeName) + "</td></tr>");
-                    } else {
+                var detailObj = this.entityModel.get('details');
+                if (detailObj && detailObj.search(':') >= 0) {
+                    var parseDetailsObject = detailObj.split(':');
+                    if (parseDetailsObject.length > 1) {
+                        parseDetailsObject.shift();
+                        var auditData = parseDetailsObject.join(":");
+                    }
+                    try {
+                        parseDetailsObject = JSON.parse(auditData);
+                        var name = _.escape(parseDetailsObject.typeName);
+                    } catch (err) {
+                        if (_.isArray(parseDetailsObject)) {
+                            var name = _.escape(parseDetailsObject[0]);
+                        }
+                    }
+                    var values = parseDetailsObject.values;
+                    if (this.action && (Globals.auditAction.ENTITY_CREATE !== this.action) && name) {
+                        this.ui.auditHeaderValue.html('<th>' + this.action + '</th>');
+                        this.ui.auditValue.html("<tr><td>" + (name ? name : this.entityName) + "</td></tr>");
+                    } else if (parseDetailsObject && parseDetailsObject.values) {
                         this.ui.auditHeaderValue.html('<th>Key</th><th>New Value</th>');
-                        table = CommonViewFunction.propertyTable(valueObject, this);
+                        table = CommonViewFunction.propertyTable(this, values, this.entityDef);
                         if (table.length) {
                             this.ui.noData.hide();
                             this.ui.tableAudit.show();
@@ -83,13 +93,8 @@ define(['require',
                             this.ui.tableAudit.hide();
                         }
                     }
-                } else if (this.action == Globals.auditAction.TAG_DELETE) {
-                    var appendedString = this.entityModel.get('details').split(':');
-                    this.ui.auditHeaderValue.html('<th>Tag</th>');
-                    this.ui.auditValue.html("<tr><td>" + _.escape(appendedString[1]) + "</td></tr>");
                 }
-
-            },
+            }
         });
     return CreateAuditTableLayoutView;
 });

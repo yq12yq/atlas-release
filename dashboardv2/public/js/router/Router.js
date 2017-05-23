@@ -227,7 +227,7 @@ define([
                 App.rNContent.show(new SearchDetailLayoutView({
                     'globalVent': that.globalVent,
                     'value': paramObj,
-                    'initialView': (paramObj.query.trim() || paramObj.type || (paramObj.dslChecked == "true" ? "" : paramObj.tag)).length === 0
+                    'initialView': (paramObj.type || (paramObj.dslChecked == "true" ? "" : paramObj.tag) || (paramObj.query ? paramObj.query.trim() : "")).length === 0
                 }));
             });
         },

@@ -415,7 +415,7 @@ define(['require',
                             orderable: true,
                             formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
                                 fromRaw: function(rawValue, model) {
-                                    return CommonViewFunction.propertyTable({ 'notUsedKey': rawValue }, that, true);
+                                    return CommonViewFunction.propertyTable(that, rawValue, [], true);
                                 }
                             })
                         };

@@ -102,32 +102,38 @@ define(['require',
             initialize: function(options) {
                 _.extend(this, _.pick(options, 'globalVent', 'collection', 'vent', 'id'));
                 this.bindEvents();
+                this.entityDef = [];
+                this.fetchSuperTypeEntity = 0;
             },
             bindEvents: function() {
                 var that = this;
                 this.listenTo(this.collection, 'reset', function() {
 
-                    var collectionJSON = this.collection.toJSON();
-                    if (collectionJSON[0].id && collectionJSON[0].id.id) {
-                        var tagGuid = collectionJSON[0].id.id;
-                        this.readOnly = Globals.entityStateReadOnly[collectionJSON[0].id.state];
+                    var collectionJSON = this.collection.toJSON()[0];
+                    if (collectionJSON.id && collectionJSON.id.id) {
+                        var tagGuid = collectionJSON.id.id;
+                        this.readOnly = Globals.entityStateReadOnly[collectionJSON.id.state];
                     }
                     if (this.readOnly) {
                         this.$el.addClass('readOnly');
                     } else {
                         this.$el.removeClass('readOnly');
                     }
-                    if (collectionJSON && collectionJSON.length) {
-                        if (collectionJSON[0].values) {
-                            if (collectionJSON[0].values.name) {
-                                this.name = collectionJSON[0].values.name;
+                    if (collectionJSON) {
+                        if (collectionJSON.values) {
+                            if (collectionJSON.values.name) {
+                                this.name = collectionJSON.values.name;
                             }
-                            if (!this.name && collectionJSON[0].values.qualifiedName) {
-                                this.name = collectionJSON[0].values.qualifiedName;
+                            if (!this.name && collectionJSON.values.qualifiedName) {
+                                this.name = collectionJSON.values.qualifiedName;
                             }
-                            if (!this.name && collectionJSON[0].typeName) {
-                                this.name = collectionJSON[0].typeName;
+                            if (this.name && collectionJSON.typeName) {
+                                this.name = this.name + ' (' + collectionJSON.typeName + ')';
                             }
+                            if (!this.name && collectionJSON.typeName) {
+                                this.name = collectionJSON.typeName;
+                            }
+
                             if (!this.name && this.id) {
                                 this.name = this.id;
                             }
@@ -135,21 +141,20 @@ define(['require',
                                 this.ui.title.show();
                                 var titleName = '<span>' + _.escape(this.name) + '</span>';
                                 if (this.readOnly) {
-                                    titleName += '<button title="Deleted" class="btn btn-atlasAction btn-atlas deleteBtn"><i class="fa fa-trash"></i> Deleted</button>'
+                                    titleName += '<button title="Deleted" class="btn btn-atlasAction btn-atlas deleteBtn"><i class="fa fa-trash"></i> Deleted</button>';
                                 }
                                 this.ui.title.html(titleName);
                             } else {
                                 this.ui.title.hide();
                             }
                         }
-                        if (collectionJSON[0].traits) {
-                            this.addTagTerms(collectionJSON[0].traits);
+                        if (collectionJSON.traits) {
+                            this.addTagTerms(collectionJSON.traits);
                         }
                     }
                     Utils.hideTitleLoader(this.$('.page-title .fontLoader'), this.$('.entityDetail'));
-                    this.renderEntityDetailTableLayoutView();
+                    this.fetchType(collectionJSON.typeName);
                     this.renderTagTableLayoutView(tagGuid);
-                    this.renderAuditTableLayoutView(tagGuid);
                     this.renderTermTableLayoutView(tagGuid);
                 }, this);
                 this.listenTo(this.collection, 'error', function(model, response) {
@@ -170,6 +175,35 @@ define(['require',
             },
             fetchCollection: function() {
                 this.collection.fetch({ reset: true });
+            },
+            fetchType: function(typeName) {
+                var that = this;
+                ++that.fetchSuperTypeEntity;
+                if (typeName) {
+                    new this.collection.model().getEntityType(typeName, {
+                        success: function(data) {
+                            if (data && data.definition && data.definition.classTypes) {
+                                var classTypes = data.definition.classTypes[0];
+                                if (classTypes.attributeDefinitions) {
+                                    that.entityDef = that.entityDef.concat(classTypes.attributeDefinitions);
+                                }
+                                if (classTypes.superTypes && classTypes.superTypes.length) {
+                                    _.each(classTypes.superTypes, function(val) {
+                                        that.fetchType(val);
+                                    });
+                                }
+                            }
+                        },
+                        error: function(error, data, status) {},
+                        complete: function() {
+                            --that.fetchSuperTypeEntity;
+                            if (that.fetchSuperTypeEntity === 0) {
+                                that.renderEntityDetailTableLayoutView();
+                                that.renderAuditTableLayoutView(that.id);
+                            }
+                        }
+                    })
+                }
             },
             onClickTagCross: function(e) {
                 var tagName = $(e.currentTarget).parent().text(),
@@ -265,8 +299,8 @@ define(['require',
                 var that = this;
                 require(['views/entity/EntityDetailTableLayoutView'], function(EntityDetailTableLayoutView) {
                     that.REntityDetailTableLayoutView.show(new EntityDetailTableLayoutView({
-                        globalVent: that.globalVent,
-                        collection: that.collection
+                        collection: that.collection,
+                        entityDef: that.entityDef
                     }));
                 });
             },
@@ -274,7 +308,6 @@ define(['require',
                 var that = this;
                 require(['views/tag/TagDetailTableLayoutView'], function(TagDetailTableLayoutView) {
                     that.RTagTableLayoutView.show(new TagDetailTableLayoutView({
-                        globalVent: that.globalVent,
                         collection: that.collection,
                         guid: tagGuid,
                         assetName: that.name
@@ -285,7 +318,6 @@ define(['require',
                 var that = this;
                 require(['views/graph/LineageLayoutView'], function(LineageLayoutView) {
                     that.RLineageLayoutView.show(new LineageLayoutView({
-                        globalVent: that.globalVent,
                         guid: tagGuid
                     }));
                 });
@@ -294,7 +326,6 @@ define(['require',
                 var that = this;
                 require(['views/schema/SchemaLayoutView'], function(SchemaLayoutView) {
                     that.RSchemaTableLayoutView.show(new SchemaLayoutView({
-                        globalVent: that.globalVent,
                         guid: tagGuid
                     }));
                 });
@@ -303,8 +334,9 @@ define(['require',
                 var that = this;
                 require(['views/audit/AuditTableLayoutView'], function(AuditTableLayoutView) {
                     that.RAuditTableLayoutView.show(new AuditTableLayoutView({
-                        globalVent: that.globalVent,
-                        guid: tagGuid
+                        guid: tagGuid,
+                        entityName: that.name,
+                        entityDef: that.entityDef
                     }));
                 });
             },
@@ -312,7 +344,6 @@ define(['require',
                 var that = this;
                 require(['views/tag/TagDetailTableLayoutView'], function(TagDetailTableLayoutView) {
                     that.RTermTableLayoutView.show(new TagDetailTableLayoutView({
-                        globalVent: that.globalVent,
                         collection: that.collection,
                         guid: tagGuid,
                         assetName: that.name,
