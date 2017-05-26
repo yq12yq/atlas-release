@@ -33,17 +33,14 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
