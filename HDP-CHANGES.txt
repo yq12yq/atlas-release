@@ -10,6 +10,7 @@ ATLAS-1060 Add composite indexes for exact match performance improvements for al
 
 
 ALL CHANGES:
+ATLAS-1760 UI update to render property value per attribute type in entity definition
 ATLAS-1752 Fix for Atlas group for kerberos authentication
 ATLAS-1550 fix for unit test failure in TypeSystemTest.testDuplicateTypenames()
 ATLAS-1542 Atlas server fails to start if duplicate types are found during Typesystem bootstrap (svimal2106)
