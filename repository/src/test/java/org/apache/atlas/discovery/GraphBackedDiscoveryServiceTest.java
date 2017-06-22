@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -184,7 +185,7 @@ public class GraphBackedDiscoveryServiceTest extends BaseRepositoryTest {
         String createdTime = (String) sys_attributes.get("createdTime");
         String modifiedTime = (String) sys_attributes.get("modifiedTime");
         final String outputFormat = "EEE MMM dd HH:mm:ss z yyyy";
-        SimpleDateFormat df = new SimpleDateFormat(outputFormat);
+        SimpleDateFormat df = new SimpleDateFormat(outputFormat, Locale.ENGLISH);
         Date createdDate = df.parse(createdTime);
         Date modifiedDate = df.parse(modifiedTime);
         assertNotNull(createdDate);

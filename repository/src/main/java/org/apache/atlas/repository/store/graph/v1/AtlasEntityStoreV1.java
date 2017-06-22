@@ -22,6 +22,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.GraphTransaction;
+import org.apache.atlas.GraphTransactionInterceptor;
 import org.apache.atlas.RequestContextV1;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.impexp.AtlasImportResult;
@@ -425,6 +426,7 @@ public class AtlasEntityStoreV1 implements AtlasEntityStore {
             LOG.debug("Adding classifications={} to entity={}", classifications, guid);
         }
 
+        GraphTransactionInterceptor.lockObjectAndReleasePostCommit(guid);
         for (AtlasClassification classification : classifications) {
             validateAndNormalize(classification);
         }
@@ -455,6 +457,9 @@ public class AtlasEntityStoreV1 implements AtlasEntityStore {
         }
 
         EntityGraphMapper         graphMapper            = new EntityGraphMapper(deleteHandler, typeRegistry);
+
+        GraphTransactionInterceptor.lockObjectAndReleasePostCommit(guid);
+
         List<AtlasClassification> updatedClassifications = new ArrayList<>();
 
         for (AtlasClassification newClassification : newClassifications) {
@@ -500,6 +505,8 @@ public class AtlasEntityStoreV1 implements AtlasEntityStore {
 
         EntityGraphMapper graphMapper = new EntityGraphMapper(deleteHandler, typeRegistry);
 
+        GraphTransactionInterceptor.lockObjectAndReleasePostCommit(guids);
+
         validateAndNormalize(classification);
 
         List<AtlasClassification> classifications = Collections.singletonList(classification);
@@ -531,6 +538,8 @@ public class AtlasEntityStoreV1 implements AtlasEntityStore {
         }
 
         EntityGraphMapper entityGraphMapper = new EntityGraphMapper(deleteHandler, typeRegistry);
+        GraphTransactionInterceptor.lockObjectAndReleasePostCommit(guid);
+
         entityGraphMapper.deleteClassifications(guid, classificationNames);
 
         // notify listeners on classification deletion

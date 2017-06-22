@@ -33,6 +33,7 @@ import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.CreateUpdateEntitiesResult;
 import org.apache.atlas.GraphTransaction;
+import org.apache.atlas.GraphTransactionInterceptor;
 import org.apache.atlas.RequestContext;
 import org.apache.atlas.model.instance.GuidMapping;
 import org.apache.atlas.repository.Constants;
@@ -318,6 +319,7 @@ public class GraphBackedMetadataRepository implements MetadataRepository {
             LOG.debug("Adding a new trait={} for entities={}", traitInstance.getTypeName(), entityGuids);
         }
 
+        GraphTransactionInterceptor.lockObjectAndReleasePostCommit(entityGuids);
         for (String entityGuid : entityGuids) {
             addTraitImpl(entityGuid, traitInstance);
         }
@@ -336,12 +338,12 @@ public class GraphBackedMetadataRepository implements MetadataRepository {
         Preconditions.checkNotNull(guid, "guid cannot be null");
         Preconditions.checkNotNull(traitInstance, "Trait instance cannot be null");
 
+        GraphTransactionInterceptor.lockObjectAndReleasePostCommit(guid);
         addTraitImpl(guid, traitInstance);
     }
 
     private void addTraitImpl(String guid, ITypedStruct traitInstance) throws RepositoryException {
         final String traitName = traitInstance.getTypeName();
-
         if (LOG.isDebugEnabled()) {
             LOG.debug("Adding a new trait={} for entity={}", traitName, guid);
         }
@@ -380,9 +382,8 @@ public class GraphBackedMetadataRepository implements MetadataRepository {
     @Override
     @GraphTransaction
     public void deleteTrait(String guid, String traitNameToBeDeleted) throws TraitNotFoundException, EntityNotFoundException, RepositoryException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Deleting trait={} from entity={}", traitNameToBeDeleted, guid);
-        }
+        LOG.debug("Deleting trait={} from entity={}", traitNameToBeDeleted, guid);
+        GraphTransactionInterceptor.lockObjectAndReleasePostCommit(guid);
 
         AtlasVertex instanceVertex = graphHelper.getVertexForGUID(guid);
 
@@ -398,11 +399,11 @@ public class GraphBackedMetadataRepository implements MetadataRepository {
             AtlasEdge edge = graphHelper.getEdgeForLabel(instanceVertex, relationshipLabel);
             if(edge != null) {
                 deleteHandler.deleteEdgeReference(edge, DataTypes.TypeCategory.TRAIT, false, true);
-
-                // update the traits in entity once trait removal is successful
-                traitNames.remove(traitNameToBeDeleted);
-                updateTraits(instanceVertex, traitNames);
             }
+
+            // update the traits in entity once trait removal is successful
+            traitNames.remove(traitNameToBeDeleted);
+            updateTraits(instanceVertex, traitNames);
         } catch (Exception e) {
             throw new RepositoryException(e);
         }
