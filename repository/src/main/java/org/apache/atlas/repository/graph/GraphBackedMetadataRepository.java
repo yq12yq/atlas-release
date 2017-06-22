@@ -28,6 +28,7 @@ import com.tinkerpop.blueprints.Vertex;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.GraphTransaction;
+import org.apache.atlas.GraphTransactionInterceptor;
 import org.apache.atlas.RequestContext;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.MetadataRepository;
@@ -218,6 +219,8 @@ public class GraphBackedMetadataRepository implements MetadataRepository {
     @GraphTransaction
     public void addTrait(String guid, ITypedStruct traitInstance) throws RepositoryException {
         Preconditions.checkNotNull(traitInstance, "Trait instance cannot be null");
+        GraphTransactionInterceptor.lockObjectAndReleasePostCommit(guid);
+        
         final String traitName = traitInstance.getTypeName();
         LOG.debug("Adding a new trait={} for entity={}", traitName, guid);
 
@@ -255,6 +258,7 @@ public class GraphBackedMetadataRepository implements MetadataRepository {
     @GraphTransaction
     public void deleteTrait(String guid, String traitNameToBeDeleted) throws TraitNotFoundException, EntityNotFoundException, RepositoryException {
         LOG.debug("Deleting trait={} from entity={}", traitNameToBeDeleted, guid);
+        GraphTransactionInterceptor.lockObjectAndReleasePostCommit(guid);
         
         Vertex instanceVertex = graphHelper.getVertexForGUID(guid);
 
@@ -270,11 +274,11 @@ public class GraphBackedMetadataRepository implements MetadataRepository {
             Edge edge = graphHelper.getEdgeForLabel(instanceVertex, relationshipLabel);
             if(edge != null) {
                 deleteHandler.deleteEdgeReference(edge, DataTypes.TypeCategory.TRAIT, false, true);
-
-                // update the traits in entity once trait removal is successful
-                traitNames.remove(traitNameToBeDeleted);
-                updateTraits(instanceVertex, traitNames);
             }
+            // update the traits in entity once trait removal is successful
+            traitNames.remove(traitNameToBeDeleted);
+            updateTraits(instanceVertex, traitNames);
+            
         } catch (Exception e) {
             throw new RepositoryException(e);
         }
