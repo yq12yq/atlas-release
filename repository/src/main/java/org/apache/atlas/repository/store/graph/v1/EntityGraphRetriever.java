@@ -125,7 +125,7 @@ public final class EntityGraphRetriever {
         return entityVertex != null ? mapVertexToAtlasEntityHeader(entityVertex) : null;
     }
 
-    private AtlasVertex getEntityVertex(String guid) throws AtlasBaseException {
+    public AtlasVertex getEntityVertex(String guid) throws AtlasBaseException {
         AtlasVertex ret = AtlasGraphUtilsV1.findByGuid(guid);
 
         if (ret == null) {
