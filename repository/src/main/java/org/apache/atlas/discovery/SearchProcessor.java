@@ -48,12 +48,12 @@ public abstract class SearchProcessor {
     public static final String  AND_STR         = " AND ";
     public static final String  EMPTY_STRING    = "";
     public static final String  SPACE_STRING    = " ";
-    public static final String  BRACE_OPEN_STR  = "( ";
-    public static final String  BRACE_CLOSE_STR = " )";
+    public static final String  BRACE_OPEN_STR  = "(";
+    public static final String  BRACE_CLOSE_STR = ")";
     public static final char    DOUBLE_QUOTE    = '"';
 
     private static final Map<SearchParameters.Operator, String> OPERATOR_MAP = new HashMap<>();
-    private static final char[] OFFENDING_CHARS = {'@', '/', ' '}; // This can grow as we discover corner cases
+    private static final char[] OFFENDING_CHARS = { '@', '/', ' ' }; // This can grow as we discover corner cases
 
     static
     {
@@ -181,25 +181,14 @@ public abstract class SearchProcessor {
         return ret;
     }
 
-    protected void constructTypeTestQuery(StringBuilder solrQuery, AtlasStructType type, Set<String> typeAndAllSubTypes) {
-        String typeAndSubtypesString = StringUtils.join(typeAndAllSubTypes, SPACE_STRING);
-
+    protected void constructTypeTestQuery(StringBuilder solrQuery, Set<String> typeAndAllSubTypes) {
         if (CollectionUtils.isNotEmpty(typeAndAllSubTypes)) {
             if (solrQuery.length() > 0) {
                 solrQuery.append(AND_STR);
             }
 
-            solrQuery.append("v.\"").append(Constants.TYPE_NAME_PROPERTY_KEY).append("\": (")
-                    .append(typeAndSubtypesString)
-                    .append(")");
-        }
-
-        if (type instanceof AtlasEntityType && context.getSearchParameters().getExcludeDeletedEntities()) {
-            if (solrQuery.length() > 0) {
-                solrQuery.append(AND_STR);
-            }
-
-            solrQuery.append("v.\"").append(Constants.STATE_PROPERTY_KEY).append("\":ACTIVE");
+            solrQuery.append("v.\"").append(Constants.TYPE_NAME_PROPERTY_KEY).append("\":");
+            appendIndexQueryValue(typeAndAllSubTypes, solrQuery);
         }
     }
 
@@ -217,6 +206,14 @@ public abstract class SearchProcessor {
                 solrQuery.append(filterQuery);
             }
         }
+    }
+
+    protected void constructStateTestQuery(StringBuilder solrQuery) {
+        if (solrQuery.length() > 0) {
+            solrQuery.append(AND_STR);
+        }
+
+        solrQuery.append("v.\"").append(Constants.STATE_PROPERTY_KEY).append("\":ACTIVE");
     }
 
     private String toSolrQuery(AtlasStructType type, FilterCriteria criteria, Set<String> solrAttributes, int level) {
@@ -390,6 +387,16 @@ public abstract class SearchProcessor {
         }
 
         return ret;
+    }
+
+    protected String appendIndexQueryValue(Set<String> values, StringBuilder sb) {
+        sb.append(BRACE_OPEN_STR);
+        for (String value : values) {
+            sb.append(escapeIndexQueryValue(value)).append(SPACE_STRING);
+        }
+        sb.append(BRACE_CLOSE_STR);
+
+        return sb.toString();
     }
 
     private static int getApplicationProperty(String propertyName, int defaultValue) {
