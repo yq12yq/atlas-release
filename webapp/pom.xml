@@ -540,7 +540,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <dname>cn=atlas.incubator.apache.org</dname>
+                    <dname>cn=atlas.apache.org</dname>
                     <keystore>${project.build.directory}/atlas.keystore</keystore>
                     <keypass>keypass</keypass>
                     <storepass>keypass</storepass>
