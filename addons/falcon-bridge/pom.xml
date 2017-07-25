@@ -166,6 +166,11 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>${project.groupId}</groupId>
+                                            <artifactId>atlas-intg</artifactId>
+                                            <version>${project.version}</version>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>${project.groupId}</groupId>
                                             <artifactId>atlas-notification</artifactId>
                                             <version>${project.version}</version>
                                         </artifactItem>
