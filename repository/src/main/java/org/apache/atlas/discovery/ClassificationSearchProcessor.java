@@ -17,18 +17,33 @@
  */
 package org.apache.atlas.discovery;
 
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.discovery.SearchParameters.FilterCriteria;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.repository.Constants;
-import org.apache.atlas.repository.graphdb.*;
+import org.apache.atlas.repository.graphdb.AtlasEdge;
+import org.apache.atlas.repository.graphdb.AtlasEdgeDirection;
+import org.apache.atlas.repository.graphdb.AtlasGraph;
+import org.apache.atlas.repository.graphdb.AtlasGraphQuery;
+import org.apache.atlas.repository.graphdb.AtlasIndexQuery;
+import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.v1.AtlasGraphUtilsV1;
 import org.apache.atlas.type.AtlasClassificationType;
+import org.apache.atlas.util.AtlasGremlinQueryProvider;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 public class ClassificationSearchProcessor extends SearchProcessor {
@@ -37,7 +52,9 @@ public class ClassificationSearchProcessor extends SearchProcessor {
 
     private final AtlasIndexQuery indexQuery;
     private final AtlasGraphQuery allGraphQuery;
-    private final AtlasGraphQuery filterGraphQuery;
+
+    private final String              gremlinTagFilterQuery;
+    private final Map<String, Object> gremlinQueryBindings;
 
     public ClassificationSearchProcessor(SearchContext context) {
         super(context);
@@ -46,39 +63,66 @@ public class ClassificationSearchProcessor extends SearchProcessor {
         final FilterCriteria          filterCriteria        = context.getSearchParameters().getTagFilters();
         final Set<String>             typeAndSubTypes       = classificationType.getTypeAndAllSubTypes();
         final String                  typeAndSubTypesQryStr = classificationType.getTypeAndAllSubTypesQryStr();
-        final Set<String>             solrAttributes        = new HashSet<>();
-        final Set<String>             gremlinAttributes     = new HashSet<>();
+        final Set<String>             indexAttributes       = new HashSet<>();
+        final Set<String>             graphAttributes       = new HashSet<>();
         final Set<String>             allAttributes         = new HashSet<>();
 
 
-        processSearchAttributes(classificationType, filterCriteria, solrAttributes, gremlinAttributes, allAttributes);
+        processSearchAttributes(classificationType, filterCriteria, indexAttributes, graphAttributes, allAttributes);
 
-        // for classification search, if any attribute can't be handled by Solr - switch to all Gremlin
-        boolean useSolrSearch = typeAndSubTypesQryStr.length() <= MAX_QUERY_STR_LENGTH_TAGS && CollectionUtils.isEmpty(gremlinAttributes) && canApplySolrFilter(classificationType, filterCriteria, false);
+        // for classification search, if any attribute can't be handled by index query - switch to all filter by Graph query
+        boolean useIndexSearch = typeAndSubTypesQryStr.length() <= MAX_QUERY_STR_LENGTH_TAGS && CollectionUtils.isEmpty(graphAttributes) && canApplyIndexFilter(classificationType, filterCriteria, false);
 
-        if (useSolrSearch) {
-            StringBuilder solrQuery = new StringBuilder();
+        AtlasGraph graph = context.getGraph();
 
-            constructTypeTestQuery(solrQuery, typeAndSubTypesQryStr);
-            constructFilterQuery(solrQuery, classificationType, filterCriteria, solrAttributes);
+        if (useIndexSearch) {
+            StringBuilder indexQuery = new StringBuilder();
 
-            String solrQueryString = STRAY_AND_PATTERN.matcher(solrQuery).replaceAll(")");
+            constructTypeTestQuery(indexQuery, typeAndSubTypesQryStr);
+            constructFilterQuery(indexQuery, classificationType, filterCriteria, indexAttributes);
 
-            solrQueryString = STRAY_OR_PATTERN.matcher(solrQueryString).replaceAll(")");
-            solrQueryString = STRAY_ELIPSIS_PATTERN.matcher(solrQueryString).replaceAll("");
+            String indexQueryString = STRAY_AND_PATTERN.matcher(indexQuery).replaceAll(")");
 
-            indexQuery = context.getGraph().indexQuery(Constants.VERTEX_INDEX, solrQueryString);
+            indexQueryString = STRAY_OR_PATTERN.matcher(indexQueryString).replaceAll(")");
+            indexQueryString = STRAY_ELIPSIS_PATTERN.matcher(indexQueryString).replaceAll("");
+
+            this.indexQuery = graph.indexQuery(Constants.VERTEX_INDEX, indexQueryString);
         } else {
             indexQuery = null;
         }
 
-        AtlasGraphQuery query = context.getGraph().query().in(Constants.TYPE_NAME_PROPERTY_KEY, typeAndSubTypes);
+        AtlasGraphQuery query = graph.query().in(Constants.TYPE_NAME_PROPERTY_KEY, typeAndSubTypes);
 
-        allGraphQuery = toGremlinFilterQuery(classificationType, filterCriteria, allAttributes, query);
+        allGraphQuery = toGraphFilterQuery(classificationType, filterCriteria, allAttributes, query);
 
-        query = context.getGraph().query().in(Constants.TRAIT_NAMES_PROPERTY_KEY, typeAndSubTypes);
+        if (context.getSearchParameters().getTagFilters() != null) {
+            // Now filter on the tag attributes
+            AtlasGremlinQueryProvider queryProvider = AtlasGremlinQueryProvider.INSTANCE;
 
-        filterGraphQuery = query; // TODO: filer based on tag attributes
+            gremlinQueryBindings = new HashMap<>();
+
+            StringBuilder gremlinQuery = new StringBuilder();
+            gremlinQuery.append("g.V().has('__guid', T.in, guids)");
+            gremlinQuery.append(queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.BASIC_SEARCH_CLASSIFICATION_FILTER));
+            gremlinQuery.append(".as('e').out()");
+            gremlinQuery.append(queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.BASIC_SEARCH_TYPE_FILTER));
+
+            constructGremlinFilterQuery(gremlinQuery, gremlinQueryBindings, context.getClassificationType(), context.getSearchParameters().getTagFilters());
+            // After filtering on tags go back to e and output the list of entity vertices
+            gremlinQuery.append(".back('e').toList()");
+
+            gremlinQueryBindings.put("traitNames", typeAndSubTypes);
+            gremlinQueryBindings.put("typeNames", typeAndSubTypes); // classification typeName
+
+            gremlinTagFilterQuery = gremlinQuery.toString();
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("gremlinTagFilterQuery={}", gremlinTagFilterQuery);
+            }
+        } else {
+            gremlinTagFilterQuery = null;
+            gremlinQueryBindings  = null;
+        }
     }
 
     @Override
@@ -125,7 +169,7 @@ public class ClassificationSearchProcessor extends SearchProcessor {
                 if (indexQuery != null) {
                     Iterator<AtlasIndexQuery.Result> queryResult = indexQuery.vertices(qryOffset, limit);
 
-                    if (!queryResult.hasNext()) { // no more results from solr - end of search
+                    if (!queryResult.hasNext()) { // no more results from index query - end of search
                         break;
                     }
 
@@ -195,12 +239,28 @@ public class ClassificationSearchProcessor extends SearchProcessor {
             LOG.debug("==> ClassificationSearchProcessor.filter({})", entityVertices.size());
         }
 
-        AtlasGraphQuery query = context.getGraph().query().in(Constants.GUID_PROPERTY_KEY, getGuids(entityVertices));
+        if (gremlinTagFilterQuery != null && gremlinQueryBindings != null) {
+            // Now filter on the tag attributes
+            Set<String> guids = getGuids(entityVertices);
 
-        query.addConditionsFrom(filterGraphQuery);
+            gremlinQueryBindings.put("guids", guids);
 
-        entityVertices.clear();
-        getVertices(query.vertices().iterator(), entityVertices);
+            try {
+                AtlasGraph        graph               = context.getGraph();
+                ScriptEngine      gremlinScriptEngine = graph.getGremlinScriptEngine();
+                List<AtlasVertex> atlasVertices       = (List<AtlasVertex>) graph.executeGremlinScript(gremlinScriptEngine, gremlinQueryBindings, gremlinTagFilterQuery, false);
+
+                // Clear prior results
+                entityVertices.clear();
+
+                if (CollectionUtils.isNotEmpty(atlasVertices)) {
+                    entityVertices.addAll(atlasVertices);
+                }
+
+            } catch (AtlasBaseException | ScriptException e) {
+                LOG.warn(e.getMessage(), e);
+            }
+        }
 
         super.filter(entityVertices);
 

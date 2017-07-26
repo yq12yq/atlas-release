@@ -23,11 +23,14 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.discovery.SearchParameters;
 import org.apache.atlas.model.discovery.SearchParameters.FilterCriteria;
 import org.apache.atlas.model.discovery.SearchParameters.FilterCriteria.Condition;
+import org.apache.atlas.model.typedef.AtlasBaseTypeDef;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.graphdb.*;
 import org.apache.atlas.repository.store.graph.v1.AtlasGraphUtilsV1;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasStructType;
+import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
+import org.apache.atlas.util.AtlasGremlinQueryProvider;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -93,7 +96,7 @@ public abstract class SearchProcessor {
     }
 
 
-    protected void processSearchAttributes(AtlasStructType structType, FilterCriteria filterCriteria, Set<String> solrFiltered, Set<String> gremlinFiltered, Set<String> allAttributes) {
+    protected void processSearchAttributes(AtlasStructType structType, FilterCriteria filterCriteria, Set<String> indexFiltered, Set<String> graphFiltered, Set<String> allAttributes) {
         if (structType == null || filterCriteria == null) {
             return;
         }
@@ -103,7 +106,7 @@ public abstract class SearchProcessor {
 
         if (filterCondition != null && CollectionUtils.isNotEmpty(criterion)) {
             for (SearchParameters.FilterCriteria criteria : criterion) {
-                processSearchAttributes(structType, criteria, solrFiltered, gremlinFiltered, allAttributes);
+                processSearchAttributes(structType, criteria, indexFiltered, graphFiltered, allAttributes);
             }
         } else if (StringUtils.isNotEmpty(filterCriteria.getAttributeName())) {
             try {
@@ -112,11 +115,11 @@ public abstract class SearchProcessor {
                 Set<String> indexedKeys   = context.getIndexedKeys();
 
                 if (indexedKeys != null && indexedKeys.contains(qualifiedName)) {
-                    solrFiltered.add(attributeName);
+                    indexFiltered.add(attributeName);
                 } else {
                     LOG.warn("search includes non-indexed attribute '{}'; might cause poor performance", qualifiedName);
 
-                    gremlinFiltered.add(attributeName);
+                    graphFiltered.add(attributeName);
                 }
 
                 if (structType instanceof AtlasEntityType) {
@@ -133,16 +136,16 @@ public abstract class SearchProcessor {
 
     //
     // If filterCriteria contains any non-indexed attribute inside OR condition:
-    //    Solr+Grelin can't be used. Need to use only Gremlin filter for all attributes. Examples:
+    //    Index+Graph can't be used. Need to use only Graph query filter for all attributes. Examples:
     //    (OR idx-att1=x non-idx-attr=z)
     //    (AND idx-att1=x (OR idx-attr2=y non-idx-attr=z))
     // Else
-    //    Solr can be used for indexed-attribute filtering and Gremlin for non-indexed attributes. Examples:
+    //    Index query can be used for indexed-attribute filtering and Graph query for non-indexed attributes. Examples:
     //      (AND idx-att1=x idx-attr2=y non-idx-attr=z)
     //      (AND (OR idx-att1=x idx-attr1=y) non-idx-attr=z)
     //      (AND (OR idx-att1=x idx-attr1=y) non-idx-attr=z (AND idx-attr2=xyz idx-attr2=abc))
     //
-    protected boolean canApplySolrFilter(AtlasStructType structType, FilterCriteria filterCriteria, boolean insideOrCondition) {
+    protected boolean canApplyIndexFilter(AtlasStructType structType, FilterCriteria filterCriteria, boolean insideOrCondition) {
         if (filterCriteria == null) {
             return true;
         }
@@ -158,7 +161,7 @@ public abstract class SearchProcessor {
 
             // If we have nested criterion let's find any nested ORs with non-indexed attr
             for (FilterCriteria criteria : criterion) {
-                ret = canApplySolrFilter(structType, criteria, insideOrCondition);
+                ret = canApplyIndexFilter(structType, criteria, insideOrCondition);
 
                 if (!ret) {
                     break;
@@ -179,56 +182,99 @@ public abstract class SearchProcessor {
         return ret;
     }
 
-    protected void constructTypeTestQuery(StringBuilder solrQuery, String typeAndAllSubTypesQryStr) {
+    protected void constructTypeTestQuery(StringBuilder indexQuery, String typeAndAllSubTypesQryStr) {
         if (StringUtils.isNotEmpty(typeAndAllSubTypesQryStr)) {
-            if (solrQuery.length() > 0) {
-                solrQuery.append(AND_STR);
+            if (indexQuery.length() > 0) {
+                indexQuery.append(AND_STR);
             }
 
-            solrQuery.append("v.\"").append(Constants.TYPE_NAME_PROPERTY_KEY).append("\":").append(typeAndAllSubTypesQryStr);
+            indexQuery.append("v.\"").append(Constants.TYPE_NAME_PROPERTY_KEY).append("\":").append(typeAndAllSubTypesQryStr);
         }
     }
 
-    protected void constructFilterQuery(StringBuilder solrQuery, AtlasStructType type, FilterCriteria filterCriteria, Set<String> solrAttributes) {
+    protected void constructFilterQuery(StringBuilder indexQuery, AtlasStructType type, FilterCriteria filterCriteria, Set<String> indexAttributes) {
         if (filterCriteria != null) {
             LOG.debug("Processing Filters");
 
-            String filterQuery = toSolrQuery(type, filterCriteria, solrAttributes, 0);
+            String filterQuery = toIndexQuery(type, filterCriteria, indexAttributes, 0);
 
             if (StringUtils.isNotEmpty(filterQuery)) {
-                if (solrQuery.length() > 0) {
-                    solrQuery.append(AND_STR);
+                if (indexQuery.length() > 0) {
+                    indexQuery.append(AND_STR);
                 }
 
-                solrQuery.append(filterQuery);
+                indexQuery.append(filterQuery);
             }
         }
     }
 
-    protected void constructStateTestQuery(StringBuilder solrQuery) {
-        if (solrQuery.length() > 0) {
-            solrQuery.append(AND_STR);
+    protected void constructGremlinFilterQuery(StringBuilder gremlinQuery, Map<String, Object> queryBindings, AtlasStructType structType, FilterCriteria filterCriteria) {
+        if (filterCriteria != null) {
+            FilterCriteria.Condition condition = filterCriteria.getCondition();
+
+            if (condition != null) {
+                StringBuilder orQuery = new StringBuilder();
+
+                List<FilterCriteria> criterion = filterCriteria.getCriterion();
+
+                for (int i = 0; i < criterion.size(); i++) {
+                    FilterCriteria criteria = criterion.get(i);
+
+                    if (condition == FilterCriteria.Condition.OR) {
+                        StringBuilder nestedOrQuery = new StringBuilder("_()");
+
+                        constructGremlinFilterQuery(nestedOrQuery, queryBindings, structType, criteria);
+
+                        orQuery.append(i == 0 ? "" : ",").append(nestedOrQuery);
+                    } else {
+                        constructGremlinFilterQuery(gremlinQuery, queryBindings, structType, criteria);
+                    }
+                }
+
+                if (condition == FilterCriteria.Condition.OR) {
+                    gremlinQuery.append(".or(").append(orQuery).append(")");
+                }
+            } else {
+                String         attributeName = filterCriteria.getAttributeName();
+                AtlasAttribute attribute     = structType.getAttribute(attributeName);
+
+                if (attribute != null) {
+                    SearchParameters.Operator operator       = filterCriteria.getOperator();
+                    String                    attributeValue = filterCriteria.getAttributeValue();
+
+                    gremlinQuery.append(toGremlinComparisonQuery(attribute, operator, attributeValue, queryBindings));
+                } else {
+                    LOG.warn("Ignoring unknown attribute {}.{}", structType.getTypeName(), attributeName);
+                }
+
+            }
+        }
+    }
+
+    protected void constructStateTestQuery(StringBuilder indexQuery) {
+        if (indexQuery.length() > 0) {
+            indexQuery.append(AND_STR);
         }
 
-        solrQuery.append("v.\"").append(Constants.STATE_PROPERTY_KEY).append("\":ACTIVE");
+        indexQuery.append("v.\"").append(Constants.STATE_PROPERTY_KEY).append("\":ACTIVE");
     }
 
-    private String toSolrQuery(AtlasStructType type, FilterCriteria criteria, Set<String> solrAttributes, int level) {
-        return toSolrQuery(type, criteria, solrAttributes, new StringBuilder(), level);
+    private String toIndexQuery(AtlasStructType type, FilterCriteria criteria, Set<String> indexAttributes, int level) {
+        return toIndexQuery(type, criteria, indexAttributes, new StringBuilder(), level);
     }
 
-    private String toSolrQuery(AtlasStructType type, FilterCriteria criteria, Set<String> solrAttributes, StringBuilder sb, int level) {
+    private String toIndexQuery(AtlasStructType type, FilterCriteria criteria, Set<String> indexAttributes, StringBuilder sb, int level) {
         if (criteria.getCondition() != null && CollectionUtils.isNotEmpty(criteria.getCriterion())) {
             StringBuilder nestedExpression = new StringBuilder();
 
             for (FilterCriteria filterCriteria : criteria.getCriterion()) {
-                String nestedQuery = toSolrQuery(type, filterCriteria, solrAttributes, level + 1);
+                String nestedQuery = toIndexQuery(type, filterCriteria, indexAttributes, level + 1);
 
                 if (StringUtils.isNotEmpty(nestedQuery)) {
                     if (nestedExpression.length() > 0) {
                         nestedExpression.append(SPACE_STRING).append(criteria.getCondition()).append(SPACE_STRING);
                     }
-                    // todo: when a neq operation is nested and occurs in the beginning of the query, solr has issues
+                    // todo: when a neq operation is nested and occurs in the beginning of the query, index query has issues
                     nestedExpression.append(nestedQuery);
                 }
             }
@@ -238,14 +284,14 @@ public abstract class SearchProcessor {
             } else {
                 return nestedExpression.length() > 0 ? sb.append(BRACE_OPEN_STR).append(nestedExpression).append(BRACE_CLOSE_STR).toString() : EMPTY_STRING;
             }
-        } else if (solrAttributes.contains(criteria.getAttributeName())){
-            return toSolrExpression(type, criteria.getAttributeName(), criteria.getOperator(), criteria.getAttributeValue());
+        } else if (indexAttributes.contains(criteria.getAttributeName())){
+            return toIndexExpression(type, criteria.getAttributeName(), criteria.getOperator(), criteria.getAttributeValue());
         } else {
             return EMPTY_STRING;
         }
     }
 
-    private String toSolrExpression(AtlasStructType type, String attrName, SearchParameters.Operator op, String attrVal) {
+    private String toIndexExpression(AtlasStructType type, String attrName, SearchParameters.Operator op, String attrVal) {
         String ret = EMPTY_STRING;
 
         try {
@@ -261,12 +307,12 @@ public abstract class SearchProcessor {
         return ret;
     }
 
-    protected AtlasGraphQuery toGremlinFilterQuery(AtlasStructType type, FilterCriteria criteria, Set<String> gremlinAttributes, AtlasGraphQuery query) {
+    protected AtlasGraphQuery toGraphFilterQuery(AtlasStructType type, FilterCriteria criteria, Set<String> graphAttributes, AtlasGraphQuery query) {
         if (criteria != null) {
             if (criteria.getCondition() != null) {
                 if (criteria.getCondition() == Condition.AND) {
                     for (FilterCriteria filterCriteria : criteria.getCriterion()) {
-                        AtlasGraphQuery nestedQuery = toGremlinFilterQuery(type, filterCriteria, gremlinAttributes, context.getGraph().query());
+                        AtlasGraphQuery nestedQuery = toGraphFilterQuery(type, filterCriteria, graphAttributes, context.getGraph().query());
 
                         query.addConditionsFrom(nestedQuery);
                     }
@@ -274,7 +320,7 @@ public abstract class SearchProcessor {
                     List<AtlasGraphQuery> orConditions = new LinkedList<>();
 
                     for (FilterCriteria filterCriteria : criteria.getCriterion()) {
-                        AtlasGraphQuery nestedQuery = toGremlinFilterQuery(type, filterCriteria, gremlinAttributes, context.getGraph().query());
+                        AtlasGraphQuery nestedQuery = toGraphFilterQuery(type, filterCriteria, graphAttributes, context.getGraph().query());
 
                         orConditions.add(context.getGraph().query().createChildQuery().addConditionsFrom(nestedQuery));
                     }
@@ -283,7 +329,7 @@ public abstract class SearchProcessor {
                         query.or(orConditions);
                     }
                 }
-            } else if (gremlinAttributes.contains(criteria.getAttributeName())) {
+            } else if (graphAttributes.contains(criteria.getAttributeName())) {
                 String                    attrName  = criteria.getAttributeName();
                 String                    attrValue = criteria.getAttributeValue();
                 SearchParameters.Operator operator  = criteria.getOperator();
@@ -328,12 +374,64 @@ public abstract class SearchProcessor {
                             break;
                     }
                 } catch (AtlasBaseException e) {
-                    LOG.error("toGremlinFilterQuery(): failed for attrName=" + attrName + "; operator=" + operator + "; attrValue=" + attrValue, e);
+                    LOG.error("toGraphFilterQuery(): failed for attrName=" + attrName + "; operator=" + operator + "; attrValue=" + attrValue, e);
                 }
             }
         }
 
         return query;
+    }
+
+    private String toGremlinComparisonQuery(AtlasAttribute attribute, SearchParameters.Operator operator, String attrValue, Map<String, Object> queryBindings) {
+        String bindName  = "__bind_" + queryBindings.size();
+        Object bindValue = attribute.getAttributeType().getNormalizedValue(attrValue);
+
+        AtlasGremlinQueryProvider queryProvider = AtlasGremlinQueryProvider.INSTANCE;
+        String queryTemplate = null;
+        switch (operator) {
+            case LT:
+                queryTemplate = queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.COMPARE_LT);
+                break;
+            case GT:
+                queryTemplate = queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.COMPARE_GT);
+                break;
+            case LTE:
+                queryTemplate = queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.COMPARE_LTE);
+                break;
+            case GTE:
+                queryTemplate = queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.COMPARE_GTE);
+                break;
+            case EQ:
+                queryTemplate = queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.COMPARE_EQ);
+                break;
+            case NEQ:
+                queryTemplate = queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.COMPARE_NEQ);
+                break;
+            case LIKE:
+                queryTemplate = queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.COMPARE_MATCHES);
+                break;
+            case STARTS_WITH:
+                queryTemplate = queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.COMPARE_STARTS_WITH);
+                break;
+            case ENDS_WITH:
+                queryTemplate = queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.COMPARE_ENDS_WITH);
+                break;
+            case CONTAINS:
+                queryTemplate = queryProvider.getQuery(AtlasGremlinQueryProvider.AtlasGremlinQuery.COMPARE_CONTAINS);
+                break;
+        }
+
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(queryTemplate)) {
+            if (bindValue instanceof Date) {
+                bindValue = ((Date)bindValue).getTime();
+            }
+
+            queryBindings.put(bindName, bindValue);
+
+            return String.format(queryTemplate, attribute.getQualifiedName(), bindName);
+        } else {
+            return EMPTY_STRING;
+        }
     }
 
     private String getContainsRegex(String attributeValue) {
