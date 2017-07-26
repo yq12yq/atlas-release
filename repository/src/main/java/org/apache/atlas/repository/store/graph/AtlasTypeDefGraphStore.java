@@ -348,6 +348,12 @@ public abstract class AtlasTypeDefGraphStore implements AtlasTypeDefStore, Activ
             }
         }
 
+        try {
+            ttr.updateTypes(ret);
+        } catch (AtlasBaseException e) { // this shouldn't happen, as the types were already validated
+            LOG.error("failed to update the registry after updating the store", e);
+        }
+
         if (LOG.isDebugEnabled()) {
             LOG.debug("<== AtlasTypeDefGraphStore.createUpdateTypesDef({}, {}): {}", typesToCreate, typesToUpdate, ret);
         }
@@ -380,6 +386,12 @@ public abstract class AtlasTypeDefGraphStore implements AtlasTypeDefStore, Activ
         }
 
         AtlasTypesDef ret = updateGraphStore(typesDef, ttr);
+
+        try {
+            ttr.updateTypes(ret);
+        } catch (AtlasBaseException e) { // this shouldn't happen, as the types were already validated
+            LOG.error("failed to update the registry after updating the store", e);
+        }
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("<== AtlasTypeDefGraphStore.updateTypesDef(enums={}, structs={}, classfications={}, entities={})",
