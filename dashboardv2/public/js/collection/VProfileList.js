@@ -19,26 +19,20 @@
 define(['require',
     'utils/Globals',
     'collection/BaseCollection',
-    'models/VSearch',
-    'utils/UrlLinks'
-], function(require, Globals, BaseCollection, VSearch, UrlLinks) {
+    'models/VProfile'
+], function(require, Globals, BaseCollection, VProfile) {
     'use strict';
-    var VSearchList = BaseCollection.extend(
+    var VProfileList = BaseCollection.extend(
         //Prototypal attributes
         {
-            url: UrlLinks.searchApiUrl(),
+            url: Globals.baseURL + '/api/atlas/entities',
 
-            model: VSearch,
+            model: VProfile,
 
             initialize: function() {
-                this.modelName = 'VSearch';
-                this.modelAttrName = '';
-            },
-            parseRecords: function(resp, options) {
-                this.queryType = resp.queryType;
-                this.queryText = resp.queryText;
-                this.referredEntities = resp.referredEntities;
-                return resp.entities ? resp.entities : [];
+                this.modelName = 'VProfile';
+                this.modelAttrName = 'definition';
+                this.bindErrorEvents();
             }
         },
         //Static Class Members
@@ -51,5 +45,5 @@ define(['require',
             tableCols: {}
         }
     );
-    return VSearchList;
+    return VProfileList;
 });

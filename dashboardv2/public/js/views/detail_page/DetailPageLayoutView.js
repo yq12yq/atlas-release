@@ -43,7 +43,8 @@ define(['require',
                 RTagTableLayoutView: "#r_tagTableLayoutView",
                 RLineageLayoutView: "#r_lineageLayoutView",
                 RAuditTableLayoutView: "#r_auditTableLayoutView",
-                RTermTableLayoutView: "#r_termTableLayoutView"
+                RTermTableLayoutView: "#r_termTableLayoutView",
+                RProfileLayoutView: "#r_profileLayoutView"
 
             },
             /** ui selector cache */
@@ -112,6 +113,9 @@ define(['require',
                 this.listenTo(this.collection, 'reset', function() {
                     this.entityObject = this.collection.first().toJSON();
                     var collectionJSON = this.entityObject.entity;
+                    // MergerRefEntity.
+                    Utils.findAndMergeRefEntity(collectionJSON.attributes, this.entityObject.referredEntities);
+
                     if (collectionJSON && collectionJSON.guid) {
                         var tagGuid = collectionJSON.guid;
                         this.readOnly = Enums.entityStateReadOnly[collectionJSON.status];
@@ -162,22 +166,43 @@ define(['require',
                                 this.ui.editButton.show();
                             }
                         }
+                        if (collectionJSON.attributes && collectionJSON.attributes.columns) {
+                            var valueSorted = _.sortBy(collectionJSON.attributes.columns, function(val) {
+                                return val.attributes.position
+                            });
+                            collectionJSON.attributes.columns = valueSorted;
+                        }
                     }
                     this.hideLoader();
                     var obj = {
                         entity: collectionJSON,
-                        referredEntities: this.entityObject.referredEntities,
                         guid: this.id,
                         entityName: this.name,
                         typeHeaders: this.typeHeaders,
                         entityDefCollection: this.entityDefCollection,
                         fetchCollection: this.fetchCollection.bind(that),
                         enumDefCollection: this.enumDefCollection,
-                        classificationDefCollection: this.classificationDefCollection
+                        classificationDefCollection: this.classificationDefCollection,
+                        attributeDefs: (function() {
+                            return that.getEntityDef(collectionJSON);
+                        })()
                     }
-                    this.getEntityDef(obj);
+                    this.renderEntityDetailTableLayoutView(obj);
+                    this.renderAuditTableLayoutView(obj);
                     this.renderTagTableLayoutView(obj);
                     this.renderTermTableLayoutView(_.extend({}, obj, { term: true }));
+                    if (collectionJSON && (!_.isUndefined(collectionJSON.attributes['profileData']) || collectionJSON.typeName === "hive_db")) {
+                        if (collectionJSON.typeName === "hive_db") {
+                            this.$('.profileTab a').text("Tables")
+                        }
+                        this.$('.profileTab').show();
+                        this.renderProfileLayoutView(_.extend({}, obj, {
+                            entityDetail: collectionJSON.attributes,
+                            profileData: collectionJSON.attributes.profileData,
+                            typeName: collectionJSON.typeName
+                        }));
+                    }
+
                     // To render Schema check attribute "schemaElementsAttribute"
                     var schemaOptions = this.entityDefCollection.fullCollection.find({ name: collectionJSON.typeName }).get('options');
                     if (schemaOptions && schemaOptions.hasOwnProperty('schemaElementsAttribute') && schemaOptions.schemaElementsAttribute !== "") {
@@ -238,19 +263,25 @@ define(['require',
                     }
                 })
             },
+            onShow: function() {
+                var params = Utils.getUrlState.getQueryParams();
+                if (params && params.profile) {
+                    this.$('.nav.nav-tabs').find('.profileTab').addClass('active').siblings().removeClass('active');
+                    this.$('.tab-content').find('#tab-profile').addClass('active').siblings().removeClass('active');
+                    $("html, body").animate({ scrollTop: (this.$('.tab-content').offset().top + 1200) }, 1000);
+                }
+            },
             fetchCollection: function() {
                 this.collection.fetch({ reset: true });
             },
-            getEntityDef: function(obj) {
-                var data = this.entityDefCollection.fullCollection.findWhere({ name: obj.entity.typeName }).toJSON();
-                var entityDef = Utils.getNestedSuperTypeObj({
+            getEntityDef: function(entityObj) {
+                var data = this.entityDefCollection.fullCollection.findWhere({ name: entityObj.typeName }).toJSON();
+                var attributeDefs = Utils.getNestedSuperTypeObj({
                     data: data,
                     attrMerge: true,
                     collection: this.entityDefCollection
                 });
-                obj['entityDef'] = entityDef;
-                this.renderEntityDetailTableLayoutView(obj);
-                this.renderAuditTableLayoutView(obj);
+                return attributeDefs;
             },
             onClickTagCross: function(e) {
                 var tagName = $(e.currentTarget).parent().text(),
@@ -388,6 +419,12 @@ define(['require',
                 var that = this;
                 require(['views/audit/AuditTableLayoutView'], function(AuditTableLayoutView) {
                     that.RAuditTableLayoutView.show(new AuditTableLayoutView(obj));
+                });
+            },
+            renderProfileLayoutView: function(obj) {
+                var that = this;
+                require(['views/profile/ProfileLayoutView'], function(ProfileLayoutView) {
+                    that.RProfileLayoutView.show(new ProfileLayoutView(obj));
                 });
             },
             onClickEditEntity: function(e) {

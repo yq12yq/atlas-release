@@ -266,7 +266,7 @@ define(['require',
                 });
             },
             dslFulltextToggle: function(e) {
-                var paramQuery = "";
+                var paramObj = Utils.getUrlState.getQueryParams();
                 if (e.currentTarget.checked) {
                     this.type = "dsl";
                     this.dsl = true;
@@ -276,8 +276,8 @@ define(['require',
                     this.dsl = false;
                     this.type = "basic";
                 }
-                if (Utils.getUrlState.getQueryParams() && this.type == Utils.getUrlState.getQueryParams().searchType) {
-                    this.updateQueryObject(Utils.getUrlState.getQueryParams());
+                if (paramObj && this.type == paramObj.searchType) {
+                    this.updateQueryObject(paramObj);
                 }
                 Utils.setUrl({
                     url: '#!/search/searchResult',

@@ -75,24 +75,12 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
             }
         });
     };
-    CommonViewFunction.findAndmergeRefEntity = function(attributeObject, referredEntities) {
-        _.each(attributeObject, function(obj, key) {
-            if (_.isObject(obj)) {
-                if (_.isArray(obj)) {
-                    _.each(obj, function(value) {
-                        _.extend(value, referredEntities[value.guid]);
-                    });
-                } else {
-                    _.extend(obj, referredEntities[obj.guid]);
-                }
-            }
-        });
-    }
     CommonViewFunction.propertyTable = function(options) {
         var scope = options.scope,
             valueObject = options.valueObject,
             extractJSON = options.extractJSON,
-            entityDef = options.entityDef;
+            isTable = _.isUndefined(options.isTable) ? true : options.isTable,
+            attributeDefs = options.attributeDefs;
 
         var table = "",
             fetchInputOutputValue = function(id) {
@@ -178,11 +166,11 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
                     }
                     if (id && inputOutputField) {
                         var name = Utils.getName(inputOutputField);
-                        if (name === "-" || name === id) {
+                        if ((name === "-" || name === id) && !inputOutputField.attributes) {
                             var fetch = true;
                             var fetchId = (_.isObject(id) ? id.id : id);
                             fetchInputOutputValue(fetchId);
-                            tempLink += '<div data-id="' + fetchId + '"></div>';
+                            tempLink += '<div data-id="' + fetchId + '"><div class="value-loader"></div></div>';
                         } else {
                             tempLink += '<a href="#!/detailPage/' + id + '">' + name + '</a>'
                         }
@@ -211,8 +199,11 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
             }
         _.sortBy(_.keys(valueObject)).map(function(key) {
             key = _.escape(key);
+            if (key == "profileData") {
+                return;
+            }
             var keyValue = valueObject[key];
-            var defEntity = _.find(entityDef, { name: key });
+            var defEntity = _.find(attributeDefs, { name: key });
             if (defEntity && defEntity.typeName) {
                 var defEntityType = defEntity.typeName.toLocaleLowerCase();
                 if (defEntityType === 'date' || defEntityType === 'time') {
@@ -225,7 +216,12 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
                     keyValue = extractObject(keyValue)
                 }
             }
-            table += '<tr><td>' + _.escape(key) + '</td><td>' + (_.isObject(valueObject[key]) ? keyValue : _.escape(keyValue)) + '</td></tr>';
+            if (isTable) {
+                table += '<tr><td>' + _.escape(key) + '</td><td><div ' + (_.isObject(valueObject[key]) ? 'class="scroll-y"' : '') + '>' + (_.isObject(valueObject[key]) ? keyValue : _.escape(keyValue)) + '</div></td></tr>';
+            } else {
+                table += '<div>' + (_.isObject(valueObject[key]) ? keyValue : _.escape(keyValue)) + '</div>';
+            }
+
         });
         return table;
     }
