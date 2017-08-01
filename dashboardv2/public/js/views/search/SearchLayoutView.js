@@ -72,7 +72,7 @@ define(['require',
              * @constructs
              */
             initialize: function(options) {
-                _.extend(this, _.pick(options, 'value', 'typeHeaders', 'searchVent'));
+                _.extend(this, _.pick(options, 'value', 'typeHeaders', 'searchVent', 'entityDefCollection', 'enumDefCollection', 'classificationDefCollection'));
                 this.type = "basic";
                 var param = Utils.getUrlState.getQueryParams();
                 this.query = {
@@ -86,6 +86,9 @@ define(['require',
                         tag: null
                     }
                 };
+                if (!this.value) {
+                    this.value = {};
+                }
                 this.dsl = false;
                 if (param && param.searchType) {
                     this.type = param.searchType;
@@ -142,19 +145,24 @@ define(['require',
                 if (param && param.searchType) {
                     this.type = param.searchType;
                 }
-                _.extend(this.query[this.type], {
+                _.extend(this.query[this.type],
+                    (this.type == "dsl" ? {
+                        query: null,
+                        type: null
+                    } : {
                         query: null,
                         type: null,
                         tag: null
-                    },
-                    param);
+                    }), param);
             },
             fetchCollection: function(value) {
                 this.typeHeaders.fetch({ reset: true });
             },
             onRefreshButton: function() {
                 this.fetchCollection();
-                if (this.searchVent) {
+                //to check url query param contain type or not 
+                var checkURLValue = Utils.getUrlState.getQueryParams(this.url);
+                if (this.searchVent && (_.has(checkURLValue, "tag") || _.has(checkURLValue, "type") || _.has(checkURLValue, "query"))) {
                     this.searchVent.trigger('search:refresh');
                 }
             },
@@ -232,6 +240,7 @@ define(['require',
                     setTimeout(function() {
                         that.ui.searchInput.focus();
                     }, 0);
+                    //this.searchVent.trigger('searchAttribute', this.value);
                 }
             },
             findSearchResult: function() {
@@ -243,7 +252,6 @@ define(['require',
                 if (!this.dsl) {
                     this.query[this.type].tag = this.ui.tagLov.select2('val') || null;
                 }
-
                 Utils.setUrl({
                     url: '#!/search/searchResult',
                     urlParams: _.extend(this.query[this.type], {

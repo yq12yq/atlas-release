@@ -43,7 +43,7 @@ define(['require',
             regions: {
                 RTagLayoutView: "#r_tagLayoutView",
                 RSearchLayoutView: "#r_searchLayoutView",
-                REntityTableLayoutView: "#r_searchResultTableLayoutView",
+                REntityTableLayoutView: "#r_searchResultTableLayoutView"
             },
 
             /** ui selector cache */
@@ -198,7 +198,7 @@ define(['require',
                     } else {
                         if (response.statusText !== "abort") {
                             Utils.notifyError({
-                                content: "Invalid Expression : " + model.queryParams.query
+                                content: "Invalid Expression"
                             });
                         }
                     }
@@ -255,7 +255,12 @@ define(['require',
                         if (!(that.ui.pageRecordText instanceof jQuery)) {
                             return;
                         }
-
+                        if (that.searchCollection.models.length === 0 && that.offset > that.limit) {
+                            that.ui.nextData.attr('disabled', true);
+                            that.offset = that.offset - that.limit;
+                            that.hideLoader();
+                            return;
+                        }
                         if (that.searchCollection.models.length < that.limit) {
                             that.ui.nextData.attr('disabled', true);
                         } else {
@@ -272,7 +277,7 @@ define(['require',
                             that.pageTo = that.pageTo - that.limit;
                             that.pageFrom = (that.pageTo - that.limit) + 1;
                         }
-                        that.ui.pageRecordText.html("Showing  <u>" + that.searchCollection.models.length + " records</u>, from " + that.pageFrom + " - " + that.pageTo);
+                        that.ui.pageRecordText.html("Showing  <u>" + that.searchCollection.models.length + " records</u> From " + that.pageFrom + " - " + that.pageTo);
                         if (that.offset < that.limit && that.pageFrom < 26) {
                             that.ui.previousData.attr('disabled', true);
                         }
@@ -338,7 +343,7 @@ define(['require',
                     col = {};
                 col['Check'] = {
                     name: "selected",
-                    label: "",
+                    label: "Select",
                     cell: "select-row",
                     headerCell: "select-all"
                 };
@@ -513,17 +518,19 @@ define(['require',
             },
             checkedValue: function(e) {
                 var guid = "",
-                    that = this;
-                var multiSelectTag = $(e.currentTarget).hasClass('assignTag');
-                if (multiSelectTag) {
-                    if (this.arr && this.arr.length && multiSelectTag) {
+                    that = this,
+                    isTagMultiSelect = $(e.currentTarget).hasClass('multiSelectTag'),
+                    isTermMultiSelect = $(e.currentTarget).hasClass('multiSelectTerm'),
+                    isTagButton = $(e.currentTarget).hasClass('assignTag');
+                if (isTagButton) {
+                    if (isTagMultiSelect && this.arr && this.arr.length) {
                         that.addTagModalView(guid, this.arr);
                     } else {
                         guid = that.$(e.currentTarget).data("guid");
                         that.addTagModalView(guid);
                     }
                 } else {
-                    if (this.arr && this.arr.length) {
+                    if (isTermMultiSelect && this.arr && this.arr.length) {
                         that.addTermModalView(guid, this.arr);
                     } else {
                         guid = that.$(e.currentTarget).data("guid");
