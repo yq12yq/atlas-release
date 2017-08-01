@@ -1,0 +1,171 @@
+{
+    "classificationDefs": [ ],
+    "entityDefs": [ ],
+    "enumDefs": [ ],
+    "structDefs": [
+        {
+            "attributeDefs": [
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "nonNullData",
+                    "typeName": "int",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "cardinality",
+                    "typeName": "long",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "minValue",
+                    "typeName": "long",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "maxValue",
+                    "typeName": "long",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "meanValue",
+                    "typeName": "long",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "medianValue",
+                    "typeName": "long",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "averageLength",
+                    "typeName": "long",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "maxLength",
+                    "typeName": "long",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "minDate",
+                    "typeName": "date",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "maxDate",
+                    "typeName": "date",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "distributionType",
+                    "typeName": "string",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "distributionData",
+                    "typeName": "string",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                },
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "distributionKeyOrder",
+                    "typeName": "array<string>",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                }
+            ],
+            "category": "STRUCT",
+            "createTime": 1500705608930,
+            "description": "hive_column_profile_data",
+            "guid": "223d489d-79d2-4e3b-92cb-442ccb7388e9",
+            "name": "hive_column_profile_data",
+            "typeVersion": "1.0",
+            "updateTime": 1500705608930,
+            "version": 1
+        },
+        {
+            "attributeDefs": [
+                {
+                    "cardinality": "SINGLE",
+                    "isIndexable": false,
+                    "isOptional": true,
+                    "isUnique": false,
+                    "name": "rowCount",
+                    "typeName": "long",
+                    "valuesMaxCount": 1,
+                    "valuesMinCount": 0
+                }
+            ],
+            "category": "STRUCT",
+            "createTime": 1500705607119,
+            "description": "hive_table_profile_data",
+            "guid": "05b6db98-95f6-4275-9714-afcf6531aaab",
+            "name": "hive_table_profile_data",
+            "typeVersion": "1.0",
+            "updateTime": 1500705607119,
+            "version": 1
+        }
+    ]
+}

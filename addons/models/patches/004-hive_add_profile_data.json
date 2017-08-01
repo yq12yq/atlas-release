@@ -1,0 +1,38 @@
+{
+  "patches": [
+    {
+      "action": "ADD_ATTRIBUTE",
+      "typeName": "hive_column",
+      "applyToVersion": "1.3",
+      "updateToVersion": "1.4",
+      "params": null,
+      "attributeDefs": [
+        {
+          "name": "profileData",
+          "typeName": "hive_column_profile_data",
+          "cardinality": "SINGLE",
+          "isIndexable": false,
+          "isOptional": true,
+          "isUnique": false
+        }
+      ]
+    },
+    {
+      "action": "ADD_ATTRIBUTE",
+      "typeName": "hive_table",
+      "applyToVersion": "1.1",
+      "updateToVersion": "1.2",
+      "params": null,
+      "attributeDefs": [
+        {
+          "name": "profileData",
+          "typeName": "hive_table_profile_data",
+          "cardinality": "SINGLE",
+          "isIndexable": false,
+          "isOptional": true,
+          "isUnique": false
+        }
+      ]
+    }
+  ]
+}
