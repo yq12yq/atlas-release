@@ -47,10 +47,11 @@ public class AtlasEntityType extends AtlasStructType {
 
     private final AtlasEntityDef entityDef;
 
-    private List<AtlasEntityType> superTypes         = Collections.emptyList();
-    private Set<String>           allSuperTypes      = Collections.emptySet();
-    private Set<String>           allSubTypes        = Collections.emptySet();
-    private Set<String>           typeAndAllSubTypes = Collections.emptySet();
+    private List<AtlasEntityType> superTypes               = Collections.emptyList();
+    private Set<String>           allSuperTypes            = Collections.emptySet();
+    private Set<String>           allSubTypes              = Collections.emptySet();
+    private Set<String>           typeAndAllSubTypes       = Collections.emptySet();
+    private String                typeAndAllSubTypesQryStr = "";
 
     public AtlasEntityType(AtlasEntityDef entityDef) {
         super(entityDef);
@@ -96,6 +97,8 @@ public class AtlasEntityType extends AtlasStructType {
         this.typeAndAllSubTypes = new HashSet<>();   // this will be populated in resolveReferencesPhase2()
 
         this.typeAndAllSubTypes.add(this.getTypeName());
+
+        typeAndAllSubTypesQryStr = ""; // will be computed on next access
     }
 
     @Override
@@ -134,6 +137,14 @@ public class AtlasEntityType extends AtlasStructType {
 
     public boolean isSubTypeOf(String entityTypeName) {
         return StringUtils.isNotEmpty(entityTypeName) && allSuperTypes.contains(entityTypeName);
+    }
+
+    public String getTypeAndAllSubTypesQryStr() {
+        if (StringUtils.isEmpty(typeAndAllSubTypesQryStr)) {
+            typeAndAllSubTypesQryStr = AtlasAttribute.escapeIndexQueryValue(typeAndAllSubTypes);
+        }
+
+        return typeAndAllSubTypesQryStr;
     }
 
     @Override
