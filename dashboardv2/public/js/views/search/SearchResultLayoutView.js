@@ -301,12 +301,13 @@ define(['require',
                         if (that.searchCollection.queryParams.query) {
                             resultArr.push(that.searchCollection.queryParams.query)
                         }
-                        var searchString = 'Results for <b>' + _.escape(resultArr.join(that.searchType == 'Advanced Search' ? " " : " & ")) + '</b>';
-                        if (Globals.entityCreate && Globals.entityTypeConfList && Utils.getUrlState.isSearchTab()) {
-                            searchString += "<p>If you do not find the entity in search result below then you can" + '<a href="javascript:void(0)" data-id="createEntity"> create new entity</a></p>';
+                        if (value && !value.profileDBView) {
+                            var searchString = 'Results for <b>' + _.escape(resultArr.join(that.searchType == 'Advanced Search' ? " " : " & ")) + '</b>';
+                            if (Globals.entityCreate && Globals.entityTypeConfList && Utils.getUrlState.isSearchTab()) {
+                                searchString += "<p>If you do not find the entity in search result below then you can" + '<a href="javascript:void(0)" data-id="createEntity"> create new entity</a></p>';
+                            }
+                            that.$('.searchResult').html(searchString);
                         }
-                        that.$('.searchResult').html(searchString);
-
                     },
                     silent: true,
                     reset: true
@@ -425,12 +426,12 @@ define(['require',
                         sortable: false,
                         formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
                             fromRaw: function(rawValue, model) {
-                                if (rawValue) {
-                                    return new Date(rawValue);
+                                var obj = model.toJSON();
+                                if (obj && obj.attributes && obj.attributes.createTime) {
+                                    return new Date(obj.attributes.createTime);
                                 } else {
                                     return '-'
                                 }
-
                             }
                         })
                     }
