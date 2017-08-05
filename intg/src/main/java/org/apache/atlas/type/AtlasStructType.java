@@ -17,28 +17,27 @@
  */
 package org.apache.atlas.type;
 
-import static org.apache.atlas.model.typedef.AtlasStructDef.AtlasConstraintDef.CONSTRAINT_TYPE_OWNED_REF;
-import static org.apache.atlas.model.typedef.AtlasStructDef.AtlasConstraintDef.CONSTRAINT_TYPE_INVERSE_REF;
-import static org.apache.atlas.model.typedef.AtlasStructDef.AtlasConstraintDef.CONSTRAINT_PARAM_ATTRIBUTE;
-
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasStruct;
 import org.apache.atlas.model.typedef.AtlasStructDef;
-import org.apache.atlas.model.typedef.AtlasStructDef.AtlasConstraintDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef.Cardinality;
-import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
+import org.apache.atlas.model.typedef.AtlasStructDef.AtlasConstraintDef;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.atlas.model.typedef.AtlasStructDef.AtlasConstraintDef.*;
 
 /**
  * class that implements behaviour of a struct-type.
@@ -683,6 +682,47 @@ public class AtlasStructType extends AtlasType {
             return key;
         }
 
+        public static String escapeIndexQueryValue(Collection<String> values) {
+            StringBuilder sb = new StringBuilder();
+
+            sb.append(BRACE_OPEN_CHAR);
+
+            if (CollectionUtils.isNotEmpty(values)) {
+                Iterator<String> iter = values.iterator();
+
+                sb.append(escapeIndexQueryValue(iter.next()));
+
+                while (iter.hasNext()) {
+                    sb.append(SPACE_CHAR).append(escapeIndexQueryValue(iter.next()));
+                }
+            }
+
+            sb.append(BRACE_CLOSE_CHAR);
+
+            return sb.toString();
+        }
+
+        public static String escapeIndexQueryValue(String value) {
+            String ret = value;
+
+            if (StringUtils.containsAny(value, IDX_QRY_OFFENDING_CHARS)) {
+                boolean isQuoteAtStart = value.charAt(0) == DOUBLE_QUOTE_CHAR;
+                boolean isQuoteAtEnd   = value.charAt(value.length() - 1) == DOUBLE_QUOTE_CHAR;
+
+                if (!isQuoteAtStart) {
+                    if (!isQuoteAtEnd) {
+                        ret = DOUBLE_QUOTE_CHAR + value + DOUBLE_QUOTE_CHAR;
+                    } else {
+                        ret = DOUBLE_QUOTE_CHAR + value;
+                    }
+                } else if (!isQuoteAtEnd) {
+                    ret = value + DOUBLE_QUOTE_CHAR;
+                }
+            }
+
+            return ret;
+        }
+
         private static String getQualifiedAttributeName(AtlasStructDef structDef, String attrName) {
             final String typeName = structDef.getName();
             return attrName.contains(".") ? attrName : String.format("%s.%s", typeName, attrName);
@@ -695,5 +735,10 @@ public class AtlasStructType extends AtlasType {
                 new String[] { "$",  "_d" },
                 new String[] { "%", "_p"  },
         };
-    }
+
+        private static final char[] IDX_QRY_OFFENDING_CHARS = { '@', '/', ' ', '-' };
+        private static final char   BRACE_OPEN_CHAR         = '(';
+        private static final char   BRACE_CLOSE_CHAR        = ')';
+        private static final char   DOUBLE_QUOTE_CHAR       = '"';
+        private static final char   SPACE_CHAR              = ' ';    }
 }
