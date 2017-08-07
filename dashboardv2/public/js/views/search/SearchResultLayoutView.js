@@ -258,6 +258,7 @@ define(['require',
                 }
                 Globals.searchApiCallRef = this.searchCollection.fetch({
                     skipDefaultError: true,
+                    sort: false,
                     success: function() {
                         Globals.searchApiCallRef = undefined;
                         if (!(that.ui.pageRecordText instanceof jQuery)) {
@@ -316,6 +317,7 @@ define(['require',
             renderTableLayoutView: function(col) {
                 var that = this;
                 require(['utils/TableLayout'], function(TableLayout) {
+                    // displayOrder added for column manager
                     var columnCollection = Backgrid.Columns.extend({
                         sortKey: "displayOrder",
                         comparator: function(item) {
