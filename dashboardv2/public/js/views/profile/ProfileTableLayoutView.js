@@ -88,7 +88,7 @@ define(['require',
                             }
                         }
 
-                        that.profileCollection.add(_.extend({}, obj.attributes, obj.attributes.profileData.attributes, changeValueObj, { guid: obj.guid, position: obj.attributes ? obj.attributes.position : null }));
+                        that.profileCollection.fullCollection.add(_.extend({}, obj.attributes, obj.attributes.profileData.attributes, changeValueObj, { guid: obj.guid, position: obj.attributes ? obj.attributes.position : null }));
                     }
                 });
                 this.bindEvents();
