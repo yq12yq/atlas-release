@@ -1,12 +1,170 @@
-HDP Changes
+2.6.2
+
+ATLAS-1198: Spring Framework (v4 with Spring security) over GuiceATLAS-1872: Spring fix for Kerberos and bean ordering/default
+ATLAS-1733: updated atlas_stop.py script to work in Windows environment
+ATLAS-1734: Import API update to make type import optional
+ATLAS-1753: Sandbox test data to avoid interference
+ATLAS-1766: updated NotificationConsumer implementation to use new Kafka Consumer API, to enable support for SASL_SSL protocol
+ATLAS-1804 : Allow PAM for authentication.
+ATLAS-1808:UI : All selected entities are assigned to tag when Assign Tag corresponding to 1 entity is clicked.
+ATLAS-1809 : UI : Update button in Edit tag attributes window should be enabled only when any update is done
+ATLAS-1810 : UI : Audit details of any tag event (Added,Updated) has only tag name and event.
+ATLAS-1811 : UI : Audit Events are not shown in sorted order based on time sometimes.
+ATLAS-1817 : UI : n+1 pages are created, even though only n*25 instances are retrieved
+ATLAS-1817.1 : UI :Fix for TagLayout page when tag is not associated with any entity.
+ATLAS-1819: V2 API to get entity with classification returns 500
+ATLAS-1823 - UI - Change in base path URL for few api/images to make it relative from path it is accessed.
+ATLAS-1825: updated import to support optional transformation of attribute values
+ATLAS-1826 : UI Create Entity : Type doesn't list the inverseRef constrained attribute options when name length is less than 3 (qinglin,xia via kbhatt).
+ATLAS-1832: If no attribute is present in tag then showing edit-button for a tag in tags tab on entity page.
+ATLAS-1834: TestNG asserts over JUnit for consistency
+ATLAS-1848: update UI to remove json2.js dependency
+ATLAS-1851: update import API to support resume from a specific entity/position
+ATLAS-1866: DSL 'like' operator fails for associated entity attributes
+ATLAS-1876: fix to handle large float/double values during ser-de, export/import
+ATLAS-1878 - Fix for NPE when a request without any query path lands on atlas
+ATLAS-1879: fixed - classification update removes some properties
+ATLAS-1880: search API with support for entity/tag attribute filters
+ATLAS-1889: fix to handle concurrent calls to update tags for an entity
+ATLAS-1894: Search using entity/tag attribute filters
+ATLAS-1896:Fix for adding Cross Origin [CORS] headers for Atlas
+ATLAS-1897 : UI - Render HTML element based on attribute data-type while assigning Tag to entity.
+ATLAS-1902: updated search UI to allow user to select columns in search result
+ATLAS-1906: Atlas client should support setting hadoop-jwt token in header.
+ATLAS-1908: updated to use existing Kafka consumer properties when equivalent new Kafka consumer properties are not present
+ATLAS-1914: clear button in search UI to clear filter attributes
+ATLAS-1919: Refactored ZipSink to record committed guids
+ATLAS-1920 : UI : Search using entity and trait attributes - Operators for enum and boolean data type filters.
+ATLAS-1925: basic search fixes for ATLAS-1917, ATLAS-1922, ATLAS-1926
+ATLAS-1927: UI updates in rendering of tag attributes
+ATLAS-1938: updated search UI to avoid unnecessary calls on Refresh button click
+ATLAS-1939: added parameter validation to prevent NPE during import
+ATLAS-1940: fix to remove duplicate type which causes Atlas server to fail during startup
+ATLAS-1944: Implemented ShutdownableThread for HookConsumer
+ATLAS-1944: updated handling of shutdown in KafkaConsumer
+ATLAS-1945: updated UI to use fixed version of plugins
+ATLAS-1947: AtlasSearchResult to include referredEntity headers
+ATLAS-1948: export fix to correct the import order
+ATLAS-1951:- Fix for error code for unauthenticated REST API call.
+ATLAS-1952: UI optimization to use searchResult.referredEntity to render object type attributes
+ATLAS-1956: AtlasSearchResult should include attributes present in filter criteria
+ATLAS-1960: fixed handling of import/export APIs in HA configuration
+ATLAS-1961: Basic search improvement in use of Solr index for attribute filtering
+ATLAS-1961: Basic search improvement in use of Solr index for attribute filtering (# 2)
+ATLAS-1961: Basic search improvement in use of Solr index for attribute filtering (# 3)
+ATLAS-1961: Basic search improvement in use of Solr index for attribute filtering (#4, #5)
+ATLAS-1967: search UI - render attribute filter based on browser URL
+ATLAS-1968: updated import documentation for fileName option usage
+ATLAS-1981: Cache escaped type-query string to avoid repeated computation
+ATLAS-1981: fix for unit test failures
+ATLAS-1981: fix for unit test failures (#2)
+ATLAS-1982: doc, website updated - to remove references to 'incubator', and with current PMC info
+ATLAS-1985: fix incorrect URL-encoding while redirecting to active instance in HA
+ATLAS-1988: added REST API to search for related entities
+ATLAS-1989: Hooks to include atlas-intg library
+ATLAS-1994: fix - basic-search ignores tag attribute filters when free-text query is present ATLAS-2008: basic-search gremlin query updated to use bind varibles, to avoid ClassCastException
+ATLAS-1995: updated entity-lookup-by-unique-attributes to use indexQuery
+ATLAS-1997: fix to avoid NPE while getting vertex_indices
+ATLAS-1998: Default error page for 404, 500 and Throwable from Jetty
+ATLAS-2009 : Fix in AuthorizationFilter, added return for unauthorized request.
+ATLAS-2014: populate createdBy, updatedBy fields on type create and update
+ATLAS-2018: UI: Attribute filter does not preserve state
+ATLAS-2020 : Result Table Column Filter : Filtering using Columns in Result table always sets excludeDeletedEntities to True
+ATLAS-2021 : UI Regression : Tags Tab in Entity details page not loaded.
+ATLAS-2022 - Validate limit and offset for basic search query
+ATLAS-2044: In-memory filtering for correctness after index query
+ATLAS-2046: UI Regression - Columns Filter not listing all attributes of a datatype
+ATLAS-2052: updated packaing to exclude junit jar
+ATLAS-2056: removed unused library references
+ATLAS-2061: fixed basic-search handling of enum attributes in filter
+ATLAS-2073: UI - removing tag or type from drop-down will not exclude respective filters
+ATLAS-2080: fix - tag filters should not be added in the results attributes list
+ATLAS-2082: basic-search fails when in-memory filters all results from index-query
+ATLAS-2085: HA initialization fix
+
+2.6.1
+
+ATLAS-1433 : Atlas allows creation of tag with attributes' name same as that of its parent tags.
+ATLAS-1611: Regression: Incorrect error code for the negative tests, returned: 500 server error, expected: 400 bad request
+ATLAS-1644 Taxonomy API /api/atlas/v1/taxonomies is broken.(sumasai)
+ATLAS-1660: Error code mismatch in while GETing a type that doesn't exist.
+ATLAS-1663: Fix defects reported by Coverity Scan
+ATLAS-1664: Able to add already added tag to an entity through REST API:
+ATLAS-1665: export optimization to reduce file-size and export-time
+ATLAS-1666: fix for IT failures caused by earlier commit
+ATLAS-1670: fix for IT failures introduced due to ATLAS-1664
+ATLAS-1671: fix for missing client IP in Ranger audit log for Atlas authorizations
+ATLAS-1672: fix for issues flagged by Coverity scan
+ATLAS-1673: Type deletion should check for reference & instances
+ATLAS-1675: type-registry re-initialization failure when instance goes from passive to active state
+ATLAS-1676: update Hive hook to set hdfs_path.clusterName attribute
+ATLAS-1680- Support for browser login using kerberos keytab
+ATLAS-1681 - Added type validations for compatibility with legacy typesystem
+ATLAS-1682: UI update to add new overlay loader to tables; fix incorrect state while switching between basic and Advance search
+ATLAS-1684: export should include super-type definitions, import should preserve system attribute values
+ATLAS-1685: fix for issues flagged by coverity scan
+ATLAS-1686: fixed import to use the given guid, instead of looking into store with unique attribute
+ATLAS-1687: hbase_column_family and hbase_column are not loaded after upgrade
+ATLAS-1688: fix lineage UI resize issues
+ATLAS-1697: fix log4j configuration for import-hive.sh
+ATLAS-1707 : fix to remove external css reference for font file
+ATLAS-1707: Fix for missing font file
+ATLAS-1709: Unit tests for import and export APIs
+ATLAS-1710: added entity-lookup API for entity create/update UI
+ATLAS-1710: added entity-lookup API for entity create/update UI (#2)
+ATLAS-1714 : UI : Properties tab doesn't load when an entity has attribute of type array of integers
+ATLAS-1717-IX-Documentation
+ATLAS-1718: UI update to support enum-type attributes for tags
+ATLAS-1719: updated tag association UI to support enum-type attribute values from a drop-down
+ATLAS-1721: updated action-string in the audit logs generated during import
+ATLAS-1724, ATLAS-1722: fix export to report error while exporting a non-existing entity
+ATLAS-1726 : Creating type name with space causes exceptions while doing DSL search
+ATLAS-1727: Mask userdetails in quick Start utility
+ATLAS-1730,1736,1747: fixes in type validations and special character handling in attribute names
+ATLAS-1732 : After Zoom_out from Lineage view scroll stopped working
+ATLAS-1735: Coverity Scan Fixes for 4/13
+ATLAS-1737: UI - Delete tag(classification) from UI.
+ATLAS-1742: Provide option to exclude deleted entities in basic and fulltext search
+ATLAS-1744 Error when searching type with attribute name order , limit , offset (sumasai)
+ATLAS-1745: Add google fonts license information to 3party-licenses
+ATLAS-1750: type ahead for entity input in create/update entity UI
+ATLAS-1751: Implement REST endpoint to support update of classification attribute
+ATLAS-1752:- Fix for Atlas group for kerberos authentication
+ATLAS-1755: added checkbox to exclude deleted entities in basic and fulltext search
+ATLAS-1756: UI update to allow user to edit tag attribute values
+ATLAS-1759 : UI - Add checkbox to exclude deleted entities in schema table.
+ATLAS-1759 : UI - Add checkbox to exclude/include deleted entities in schema table.
+ATLAS-1760: UI update to render property value per attribute type in entity definition
+ATLAS-1761: improve attribute search to enable search based on display text
+ATLAS-1762: updated error code returned by type create/updated APIs
+ATLAS-1767: Support KNOX SSO Token based authentication on Atlas REST API calls
+ATLAS-1771: confirmation dialog while deleting tag appears incorrectly in IE-9
+ATLAS-1776: UI fix to avoid error popup on clicling 'Include historical entities' checkbox text ATLAS-1777: UI fix to not hide 'Include historical entities' checkbox when searching a type with all DELETED entities
+ATLAS-1780: Type deletion should invalidate property keys in Titan to allow re-creation with different data type if needed
+ATLAS-1807 : Enhance DSL query to support like operator for wildcard search
+ATLAS-1812: On browser refresh if, tag is doesn't exist, then URL should update with the first tag.
+ATLAS-1813: UI to escape special characters in URL
+ATLAS-1815: Basic search API might return fewer entities when excludeDeletedEntities=true
+ATLAS-1816: button to navigate to next page in search-result is disabled incorrectly
+ATLAS-855: Atlas logs contain stale transaction eviction message
+BUG-77993 upgrade frontend-maven-plugin to latest
+BUG-77993: upgrade frontend-maven-plugin to latest
+ATLAS-1818: basic-search enhancements to improve search performance
+
+2.6.0
 
 ATLAS-1333: fix for incorrect json4s library version in Atlas Storm hook
+ATLAS-1433 : Atlas allows creation of tag with attributes' name same as that of its parent tags.
 ATLAS-1469: User provided values for tag attributes should be evaluated for its data type.
 ATLAS-1470: Tag is not associated to an entity when incorrect value for byte type is provided
 ATLAS-1503: optimization of export implementation
+ATLAS-1611: Regression: Incorrect error code for the negative tests, returned: 500 server error, expected: 400 bad request
 ATLAS-1611: incorrect error code for negative tests (#2)
 ATLAS-1630: basic search performance improvement (#3)
+ATLAS-1644 Taxonomy API /api/atlas/v1/taxonomies is broken.(sumasai)
 ATLAS-1659: Update full-text search string when traits/tags are added/removed from entity
+ATLAS-1660: Error code mismatch in while GETing a type that doesn't exist.
+ATLAS-1663: Fix defects reported by Coverity Scan
 ATLAS-1664: Able to add already added tag to an entity through REST API
 ATLAS-1665: export optimization to reduce file-size and export-time
 ATLAS-1666: Updated exception handling to avoid use of generic exceptions
@@ -15,23 +173,17 @@ ATLAS-1667: Atlas UI cleanup for lineage
 ATLAS-1669: Removed Unused class.
 ATLAS-1670: fix for IT failures introduced due to ATLAS-1664
 ATLAS-1671: fix for missing client IP in Ranger audit log for Atlas authorizations
-ATLAS-1675: type-registry re-initialization failure when instance goes from passive to active state
-ATLAS-1676: update Hive hook to set hdfs_path.clusterName attribute
-ATLAS-1682: UI update to add new overlay loader to tables; fix incorrect state while switching between basic and Advance search
-ATLAS-1687: hbase_column_family and hbase_column are not loaded after upgrade
-
-ATLAS-1433 : Atlas allows creation of tag with attributes' name same as that of its parent tags.
-ATLAS-1611: Regression: Incorrect error code for the negative tests, returned: 500 server error, expected: 400 bad request
-ATLAS-1644 Taxonomy API /api/atlas/v1/taxonomies is broken.(sumasai)
-ATLAS-1660: Error code mismatch in while GETing a type that doesn't exist.
-ATLAS-1663: Fix defects reported by Coverity Scan
 ATLAS-1672: fix for issues flagged by Coverity scan
 ATLAS-1673: Type deletion should check for reference & instances
+ATLAS-1675: type-registry re-initialization failure when instance goes from passive to active state
+ATLAS-1676: update Hive hook to set hdfs_path.clusterName attribute
 ATLAS-1680- Support for browser login using kerberos keytab
 ATLAS-1681 - Added type validations for compatibility with legacy typesystem
+ATLAS-1682: UI update to add new overlay loader to tables; fix incorrect state while switching between basic and Advance search
 ATLAS-1684: export should include super-type definitions, import should preserve system attribute values
 ATLAS-1685: fix for issues flagged by coverity scan
 ATLAS-1686: fixed import to use the given guid, instead of looking into store with unique attribute
+ATLAS-1687: hbase_column_family and hbase_column are not loaded after upgrade
 ATLAS-1688: fix lineage UI resize issues
 ATLAS-1697: fix log4j configuration for import-hive.sh
 ATLAS-1707 : fix to remove external css reference for font file
@@ -67,17 +219,15 @@ ATLAS-1767: Support KNOX SSO Token based authentication on Atlas REST API calls
 ATLAS-1771: confirmation dialog while deleting tag appears incorrectly in IE-9
 ATLAS-1776: UI fix to avoid error popup on clicling 'Include historical entities' checkbox text ATLAS-1777: UI fix to not hide 'Include historical entities' checkbox when searching a type with all DELETED entities
 ATLAS-1780: Type deletion should invalidate property keys in Titan to allow re-creation with different data type if needed
-ATLAS-855: Atlas logs contain stale transaction eviction message
 ATLAS-1812: On browser refresh if, tag is doesn't exist, then URL should update with the first tag.
 ATLAS-1815: Basic search API might return fewer entities when excludeDeletedEntities=true
 ATLAS-1816: button to navigate to next page in search-result is disabled incorrectly
 ATLAS-1818: basic-search enhancements to improve search performance
-
+ATLAS-855: Atlas logs contain stale transaction eviction message
 BUG-69358: ignore sign files in shaded jar.
 BUG-69414: atlas fix to consume latest hive change.
 BUG-71219: fix the checktyle multimodule configuration.
 BUG-74353: Kafka server startup fix
 BUG-76279: Remove problematic tests
 BUG-77446: fix Atlas hook to resolve Hive service check failure with NoClassDefFound exception
-
 BUG-77993: upgrade frontend-maven-plugin to latest
