@@ -129,7 +129,7 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
                 }
 
                 AtlasTypesDef typesToCreate = getTypesToCreate(typesDef, atlasTypeRegistry);
-                AtlasTypesDef typesToUpdate = getTypesToUpdate(typesDef, atlasTypeRegistry);
+                AtlasTypesDef typesToUpdate = getTypesToUpdate(typesDef, atlasTypeRegistry, true);
 
                 if (!typesToCreate.isEmpty() || !typesToUpdate.isEmpty()) {
                     atlasTypeDefStore.createUpdateTypesDef(typesToCreate, typesToUpdate);
@@ -187,7 +187,7 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
         return typesToCreate;
     }
 
-    public static AtlasTypesDef getTypesToUpdate(AtlasTypesDef typesDef, AtlasTypeRegistry typeRegistry) {
+    public static AtlasTypesDef getTypesToUpdate(AtlasTypesDef typesDef, AtlasTypeRegistry typeRegistry, boolean checkTypeVersion) {
         AtlasTypesDef typesToUpdate = new AtlasTypesDef();
 
         if (CollectionUtils.isNotEmpty(typesDef.getStructDefs())) {
@@ -198,7 +198,7 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
                     continue;
                 }
 
-                if (updateTypeAttributes(oldStructDef, newStructDef)) {
+                if (updateTypeAttributes(oldStructDef, newStructDef, checkTypeVersion)) {
                     typesToUpdate.getStructDefs().add(newStructDef);
                 }
             }
@@ -212,7 +212,7 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
                     continue;
                 }
 
-                if (updateTypeAttributes(oldClassifDef, newClassifDef)) {
+                if (updateTypeAttributes(oldClassifDef, newClassifDef, checkTypeVersion)) {
                     typesToUpdate.getClassificationDefs().add(newClassifDef);
                 }
             }
@@ -226,7 +226,7 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
                     continue;
                 }
 
-                if (updateTypeAttributes(oldEntityDef, newEntityDef)) {
+                if (updateTypeAttributes(oldEntityDef, newEntityDef, checkTypeVersion)) {
                     typesToUpdate.getEntityDefs().add(newEntityDef);
                 }
             }
@@ -240,7 +240,7 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
                     continue;
                 }
 
-                if (isTypeUpdateApplicable(oldEnumDef, newEnumDef)) {
+                if (isTypeUpdateApplicable(oldEnumDef, newEnumDef, checkTypeVersion)) {
                     if (CollectionUtils.isNotEmpty(oldEnumDef.getElementDefs())) {
                         for (AtlasEnumElementDef oldEnumElem : oldEnumDef.getElementDefs()) {
                             if (!newEnumDef.hasElement(oldEnumElem.getValue())) {
@@ -279,8 +279,8 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
         LOG.info("<== AtlasTypeDefStoreInitializer.instanceIsPassive()");
     }
 
-    private static boolean updateTypeAttributes(AtlasStructDef oldStructDef, AtlasStructDef newStructDef) {
-        boolean ret = isTypeUpdateApplicable(oldStructDef, newStructDef);
+    private static boolean updateTypeAttributes(AtlasStructDef oldStructDef, AtlasStructDef newStructDef, boolean checkTypeVersion) {
+        boolean ret = isTypeUpdateApplicable(oldStructDef, newStructDef, checkTypeVersion);
 
         if (ret) {
             // make sure that all attributes in oldDef are in newDef as well
@@ -296,11 +296,17 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
         return ret;
     }
 
-    private static boolean isTypeUpdateApplicable(AtlasBaseTypeDef oldTypeDef, AtlasBaseTypeDef newTypeDef) {
-        String oldTypeVersion = oldTypeDef.getTypeVersion();
-        String newTypeVersion = newTypeDef.getTypeVersion();
+    private static boolean isTypeUpdateApplicable(AtlasBaseTypeDef oldTypeDef, AtlasBaseTypeDef newTypeDef, boolean checkVersion) {
+        boolean ret = true;
 
-        return ObjectUtils.compare(newTypeVersion, oldTypeVersion) > 0;
+        if (checkVersion) {
+            String oldTypeVersion = oldTypeDef.getTypeVersion();
+            String newTypeVersion = newTypeDef.getTypeVersion();
+
+            ret = ObjectUtils.compare(newTypeVersion, oldTypeVersion) > 0;
+        }
+
+        return ret;
     }
 
     private void applyTypePatches(String typesDirName) {
