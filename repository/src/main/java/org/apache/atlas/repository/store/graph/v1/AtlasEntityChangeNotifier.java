@@ -230,7 +230,7 @@ public class AtlasEntityChangeNotifier {
             String      guid        = atlasEntityHeader.getGuid();
             AtlasVertex atlasVertex = AtlasGraphUtilsV1.findByGuid(guid);
 
-            if(atlasVertex == null) {
+            if(atlasVertex == null || GraphHelper.isInternalType(atlasVertex)) {
                 continue;
             }
 
