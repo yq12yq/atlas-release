@@ -357,3 +357,4 @@ ATLAS-2491: Hive hook using V2 notifications (#2) (Cherry picked from commit ae2
 ATLAS-2524: fix Hive hook for incorrect handling of 'alter view as' operation
 ATLAS-2581: V2 Hive hook notifications - incorrect location for sd after moving table to a different database
 ATLAS-2611: fix for NPE in Hive hook
+HOTFIX-1840 ATLAS-2145: Build failure in atlas-dashboardv2 due to js-beautify issue
