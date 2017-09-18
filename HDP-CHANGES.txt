@@ -233,3 +233,4 @@ BUG-77446: fix Atlas hook to resolve Hive service check failure with NoClassDefF
 BUG-77993: upgrade frontend-maven-plugin to latest
 ATLAS-2892: Delete by name REST endpoint.
 ATLAS-2894: UI to implement REST Endpoint that Deletes Type Given Type Name(without JSON body)- without params
+HOTFIX-1899 ATLAS-2145: Build failure in atlas-dashboardv2 due to js-beautify issue
