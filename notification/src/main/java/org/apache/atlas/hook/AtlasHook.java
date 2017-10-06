@@ -89,6 +89,16 @@ public abstract class AtlasHook {
         Injector injector = Guice.createInjector(new NotificationModule());
         notifInterface = injector.getInstance(NotificationInterface.class);
 
+        String currentUser = "";
+
+        try {
+            currentUser = getUser();
+        } catch (Exception excp) {
+            LOG.warn("Error in determining current user", excp);
+        }
+
+        notificationInterface.setCurrentUser(currentUser);
+
         LOG.info("Created Atlas Hook");
     }
 
