@@ -23,6 +23,7 @@ module.exports = function(grunt) {
     var classPathSep = (process.platform === "win32") ? ';' : ':',
         gitHash = '',
         pkg = grunt.file.readJSON('package.json'),
+        buildTime = new Date().getTime(),
         distPath = 'dist',
         publicPath = 'public',
         libPath = distPath + '/js/libs',
@@ -201,6 +202,18 @@ module.exports = function(grunt) {
             options: {
                 force: true
             }
+        },
+        template: {
+            build: {
+                options: {
+                    data: {
+                        'bust': buildTime
+                    }
+                },
+                files: {
+                    [distPath + '/index.html']: [modulesPath + '/index.html.tpl']
+                }
+            }
         }
     });
 
@@ -208,7 +221,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-connect');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-npmcopy');
-
+    grunt.loadNpmTasks('grunt-template');
 
     require('load-grunt-tasks')(grunt);
 
@@ -239,7 +252,8 @@ module.exports = function(grunt) {
         'npmcopy:css',
         'npmcopy:license',
         'copy:dist',
-        'sass'
+        'sass',
+        'template'
     ]);
 
     grunt.registerTask('minify', 'Minify the all js', function() {
