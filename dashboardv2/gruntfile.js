@@ -23,6 +23,7 @@ module.exports = function(grunt) {
     var classPathSep = (process.platform === "win32") ? ';' : ':',
         gitHash = '',
         pkg = grunt.file.readJSON('package.json'),
+        buildTime = new Date().getTime(),
         distPath = 'dist',
         publicPath = 'public',
         libPath = distPath + '/js/libs',
@@ -98,7 +99,7 @@ module.exports = function(grunt) {
             }
         },
         npmcopy: {
-            // Javascript 
+            // Javascript
             js: {
                 options: {
                     destPrefix: libPath
@@ -252,6 +253,18 @@ module.exports = function(grunt) {
                     dest: 'dist/js/templates'
                 }]
             }
+        },
+        template: {
+            build: {
+                options: {
+                    data: {
+                        'bust': buildTime
+                    }
+                },
+                files: {
+                    [distPath + '/index.html']: [modulesPath + '/index.html.tpl']
+                }
+            }
         }
     });
 
@@ -262,6 +275,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
     grunt.loadNpmTasks('grunt-contrib-htmlmin');
+    grunt.loadNpmTasks('grunt-template');
 
     require('load-grunt-tasks')(grunt);
 
@@ -280,6 +294,7 @@ module.exports = function(grunt) {
         'npmcopy:license',
         'copy:dist',
         'sass:dist',
+        'template',
         'configureProxies:server',
         'connect:server',
         'watch'
@@ -291,7 +306,8 @@ module.exports = function(grunt) {
         'npmcopy:css',
         'npmcopy:license',
         'copy:build',
-        'sass:build'
+        'sass:build',
+        'template'
     ]);
 
     grunt.registerTask('dev-minify', [
@@ -306,7 +322,9 @@ module.exports = function(grunt) {
         'htmlmin:build',
         'configureProxies:server',
         'connect:server',
-        'watch'
+        'watch',
+        'sass',
+        'template'
     ]);
 
     grunt.registerTask('build-minify', [
@@ -318,6 +336,7 @@ module.exports = function(grunt) {
         'sass:build',
         'uglify:build',
         'cssmin:build',
-        'htmlmin:build'
+        'htmlmin:build',
+        'template'
     ]);
 };
