@@ -35,6 +35,7 @@ import com.thinkaurelius.titan.diskstorage.util.time.Timestamps;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
+import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ServerName;
@@ -45,6 +46,7 @@ import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.RegionLocator;
 import org.apache.hadoop.hbase.client.Row;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.util.Pair;
@@ -519,8 +521,11 @@ public class HBaseStoreManager extends DistributedStoreManager implements KeyCol
 
             HTable hTable = (HTable)table.getTableObject();
 
-            Map<KeyRange, ServerName> normed =
-                    normalizeKeyBounds(hTable.getRegionLocations());
+            RegionLocator regionLocator = hTable.getRegionLocator();
+
+            List<HRegionLocation> allRegionLocations = regionLocator.getAllRegionLocations();
+
+            Map<KeyRange, ServerName> normed = normalizeKeyBounds(allRegionLocations);
 
             for (Map.Entry<KeyRange, ServerName> e : normed.entrySet()) {
                 if (NetworkUtil.isLocalConnection(e.getValue().getHostname())) {
@@ -543,9 +548,9 @@ public class HBaseStoreManager extends DistributedStoreManager implements KeyCol
     }
 
     /**
-     * Given a map produced by {@link HTable#getRegionLocations()}, transform
+     * Given a map produced by {@link HTable#getRegionLocator()}, transform
      * each key from an {@link HRegionInfo} to a {@link KeyRange} expressing the
-     * region's start and end key bounds using Titan-partitioning-friendly
+     * region's start and end key bounds using JanusGraph-partitioning-friendly
      * conventions (start inclusive, end exclusive, zero bytes appended where
      * necessary to make all keys at least 4 bytes long).
      * <p/>
@@ -583,19 +588,19 @@ public class HBaseStoreManager extends DistributedStoreManager implements KeyCol
      * keys null. If any null keys are observed besides these three cases, the
      * method will die with a precondition failure.
      *
-     * @param raw
-     *            A map of HRegionInfo and ServerName from HBase
-     * @return Titan-friendly expression of each region's rowkey boundaries
+     * @param locations A list of HRegionInfo
+     * @return JanusGraph-friendly expression of each region's rowkey boundaries
      */
-    private Map<KeyRange, ServerName> normalizeKeyBounds(NavigableMap<HRegionInfo, ServerName> raw) {
+    private Map<KeyRange, ServerName> normalizeKeyBounds(List<HRegionLocation> locations) {
 
-        Map.Entry<HRegionInfo, ServerName> nullStart = null;
-        Map.Entry<HRegionInfo, ServerName> nullEnd = null;
+        HRegionLocation nullStart = null;
+        HRegionLocation nullEnd = null;
 
         ImmutableMap.Builder<KeyRange, ServerName> b = ImmutableMap.builder();
 
-        for (Map.Entry<HRegionInfo, ServerName> e : raw.entrySet()) {
-            HRegionInfo regionInfo = e.getKey();
+        for (HRegionLocation location : locations) {
+            HRegionInfo regionInfo = location.getRegionInfo();
+            ServerName serverName = location.getServerName();
             byte startKey[] = regionInfo.getStartKey();
             byte endKey[]   = regionInfo.getEndKey();
 
@@ -610,40 +615,40 @@ public class HBaseStoreManager extends DistributedStoreManager implements KeyCol
             }
 
             if (null == startKey && null == endKey) {
-                Preconditions.checkState(1 == raw.size());
+                Preconditions.checkState(1 == locations.size());
                 logger.debug("HBase table {} has a single region {}", tableName, regionInfo);
                 // Choose arbitrary shared value = startKey = endKey
-                return b.put(new KeyRange(FOUR_ZERO_BYTES, FOUR_ZERO_BYTES), e.getValue()).build();
+                return b.put(new KeyRange(FOUR_ZERO_BYTES, FOUR_ZERO_BYTES), serverName).build();
             } else if (null == startKey) {
-                logger.debug("Found HRegionInfo with null startKey on server {}: {}", e.getValue(), regionInfo);
+                logger.debug("Found HRegionInfo with null startKey on server {}: {}", serverName, regionInfo);
                 Preconditions.checkState(null == nullStart);
-                nullStart = e;
+                nullStart = location;
                 // I thought endBuf would be inclusive from the HBase javadoc, but in practice it is exclusive
                 StaticBuffer endBuf = StaticArrayBuffer.of(zeroExtend(endKey));
                 // Replace null start key with zeroes
-                b.put(new KeyRange(FOUR_ZERO_BYTES, endBuf), e.getValue());
+                b.put(new KeyRange(FOUR_ZERO_BYTES, endBuf), serverName);
             } else if (null == endKey) {
-                logger.debug("Found HRegionInfo with null endKey on server {}: {}", e.getValue(), regionInfo);
+                logger.debug("Found HRegionInfo with null endKey on server {}: {}", serverName, regionInfo);
                 Preconditions.checkState(null == nullEnd);
-                nullEnd = e;
+                nullEnd = location;
                 // Replace null end key with zeroes
-                b.put(new KeyRange(StaticArrayBuffer.of(zeroExtend(startKey)), FOUR_ZERO_BYTES), e.getValue());
+                b.put(new KeyRange(StaticArrayBuffer.of(zeroExtend(startKey)), FOUR_ZERO_BYTES), serverName);
             } else {
                 Preconditions.checkState(null != startKey);
                 Preconditions.checkState(null != endKey);
 
-                // Convert HBase's inclusive end keys into exclusive Titan end keys
+                // Convert HBase's inclusive end keys into exclusive JanusGraph end keys
                 StaticBuffer startBuf = StaticArrayBuffer.of(zeroExtend(startKey));
                 StaticBuffer endBuf = StaticArrayBuffer.of(zeroExtend(endKey));
 
                 KeyRange kr = new KeyRange(startBuf, endBuf);
-                b.put(kr, e.getValue());
-                logger.debug("Found HRegionInfo with non-null end and start keys on server {}: {}", e.getValue(), regionInfo);
+                b.put(kr, serverName);
+                logger.debug("Found HRegionInfo with non-null end and start keys on server {}: {}", serverName, regionInfo);
             }
         }
 
         // Require either no null key bounds or a pair of them
-        Preconditions.checkState((null == nullStart) == (null == nullEnd));
+        Preconditions.checkState(!(null == nullStart ^ null == nullEnd));
 
         // Check that every key in the result is at least 4 bytes long
         Map<KeyRange, ServerName> result = b.build();
@@ -739,7 +744,7 @@ public class HBaseStoreManager extends DistributedStoreManager implements KeyCol
         if (MIN_REGION_COUNT <= (count = regionCount)) {
             src = "region count configuration";
         } else if (0 < regionsPerServer &&
-                   MIN_REGION_COUNT <= (count = regionsPerServer * adm.getEstimatedRegionServerCount())) {
+                MIN_REGION_COUNT <= (count = regionsPerServer * adm.getEstimatedRegionServerCount())) {
             src = "ClusterStatus server count";
         } else {
             count = -1;
@@ -879,7 +884,7 @@ public class HBaseStoreManager extends DistributedStoreManager implements KeyCol
                     }
 
                     for (StaticBuffer b : mutation.getDeletions()) {
-                        commands.getSecond().deleteColumns(cfName, b.as(StaticBuffer.ARRAY_FACTORY), delTimestamp);
+                        commands.getSecond().addColumns(cfName, b.as(StaticBuffer.ARRAY_FACTORY), delTimestamp);
                     }
                 }
 
@@ -890,7 +895,7 @@ public class HBaseStoreManager extends DistributedStoreManager implements KeyCol
                     }
 
                     for (Entry e : mutation.getAdditions()) {
-                        commands.getFirst().add(cfName,
+                        commands.getFirst().addColumn(cfName,
                                 e.getColumnAs(StaticBuffer.ARRAY_FACTORY),
                                 putTimestamp,
                                 e.getValueAs(StaticBuffer.ARRAY_FACTORY));

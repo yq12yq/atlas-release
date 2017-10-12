@@ -25,7 +25,6 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.TableNotDisabledException;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
 
 public class HBaseAdmin1_0 implements AdminMask
 {
@@ -34,7 +33,7 @@ public class HBaseAdmin1_0 implements AdminMask
 
     private final Admin adm;
 
-    public HBaseAdmin1_0(HBaseAdmin adm)
+    public HBaseAdmin1_0(Admin adm)
     {
         this.adm = adm;
     }

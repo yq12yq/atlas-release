@@ -18,9 +18,10 @@
 package org.apache.atlas.kafka;
 
 import com.google.common.annotations.VisibleForTesting;
+import kafka.metrics.KafkaMetricsReporter;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
-import kafka.utils.Time;
+import org.apache.kafka.common.utils.SystemTime;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.notification.AbstractNotification;
@@ -45,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import scala.Option;
+import scala.collection.mutable.Buffer;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -321,34 +323,12 @@ public class KafkaNotification extends AbstractNotification implements Service {
         brokerConfig.setProperty("log.dirs", constructDir("kafka").getAbsolutePath());
         brokerConfig.setProperty("log.flush.interval.messages", String.valueOf(1));
 
-        kafkaServer = new KafkaServer(KafkaConfig.fromProps(brokerConfig), new SystemTime(),
-                Option.apply(this.getClass().getName()));
+        List<KafkaMetricsReporter>   metrics          = new ArrayList<>();
+        Buffer<KafkaMetricsReporter> metricsReporters = scala.collection.JavaConversions.asScalaBuffer(metrics);
+
+        kafkaServer = new KafkaServer(KafkaConfig.fromProps(brokerConfig), new SystemTime(), Option.apply(this.getClass().getName()), metricsReporters);
         kafkaServer.startup();
         LOG.debug("Embedded kafka server started with broker config {}", brokerConfig);
-    }
-
-
-    // ----- inner class : SystemTime ----------------------------------------
-
-    private static class SystemTime implements Time {
-        @Override
-        public long milliseconds() {
-            return System.currentTimeMillis();
-        }
-
-        @Override
-        public long nanoseconds() {
-            return System.nanoTime();
-        }
-
-        @Override
-        public void sleep(long arg0) {
-            try {
-                Thread.sleep(arg0);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     private class MessageContext {

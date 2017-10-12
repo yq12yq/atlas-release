@@ -189,8 +189,8 @@
                     <scalaVersion>${scala.version}</scalaVersion>
                     <recompileMode>incremental</recompileMode>
                     <useZincServer>true</useZincServer>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                     <args>
                         <arg>-unchecked</arg>
                         <arg>-deprecation</arg>

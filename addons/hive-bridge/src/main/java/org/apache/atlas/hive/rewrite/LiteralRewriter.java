@@ -26,15 +26,12 @@ import java.util.Map;
 public class LiteralRewriter implements ASTRewriter {
 
     public static Map<Integer, String> LITERAL_TOKENS = new HashMap<Integer, String>() {{
-        put(HiveParser.Number, "NUMBER_LITERAL");
+        put(HiveParser.NumberLiteral, "NUMBER_LITERAL");
         put(HiveParser.Digit, "DIGIT_LITERAL");
         put(HiveParser.HexDigit, "HEX_LITERAL");
         put(HiveParser.Exponent, "EXPONENT_LITERAL");
         put(HiveParser.StringLiteral, "'STRING_LITERAL'");
-        put(HiveParser.BigintLiteral, "BIGINT_LITERAL");
-        put(HiveParser.SmallintLiteral, "SMALLINT_LITERAL");
-        put(HiveParser.TinyintLiteral, "TINYINT_LITERAL");
-        put(HiveParser.DecimalLiteral, "DECIMAL_LITERAL");
+        put(HiveParser.IntegralLiteral, "'INTEGRAL_LITERAL'");
         put(HiveParser.ByteLengthLiteral, "BYTE_LENGTH_LITERAL");
         put(HiveParser.TOK_STRINGLITERALSEQUENCE, "'STRING_LITERAL_SEQ'");
         put(HiveParser.TOK_CHARSETLITERAL, "'CHARSET_LITERAL'");

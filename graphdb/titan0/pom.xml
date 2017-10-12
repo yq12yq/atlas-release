@@ -35,7 +35,7 @@
         <tinkerpop.version>2.6.0</tinkerpop.version>
         <titan.version>0.5.4</titan.version>
         <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
-    <guava.version>14.0</guava.version>
+        <guava.version>19.0</guava.version>
     </properties>
 
      <profiles>
@@ -195,6 +195,14 @@
                                     <excludes>
                                         <exclude>com/thinkaurelius/titan/diskstorage/locking/LocalLockMediator.class</exclude>
                                         <exclude>com/thinkaurelius/titan/graphdb/query/graph/GraphCentricQueryBuilder.class</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

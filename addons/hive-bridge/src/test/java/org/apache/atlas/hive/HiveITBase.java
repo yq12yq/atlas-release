@@ -115,7 +115,6 @@ public class HiveITBase {
 
     protected void runCommandWithDelay(Driver driver, String cmd, int sleepMs) throws Exception {
         LOG.debug("Running command '{}'", cmd);
-        ss.setCommandType(null);
         CommandProcessorResponse response = driver.run(cmd);
         assertEquals(response.getResponseCode(), 0);
         if (sleepMs != 0) {

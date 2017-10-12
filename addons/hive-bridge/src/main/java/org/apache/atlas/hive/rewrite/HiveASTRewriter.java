@@ -54,12 +54,12 @@ public class HiveASTRewriter {
     }
 
     public String rewrite(String sourceQry) throws RewriteException {
-        String result = sourceQry;
-        ASTNode tree = null;
+        String  result = sourceQry;
+        ASTNode tree   = null;
         try {
             ParseDriver pd = new ParseDriver();
             tree = pd.parse(sourceQry, queryContext, true);
-            tree = ParseUtils.findRootNonNullToken(tree);
+            tree = findRootNonNullToken(tree);
             this.rwCtx = new RewriteContext(sourceQry, tree, queryContext.getTokenRewriteStream());
             rewrite(tree);
             result = toSQL();
@@ -90,6 +90,13 @@ public class HiveASTRewriter {
 
     public String printAST() {
         return rwCtx.getOriginNode().dump();
+    }
+
+    private static ASTNode findRootNonNullToken(ASTNode tree) {
+        while ((tree.getToken() == null) && (tree.getChildCount() > 0)) {
+            tree = (ASTNode) tree.getChild(0);
+        }
+        return tree;
     }
 
 }

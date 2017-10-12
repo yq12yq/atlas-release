@@ -527,17 +527,18 @@
         <node.version>v0.10.30</node.version>
         <node-for-v2.version>v4.4.2</node-for-v2.version>
         <slf4j.version>1.7.21</slf4j.version>
-        <jetty.version>9.4.0.v20161208</jetty.version>
+        <jetty.version>9.3.11.v20160721</jetty.version>
+        <jetty.maven.plugin.version>9.3.11.v20160721</jetty.maven.plugin.version>
         <jetty.jsp.version>9.2.12.v20150709</jetty.jsp.version>
         <jersey.version>1.19</jersey.version>
         <tinkerpop.version>2.6.0</tinkerpop.version>
         <titan.version>0.5.4</titan.version>
-        <hadoop.version>2.7.1</hadoop.version>
-        <hbase.version>1.1.2</hbase.version>
-        <solr.version>5.5.1</solr.version>
-        <kafka.version>0.10.0.0</kafka.version>
+        <hadoop.version>3.0.0-alpha4</hadoop.version>
+        <hbase.version>2.0.0-alpha3</hbase.version>
+        <solr.version>6.6.1</solr.version>
+        <kafka.version>0.11.0.1</kafka.version>
         <curator.version>2.11.0</curator.version>
-        <zookeeper.version>3.4.6</zookeeper.version>
+        <zookeeper.version>3.5.3-beta</zookeeper.version>
 
         <!-- scala versions -->
         <scala.version>2.11.8</scala.version>
@@ -2001,7 +2002,7 @@
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.maven.plugin.version}</version>
                 <configuration>
                     <!-- Log to the console. -->
                     <requestLog implementation="org.eclipse.jetty.server.NCSARequestLog">
