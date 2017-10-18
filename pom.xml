@@ -665,7 +665,6 @@
         <module>graphdb</module>
         <module>repository</module>
         <module>authorization</module>
-        <module>catalog</module>
         <module>dashboardv2</module>
         <module>webapp</module>
         <module>docs</module>
@@ -1468,12 +1467,6 @@
             <dependency>
                 <groupId>org.apache.atlas</groupId>
                 <artifactId>sqoop-bridge</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.atlas</groupId>
-                <artifactId>atlas-catalog</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
