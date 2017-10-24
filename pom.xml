@@ -679,7 +679,8 @@
         <module>addons/sqoop-bridge</module>
         <module>addons/storm-bridge-shim</module>
         <module>addons/storm-bridge</module>
-
+	<module>addons/hbase-bridge-shim</module>
+        <module>addons/hbase-bridge</module>
         <module>distro</module>
     </modules>
 
@@ -1478,7 +1479,7 @@
 
             <dependency>
                 <groupId>org.apache.atlas</groupId>
-                <artifactId>storm-bridge-shim</artifactId>
+                <artifactId>falcon-bridge-shim</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -1490,9 +1491,16 @@
 
             <dependency>
                 <groupId>org.apache.atlas</groupId>
-                <artifactId>sqoop-bridge-shim</artifactId>
+                <artifactId>hbase-bridge</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.atlas</groupId>
+                <artifactId>hbase-bridge-shim</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
 
             <!--Scala dependencies-->
             <dependency>
@@ -1842,6 +1850,7 @@
                     <version>2.7</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
+                        <nonFilteredFileExtensions>zip</nonFilteredFileExtensions>
                     </configuration>
                 </plugin>
 
