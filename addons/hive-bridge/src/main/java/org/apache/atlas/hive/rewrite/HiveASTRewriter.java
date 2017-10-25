@@ -58,7 +58,7 @@ public class HiveASTRewriter {
         ASTNode tree   = null;
         try {
             ParseDriver pd = new ParseDriver();
-            tree = pd.parse(sourceQry, queryContext, true);
+            tree = pd.parse(sourceQry, queryContext);
             tree = findRootNonNullToken(tree);
             this.rwCtx = new RewriteContext(sourceQry, tree, queryContext.getTokenRewriteStream());
             rewrite(tree);
