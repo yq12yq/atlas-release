@@ -1,3 +1,104 @@
+2.6.3
+
+ATLAS-1218: Atlas says it is started but does not accept REST requests
+ATLAS-1867 ATLASClientV2 correct delete typedefs expected http code
+ATLAS-1905 : Search UI is confusing to user
+ATLAS-1944: HookConsumer updated to address case where consumer is stopped before starting. Updated unit tests.
+ATLAS-1988: Implement REST API to search for related entities - Add excludeDeletedEntities flag
+ATLAS-1993: UI updates to show list of Tables in detail page hive_db entity
+ATLAS-1996: Updated Log4J configuration to limit size of log files.
+ATLAS-2003 Add Javadoc format to class summaries
+ATLAS-2004: Move Apache license header to the beginning of file. (Richard Ding via nixonrodrigues)
+ATLAS-2015: Fix Maven warnings
+ATLAS-2017: updated import API to make request parameter optional
+ATLAS-2017: updated import API to make request parameter optional (#2 - fix for unit test failure)
+ATLAS-2024: Updated Atlas TWiki for basic search functionality (ATLAS-1880)
+ATLAS-2025: Validation of classification/type in basic search query
+ATLAS-2027 : UI : Add type-name with attribute name in query-builder
+ATLAS-2028: invalid attributes in basic-search request should fail with status code 400
+ATLAS-2033: Modified to produce ugly JSON for Kafka topic messages.
+ATLAS-2038 : Integration Tests for AtlasAuthentication and Authorization Filter
+ATLAS-2038: Minor refactoring to use org.apache.commons.codec.binary.Base64.
+ATLAS-2039 : Unable to edit date value from UI when entity definition is POSTed without value for date attribute.
+ATLAS-2041: UI: Show tag names with dot, when taxonomy is disabled
+ATLAS-2047: Exception Thrown by Kafka Consumer Ends up Filling Logs Due to Incorrect Handling
+ATLAS-2047: Update to fix IT failure in build environment.
+ATLAS-2048: Fix for Unit test failure on 0.8-incubating branch
+ATLAS-2054: Add flag to exclude attribute mapping in FullTextMapper
+ATLAS-2060: Fix logger class name typos
+ATLAS-2062: Add flag to disable v1 gremlin search API using atlas-application property
+ATLAS-2071 : UI : Minification of atlas code (js,css)
+ATLAS-2074: AtlasType.resolveReferences() method made package-private
+ATLAS-2075: notification enhancement to handle large messages, using compression and multi-part messages
+ATLAS-2078, ATLAS-2114: Type update using v1 API doesn't route to createUpdateTypesDef in v2 API
+ATLAS-2079: Fix coverity scan issue and IT failures introduced by ATLAS-2062
+ATLAS-2079: Fix coverity scan issue and IT failures introduced by ATLAS-2062 - missing changes
+ATLAS-2083: Refactor Atlas<Type>DefStore classes to reduce code duplication
+ATLAS-2089: Upgrade Jetty to newer version
+ATLAS-2090 : UI - Cache busting for static content (css, js)
+ATLAS-2091: basic search update to avoid index query for attribute values containing Tokenizer characters
+ATLAS-2092: Create edgeLabel while updating the index
+ATLAS-2097: Update docs site.xml about 0.8.1 documentation and release information
+ATLAS-2100: UserProfile & SavedSearch API implementation ATLAS-2141: edit/disassociate tag results in NPE
+ATLAS-2100: UserProfile & SavedSearch API implementation. Fixed accidentally deleted type.
+ATLAS-2101: Update Implementation to Eliminate Use of Stopwatch
+ATLAS-2102 : Atlas UI Improvements: Search results page. patch has (ATLAS-2103,2104,2105,2107,2108)
+ATLAS-2111 : UI: Select query is not able to render the search table in Advance search
+ATLAS-2115: Basic search updates to fix performance regression
+ATLAS-2117: basic search updates to handle issue caused by tokenization in indexer
+ATLAS-2118: basic search fix - incorrect results for contains operator
+ATLAS-2120: Import API updated to detect attribute-type change
+ATLAS-2121: basic-search update to use case-sensitive filter for type-name / tag-name
+ATLAS-2128 : UI Regression : DSL Results pagination doesn't spawn more than 2 pages
+ATLAS-2129: Addressed Case Where Abrupt Shutdown of Atlas During Import Retains Entities Imported Before Shutdown
+ATLAS-2129: import fix to handle shutdown while in the middle of import
+ATLAS-2129: import fix to handle shutdown while in the middle of import (unit test fix)
+ATLAS-2130 : Call made to fetch tables of a database doesn't have exlcudeDeletedEntities parameter
+ATLAS-2132: incorrect error for invalid file path/unreadable file provided during import
+ATLAS-2134: Code Improvements.
+ATLAS-2140: Throwing overly generic exceptions, or unnecessarily exceptions
+ATLAS-2144: add Knox x-forwarded path to Atlas base URL when Atlas is access via knox proxy
+ATLAS-2145: Build failure in atlas-dashboardv2 due to js-beautify issue
+ATLAS-2146: Remove Powermock Usage
+ATLAS-2148: saved-search API enhancement to support searchType
+ATLAS-2150: UI to support search-history and favorites
+ATLAS-2151: fix incorrect handling of OR condition in index query
+ATLAS-2153 : UI : Adding more columns to the search table masks the Remove tag button
+ATLAS-2156: save-search UI to allow user to edit name
+ATLAS-2157: HiveHook fix to handle getTable() error for temproray tables
+ATLAS-2158: good coding practices
+ATLAS-2159: Incorrect createTime retrieved for entity attributes in related entities search
+ATLAS-2160: added REST APIs to execute a saved-search
+ATLAS-2162 : Add hyperlink for URI formatted attribute value on property table
+ATLAS-2163: UI updates to handle Saved search query having deleted types
+ATLAS-2166 - Block Knox proxy service user for kerberos authentication
+ATLAS-2167 : UI - Redirection of Pagination gives issue if user enter Page No. which does not exists
+ATLAS-2168 : When a second search is fired in between the pages of the first search results , offset is not reset to 0
+ATLAS-2171: Atlas UI fix when accessed via Knox proxy without / at the end
+ATLAS-2172: Atlas AD search filter is not get honored when logging into Atlas UI
+ATLAS-2174: code improvements and validations
+ATLAS-2174: Query length validations and path normalization
+ATLAS-2179: Split Atlas client library to avoid unnecessary dependencies
+ATLAS-2182 : UI : Web elements are hidden when zoomed in
+ATLAS-2184: fixed isNull/notNull in-memory predicates to handle empty value
+ATLAS-2184: IS_NULL and NOT_NULL operator support
+ATLAS-2184: IS_NULL, NOT_NULL operator support (#2)
+ATLAS-2185: UI to handle is_null, not_null operators for attribute search
+ATLAS-2186: Jetty downgrade to v8.
+ATLAS-2187 : UI improved debugging in minification
+ATLAS-2187: fix for build break in powerpc
+ATLAS-2188 : UI can trim whitespaces at the beginning or end of search query
+ATLAS-2189 : IE-9 Alignment Issues
+ATLAS-2192: notification consumer updates to handle stale split messages
+ATLAS-2194 : In Basic Search for Tag if any columns are removed then UI throws exception
+ATLAS-2195: fix to close a graph transaction left open during Atlas startup
+ATLAS-2195: fix to close trasaction left open while queries index keys (#2)
+ATLAS-2198: fix for Hive Hook OOM for large notification messages
+ATLAS-2211: Dangling transaction issue within GraphBackedMetadataRepository
+ATLAS-2212: UI fix to allow negative number input for tag attributes
+ATLAS-2213: Remove unused attributes from Hive hook
+Revert "ATLAS-2089: Upgrade Jetty to newer version"
+
 2.6.2
 
 ATLAS-1198: Spring Framework (v4 with Spring security) over GuiceATLAS-1872: Spring fix for Kerberos and bean ordering/default
