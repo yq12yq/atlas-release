@@ -595,7 +595,7 @@ public class GraphBackedMetadataRepositoryTest {
             Assert.fail();
         }
 
-        Id expected = new Id(guid, GraphHelper.getSingleValuedProperty(tableVertex, Constants.VERSION_PROPERTY_KEY, Integer.class), TestUtils.TABLE_TYPE);
+        Id expected = new Id(guid, GraphHelper.getSingleValuedProperty(tableVertex, Constants.VERSION_PROPERTY_KEY, Long.class).intValue(), TestUtils.TABLE_TYPE);
         Assert.assertEquals(GraphHelper.getIdFromVertex(TestUtils.TABLE_TYPE, tableVertex), expected);
     }
 
@@ -795,11 +795,12 @@ public class GraphBackedMetadataRepositoryTest {
     }
 
     private boolean assertEdge(String id, String typeName) throws Exception {
-        AtlasGraph graph = TestUtils.getGraph();
+        AtlasGraph            graph    = TestUtils.getGraph();
         Iterable<AtlasVertex> vertices = graph.query().has(Constants.GUID_PROPERTY_KEY, id).vertices();
-        AtlasVertex AtlasVertex = vertices.iterator().next();
-        Iterable<AtlasEdge> edges = AtlasVertex.getEdges(AtlasEdgeDirection.OUT, Constants.INTERNAL_PROPERTY_KEY_PREFIX + typeName + ".ref");
-        if (!edges.iterator().hasNext()) {
+        AtlasVertex           vertex   = vertices.iterator().next();
+        Iterable<AtlasEdge>   edges    = vertex.getEdges(AtlasEdgeDirection.OUT, Constants.INTERNAL_PROPERTY_KEY_PREFIX + typeName + ".ref");
+
+        if (edges.iterator().hasNext()) {
             ITypedReferenceableInstance entity = repositoryService.getEntityDefinition(id);
             assertNotNull(entity.get("ref"));
             return true;
