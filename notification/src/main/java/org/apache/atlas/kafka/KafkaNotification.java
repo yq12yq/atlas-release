@@ -21,7 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import kafka.metrics.KafkaMetricsReporter;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
-import org.apache.kafka.common.utils.SystemTime;
+import kafka.utils.Time;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.notification.AbstractNotification;
@@ -62,6 +62,7 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Kafka specific access point to the Atlas notification framework.
@@ -329,6 +330,35 @@ public class KafkaNotification extends AbstractNotification implements Service {
         kafkaServer = new KafkaServer(KafkaConfig.fromProps(brokerConfig), new SystemTime(), Option.apply(this.getClass().getName()), metricsReporters);
         kafkaServer.startup();
         LOG.debug("Embedded kafka server started with broker config {}", brokerConfig);
+    }
+
+
+    // ----- inner class : SystemTime ----------------------------------------
+
+    private static class SystemTime implements Time {
+        @Override
+        public long milliseconds() {
+            return System.currentTimeMillis();
+        }
+
+        @Override
+        public long nanoseconds() {
+            return System.nanoTime();
+        }
+
+        @Override
+        public long hiResClockMs() {
+            return TimeUnit.NANOSECONDS.toMillis(nanoseconds());
+        }
+
+        @Override
+        public void sleep(long arg0) {
+            try {
+                Thread.sleep(arg0);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private class MessageContext {
