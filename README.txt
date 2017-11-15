@@ -68,3 +68,4 @@ Build Process
    addons/hive-bridge/target/hive-bridge-<version>.jar
    addons/sqoop-bridge/target/sqoop-bridge-<version>.jar
    addons/storm-bridge/target/storm-bridge-<version>.jar
+Patch Upgrade - Wed Nov 15 10:28:10 UTC 2017
