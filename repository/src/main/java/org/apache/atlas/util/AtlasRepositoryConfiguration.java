@@ -122,7 +122,7 @@ public class AtlasRepositoryConfiguration {
     }
 
     private static final String GRAPH_DATABASE_IMPLEMENTATION_PROPERTY = "atlas.graphdb.backend";
-    private static final String DEFAULT_GRAPH_DATABASE_IMPLEMENTATION_CLASS = "org.apache.atlas.repository.graphdb.janus.AtlasJanusGraphDatabase";
+    private static final String DEFAULT_GRAPH_DATABASE_IMPLEMENTATION_CLASS = "org.apache.atlas.repository.graphdb.titan0.Titan0GraphDatabase";
 
     @SuppressWarnings("unchecked")
     public static Class<? extends GraphDatabase> getGraphDatabaseImpl() {
