@@ -238,6 +238,8 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>org/codehaus/jackson/**</exclude>
+                                        <exclude>com/fasterxml/jackson/**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
