@@ -217,6 +217,10 @@
                                 <excludes>
                                     <!-- these are bundled with Atlas -->
                                     <exclude>org.slf4j:*</exclude>
+                                    <exclude>com.fasterxml.jackson.core:*</exclude>
+                                    <exclude>com.fasterxml.jackson.dataformat:*</exclude>
+                                    <exclude>com.fasterxml.jackson.databind:*</exclude>
+                                    <exclude>com.fasterxml.jackson.datatype:*</exclude>
                                 </excludes>
                             </artifactSet>
                             <filters>
