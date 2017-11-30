@@ -653,9 +653,9 @@
                 <graphGroup>org.apache.atlas</graphGroup>
                 <graphArtifact>atlas-graphdb-titan0</graphArtifact>
                 <skipDocs>false</skipDocs>
-                <graphdb.backend.impl>org.apache.atlas.repository.graphdb.janus.AtlasJanusGraphDatabase</graphdb.backend.impl>
-                <graph.index.backend>solr</graph.index.backend>
-                <solr.embedded>true</solr.embedded>
+                <graphdb.backend.impl>org.apache.atlas.repository.graphdb.titan0.Titan0GraphDatabase</graphdb.backend.impl>
+                <graph.index.backend>elasticsearch</graph.index.backend>
+                <solr.embedded>false</solr.embedded>
             </properties>
         </profile>
 
