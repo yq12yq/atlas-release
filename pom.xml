@@ -1056,18 +1056,6 @@
 
             <dependency>
                 <groupId>com.sun.jersey</groupId>
-                <artifactId>jersey-json</artifactId>
-                <version>${jersey.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.stream</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>com.sun.jersey</groupId>
                 <artifactId>jersey-server</artifactId>
                 <version>${jersey.version}</version>
             </dependency>
@@ -1156,6 +1144,10 @@
                     <exclusion>
                         <artifactId>*</artifactId>
                         <groupId>org.apache.hadoop</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.codehaus.jackson</groupId>
                     </exclusion>
                     <exclusion>
                         <artifactId>*</artifactId>
