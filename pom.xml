@@ -539,6 +539,7 @@
         <zookeeper.version>3.5.3-beta</zookeeper.version>
         <hive.version>3.0.0-SNAPSHOT</hive.version>
         <calcite.version>1.14.0</calcite.version>
+        <scala.version>2.11.8</scala.version>
 
         <json.version>3.2.11</json.version>
         <log4j.version>1.2.17</log4j.version>
