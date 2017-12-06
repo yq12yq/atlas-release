@@ -35,7 +35,6 @@
 
     <properties>
         <tinkerpop.version>3.2.6</tinkerpop.version>
-        <janus.version>0.2.0</janus.version>
         <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
     </properties>
 
@@ -51,6 +50,12 @@
             <artifactId>atlas-graphdb-api</artifactId>
             <!-- set scope to provided to prevent the this from being included in the shared jar -->
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.atlas</groupId>
+            <artifactId>atlas-janusgraph-hbase2</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

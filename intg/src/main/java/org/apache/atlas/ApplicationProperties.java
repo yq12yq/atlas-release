@@ -131,6 +131,21 @@ public final class ApplicationProperties extends PropertiesConfiguration {
         }
     }
 
+    public static Class getClass(String fullyQualifiedClassName, Class assignableClass) throws AtlasException {
+        try {
+            Class<?> clazz = Class.forName(fullyQualifiedClassName);
+            if (assignableClass == null || assignableClass.isAssignableFrom(clazz)) {
+                return clazz;
+            } else {
+                String message = "Class " + clazz.getName() + " is not assignable to class " + assignableClass.getName();
+                LOG.error(message);
+                throw new AtlasException(message);
+            }
+        } catch (Exception e) {
+            throw new AtlasException(e);
+        }
+    }
+
     /**
      * Get the specified property as an {@link InputStream}.
      * If the property is not set, then the specified default filename

@@ -18,10 +18,15 @@
 
 package org.apache.atlas.repository.graphdb.janus;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
@@ -32,15 +37,14 @@ import org.apache.atlas.repository.graphdb.janus.serializer.StringListSerializer
 import org.apache.atlas.repository.graphdb.janus.serializer.TypeCategorySerializer;
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
 import org.apache.commons.configuration.Configuration;
-import org.apache.tinkerpop.gremlin.groovy.loaders.SugarLoader;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONMapper;
+import org.janusgraph.diskstorage.StandardStoreManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.schema.JanusGraphManagement;
-import org.janusgraph.core.util.JanusGraphCleanup;
 import org.janusgraph.graphdb.tinkerpop.JanusGraphIoRegistry;
 
 /**
@@ -92,6 +96,30 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
         janusConfig.addProperty("attributes.custom.attribute4.serializer-class", BigDecimalSerializer.class.getName());
 
         return janusConfig;
+    }
+
+    static {
+        addHBase2Support();
+    }
+
+    private static void addHBase2Support() {
+        try {
+            Field field = StandardStoreManager.class.getDeclaredField("ALL_MANAGER_CLASSES");
+            field.setAccessible(true);
+
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+            Map<String, String> customMap = new HashMap<>(StandardStoreManager.getAllManagerClasses());
+            customMap.put("hbase2", org.janusgraph.diskstorage.hbase2.HBaseStoreManager.class.getName());
+            ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
+            field.set(null, immap);
+
+            LOG.debug("Injected HBase2 support - {}", org.janusgraph.diskstorage.hbase2.HBaseStoreManager.class.getName());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static JanusGraph getGraphInstance() {

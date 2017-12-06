@@ -40,6 +40,7 @@
         <module>graphdb-impls</module>
         <module>titan0</module>
         <module>titan1</module>
+        <module>janus-hbase2</module>
         <module>janus</module>
     </modules>
 
