@@ -650,14 +650,13 @@
                 </property>
             </activation>
             <properties>
-                <!-- Define graph dependency type/version -->
                 <graphGroup>org.apache.atlas</graphGroup>
-                <graphArtifact>atlas-graphdb-titan0</graphArtifact>
+                <graphArtifact>atlas-graphdb-janus</graphArtifact>
                 <skipDocs>false</skipDocs>
-                <graphdb.backend.impl>org.apache.atlas.repository.graphdb.titan0.Titan0GraphDatabase</graphdb.backend.impl>
-                <graph.index.backend>elasticsearch</graph.index.backend>
-                <tests.solr.embedded>false</tests.solr.embedded>
-                <distro.exclude.packages>WEB-INF/lib/titan-*.jar,WEB-INF/lib/je-*.jar,WEB-INF/lib/elasticsearch-*.jar,WEB-INF/lib/lucene-*.jar</distro.exclude.packages>
+                <graphdb.backend.impl>org.apache.atlas.repository.graphdb.janus.AtlasJanusGraphDatabase</graphdb.backend.impl>
+                <graph.index.backend>solr</graph.index.backend>
+                <tests.solr.embedded>true</tests.solr.embedded>
+                <distro.exclude.packages>WEB-INF/lib/je-*.jar,WEB-INF/lib/elasticsearch-*.jar</distro.exclude.packages>
             </properties>
         </profile>
 

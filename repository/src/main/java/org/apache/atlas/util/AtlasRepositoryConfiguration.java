@@ -49,10 +49,6 @@ public class AtlasRepositoryConfiguration {
     private static final Integer DEFAULT_TYPE_UPDATE_LOCK_MAX_WAIT_TIME_IN_SECONDS = Integer.valueOf(15);
     private static final String  CONFIG_TYPE_UPDATE_LOCK_MAX_WAIT_TIME_IN_SECONDS  = "atlas.server.type.update.lock.max.wait.time.seconds";
     private static final String  ENABLE_FULLTEXT_SEARCH_PROPERTY                   = "atlas.search.fulltext.enable";
-    private static final String  TITAN0                                            = "titan0";
-    private static final String  TITAN1                                            = "titan1";
-    private static final String  JANUS                                             = "janus";
-    private static final String  GRAPH_DATABASE_IMPLEMENTATION_PROPERTY            = "atlas.graphdb.backend";
     private static final String  JANUS_GRAPH_DATABASE_IMPLEMENTATION_CLASS         = "org.apache.atlas.repository.graphdb.janus.AtlasJanusGraphDatabase";
     private static final String  TITAN0_GRAPH_DATABASE_IMPLEMENTATION_CLASS        = "org.apache.atlas.repository.graphdb.titan0.Titan0GraphDatabase";
     private static final String  TITAN1_GRAPH_DATABASE_IMPLEMENTATION_CLASS        = "org.apache.atlas.repository.graphdb.titan1.Titan1GraphDatabase";
@@ -132,22 +128,18 @@ public class AtlasRepositoryConfiguration {
     @SuppressWarnings("unchecked")
     public static Class<? extends GraphDatabase> getGraphDatabaseImpl() {
         try {
-            Class<? extends GraphDatabase> ret               = null;
-            Configuration                  config            = ApplicationProperties.get();
-            String                         graphDatabaseImpl = config.getString(GRAPH_DATABASE_IMPLEMENTATION_PROPERTY);
+            final Class<? extends GraphDatabase> ret;
+            Configuration                        config            = ApplicationProperties.get();
+            String                               graphDatabaseImpl = config.getString(ApplicationProperties.GRAPHDB_BACKEND_CONF);
 
-            if (StringUtils.isNotEmpty(graphDatabaseImpl)) {
-                if (StringUtils.equals(graphDatabaseImpl, TITAN0) || StringUtils.equals(graphDatabaseImpl, TITAN0_GRAPH_DATABASE_IMPLEMENTATION_CLASS)) {
-                    ret = ApplicationProperties.getClass(TITAN0_GRAPH_DATABASE_IMPLEMENTATION_CLASS, GraphDatabase.class);
-
-                } else if (StringUtils.equals(graphDatabaseImpl, TITAN1) || StringUtils.equals(graphDatabaseImpl, TITAN1_GRAPH_DATABASE_IMPLEMENTATION_CLASS)) {
-                    ret = ApplicationProperties.getClass(TITAN1_GRAPH_DATABASE_IMPLEMENTATION_CLASS, GraphDatabase.class);
-
-                } else if (StringUtils.equals(graphDatabaseImpl, JANUS) || StringUtils.equals(graphDatabaseImpl, JANUS_GRAPH_DATABASE_IMPLEMENTATION_CLASS)) {
-                    ret = ApplicationProperties.getClass(JANUS_GRAPH_DATABASE_IMPLEMENTATION_CLASS, GraphDatabase.class);
-                }
-            } else {
+            if (StringUtils.equals(graphDatabaseImpl, ApplicationProperties.GRAPHBD_BACKEND_TITAN0)) {
                 ret = ApplicationProperties.getClass(TITAN0_GRAPH_DATABASE_IMPLEMENTATION_CLASS, GraphDatabase.class);
+            } else if (StringUtils.equals(graphDatabaseImpl, ApplicationProperties.GRAPHBD_BACKEND_TITAN1)) {
+                ret = ApplicationProperties.getClass(TITAN1_GRAPH_DATABASE_IMPLEMENTATION_CLASS, GraphDatabase.class);
+            } else if (StringUtils.equals(graphDatabaseImpl, ApplicationProperties.GRAPHBD_BACKEND_JANUS)) {
+                ret = ApplicationProperties.getClass(JANUS_GRAPH_DATABASE_IMPLEMENTATION_CLASS, GraphDatabase.class);
+            } else {
+                ret = ApplicationProperties.getClass(graphDatabaseImpl, GraphDatabase.class);
             }
 
             return ret;

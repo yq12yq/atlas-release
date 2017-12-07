@@ -21,6 +21,7 @@ import org.apache.atlas.security.InMemoryJAASConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,20 @@ public final class ApplicationProperties extends PropertiesConfiguration {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationProperties.class);
 
-    public static final String APPLICATION_PROPERTIES = "atlas-application.properties";
+    public static final String  APPLICATION_PROPERTIES     = "atlas-application.properties";
+    public static final String  GRAPHDB_BACKEND_CONF       = "atlas.graphdb.backend";
+    public static final String  STORAGE_BACKEND_CONF       = "atlas.graph.storage.backend";
+    public static final String  INDEX_BACKEND_CONF         = "atlas.graph.index.search.backend";
+    public static final String  SOLR_WAIT_SEARCHER_CONF    = "atlas.graph.index.search.solr.wait-searcher";
+    public static final String  GRAPHBD_BACKEND_TITAN0     = "titan0";
+    public static final String  GRAPHBD_BACKEND_TITAN1     = "titan1";
+    public static final String  GRAPHBD_BACKEND_JANUS      = "janus";
+    public static final String  STORAGE_BACKEND_HBASE      = "hbase";
+    public static final String  STORAGE_BACKEND_HBASE2     = "hbase2";
+    public static final String  INDEX_BACKEND_SOLR         = "solr";
+    public static final String  INDEX_BACKEND_SOLR5        = "solr5";
+    public static final String  DEFAULT_GRAPHDB_BACKEND    = GRAPHBD_BACKEND_JANUS;
+    public static final boolean DEFAULT_SOLR_WAIT_SEARCHER = true;
 
     private static volatile Configuration instance = null;
 
@@ -90,7 +104,12 @@ public final class ApplicationProperties extends PropertiesConfiguration {
 
             LOG.info("Loading {} from {}", fileName, url);
 
-            Configuration configuration = new ApplicationProperties(url).interpolatedConfiguration();
+            ApplicationProperties appProperties = new ApplicationProperties(url);
+
+            appProperties.setDefaults();
+
+            Configuration configuration = appProperties.interpolatedConfiguration();
+
             logConfiguration(configuration);
             return configuration;
         } catch (Exception e) {
@@ -214,5 +233,71 @@ public final class ApplicationProperties extends PropertiesConfiguration {
             }
         }
         return inStr;
+    }
+
+
+    private void setDefaults() {
+        String graphDbBackend = getString(GRAPHDB_BACKEND_CONF);
+
+        if (StringUtils.isEmpty(graphDbBackend)) {
+            graphDbBackend = DEFAULT_GRAPHDB_BACKEND;
+
+            clearPropertyDirect(GRAPHDB_BACKEND_CONF);
+            addPropertyDirect(GRAPHDB_BACKEND_CONF, graphDbBackend);
+            LOG.info("No graphdb backend specified. Will use '" + graphDbBackend + "'");
+
+            // The below default values for storage backend, index backend and solr-wait-searcher
+            // should be removed once ambari change to handle them is committed.
+            clearPropertyDirect(STORAGE_BACKEND_CONF);
+            addPropertyDirect(STORAGE_BACKEND_CONF, STORAGE_BACKEND_HBASE2);
+            LOG.info("Using storage backend '" + STORAGE_BACKEND_HBASE2 + "'");
+
+            clearPropertyDirect(INDEX_BACKEND_CONF);
+            addPropertyDirect(INDEX_BACKEND_CONF, INDEX_BACKEND_SOLR);
+            LOG.info("Using index backend '" + INDEX_BACKEND_SOLR + "'");
+
+            clearPropertyDirect(SOLR_WAIT_SEARCHER_CONF);
+            addPropertyDirect(SOLR_WAIT_SEARCHER_CONF, DEFAULT_SOLR_WAIT_SEARCHER);
+            LOG.info("Setting solr-wait-searcher property '" + DEFAULT_SOLR_WAIT_SEARCHER + "'");
+        }
+
+        String storageBackend = getString(STORAGE_BACKEND_CONF);
+
+        if (StringUtils.isEmpty(storageBackend)) {
+            if (graphDbBackend.contains(GRAPHBD_BACKEND_JANUS)) {
+                storageBackend = STORAGE_BACKEND_HBASE2;
+            } else if (graphDbBackend.contains(GRAPHBD_BACKEND_TITAN0)) {
+                storageBackend = STORAGE_BACKEND_HBASE;
+            } else if (graphDbBackend.contains(GRAPHBD_BACKEND_TITAN1)) {
+                storageBackend = STORAGE_BACKEND_HBASE;
+            }
+
+            if (StringUtils.isNotEmpty(storageBackend)) {
+                clearPropertyDirect(STORAGE_BACKEND_CONF);
+                addPropertyDirect(STORAGE_BACKEND_CONF, storageBackend);
+
+                LOG.info("No storage backend specified. Will use '" + storageBackend + "'");
+            }
+        }
+
+        String indexBackend = getString(INDEX_BACKEND_CONF);
+
+        if (StringUtils.isEmpty(indexBackend)) {
+            if (graphDbBackend.contains(GRAPHBD_BACKEND_JANUS)) {
+                indexBackend = INDEX_BACKEND_SOLR;
+            } else if (graphDbBackend.contains(GRAPHBD_BACKEND_TITAN0)) {
+                indexBackend = INDEX_BACKEND_SOLR5;
+            } else if (graphDbBackend.contains(GRAPHBD_BACKEND_TITAN1)) {
+                indexBackend = INDEX_BACKEND_SOLR5;
+            }
+
+            if (StringUtils.isNotEmpty(indexBackend)) {
+                clearPropertyDirect(INDEX_BACKEND_CONF);
+                addPropertyDirect(INDEX_BACKEND_CONF, indexBackend);
+
+                LOG.info("No index backend specified. Will use '" + indexBackend + "'");
+            }
+        }
+
     }
 }
