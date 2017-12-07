@@ -1,3 +1,20 @@
+2.6.4
+
+ATLAS-2284: added jersey-multipart jar to Hive hook packaging
+ATLAS-2275: fix for incorrect serialization of date type trait attributes in entity notification
+ATLAS-2277: search for classification '*' doesn't honor excludeDeletedEntities=true
+ATLAS-2274: search for classification '*' with a typeName filter results in error
+ATLAS-2267: Update basic search to support classification attributes
+ATLAS-2244: UI - Basic Search Table not using referredEntities to render entity details
+ATLAS-2236: UI - Basic Search Post request send attribute filters even after removing Type
+ATLAS-2222: UI, Search using entity and trait attributes - , in string attribute filter throws 400 Bad request
+ATLAS-2214: fix for NPE during notNull condition
+ATLAS-2208: Include historical entities in Schema tab checked by default for DELETED tables
+ATLAS-2250: Upgrade JQuery version to 3.*
+ATLAS-2240: Fix duplicate type name error in QuickStartV2IT
+ATLAS-2218: TestMetadata fix after ATLAS-1218, ATLAS-2087 changes
+ATLAS-1954: Integration tests for Basic search
+
 2.6.3
 
 ATLAS-1218: Atlas says it is started but does not accept REST requests
