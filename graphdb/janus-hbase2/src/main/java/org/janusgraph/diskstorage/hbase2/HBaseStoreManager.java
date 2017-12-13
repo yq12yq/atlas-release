@@ -908,7 +908,7 @@ public class HBaseStoreManager extends DistributedStoreManager implements KeyCol
 
                     for (StaticBuffer b : mutation.getDeletions()) {
                         // commands.getSecond() is a Delete for this rowkey.
-                        commands.getSecond().addColumn(cfName, b.as(StaticBuffer.ARRAY_FACTORY), delTimestamp);
+                        commands.getSecond().addColumns(cfName, b.as(StaticBuffer.ARRAY_FACTORY), delTimestamp);
                     }
                 }
 
