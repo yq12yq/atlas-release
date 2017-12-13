@@ -685,7 +685,7 @@ public class EntityDiscoveryService implements AtlasDiscoveryService {
             throw new AtlasBaseException(DISCOVERY_QUERY_FAILED, query);
         }
 
-        QueryProcessor queryProcessor  = new QueryProcessor(typeRegistry);
+        QueryProcessor queryProcessor  = new QueryProcessor(typeRegistry, limit, offset);
         Expression     validExpression = queryProcessor.validate(expression);
         GremlinQuery   gremlinQuery    = new GremlinTranslator(queryProcessor, validExpression).translate();
 
@@ -934,7 +934,7 @@ public class EntityDiscoveryService implements AtlasDiscoveryService {
 
         String queryStr = query == null ? "" : query;
 
-        if (org.apache.commons.lang3.StringUtils.isNoneEmpty(typeName)) {
+        if (StringUtils.isNotEmpty(typeName)) {
             if(StringUtils.isNotEmpty(query)) {
                 String s = query.toLowerCase();
                 if(!s.startsWith(whereDSLKeyword) && !s.startsWith(limitDSLKeyword)) {
@@ -945,7 +945,7 @@ public class EntityDiscoveryService implements AtlasDiscoveryService {
             queryStr = escapeTypeName(typeName) + " " + queryStr;
         }
 
-        if (org.apache.commons.lang3.StringUtils.isNoneEmpty(classification)) {
+        if (StringUtils.isNotEmpty(classification)) {
             // isa works with a type name only - like hive_column isa PII; it doesn't work with more complex query
             if (StringUtils.isEmpty(query)) {
                 queryStr += (" isa " + classification);
