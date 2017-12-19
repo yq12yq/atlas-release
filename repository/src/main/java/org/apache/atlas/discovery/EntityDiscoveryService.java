@@ -928,9 +928,20 @@ public class EntityDiscoveryService implements AtlasDiscoveryService {
 
     @Override
     public String getDslQueryUsingTypeNameClassification(String query, String typeName, String classification) {
+        final String whereDSLKeyword = "where";
+        final String limitDSLKeyword = "limit";
+        final String whereFormat = whereDSLKeyword + " %s";
+
         String queryStr = query == null ? "" : query;
 
         if (org.apache.commons.lang3.StringUtils.isNoneEmpty(typeName)) {
+            if(StringUtils.isNotEmpty(query)) {
+                String s = query.toLowerCase();
+                if(!s.startsWith(whereDSLKeyword) && !s.startsWith(limitDSLKeyword)) {
+                    queryStr = String.format(whereFormat, query);
+                }
+            }
+
             queryStr = escapeTypeName(typeName) + " " + queryStr;
         }
 
