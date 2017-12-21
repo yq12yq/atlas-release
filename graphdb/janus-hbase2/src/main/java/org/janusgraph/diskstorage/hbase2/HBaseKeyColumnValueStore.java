@@ -249,7 +249,7 @@ public class HBaseKeyColumnValueStore implements KeyColumnValueStore {
             scan.withStartRow(startKey);
 
         if (endKey != null)
-            scan.withStartRow(endKey);
+            scan.withStopRow(endKey);
 
         if (columnSlice != null) {
             filters.addFilter(getFilter(columnSlice));
