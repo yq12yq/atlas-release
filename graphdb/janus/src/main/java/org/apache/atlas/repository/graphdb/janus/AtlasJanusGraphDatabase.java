@@ -38,7 +38,9 @@ import org.apache.atlas.repository.graphdb.janus.serializer.TypeCategorySerializ
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
 import org.apache.commons.configuration.Configuration;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONMapper;
+import org.janusgraph.diskstorage.StandardIndexProvider;
 import org.janusgraph.diskstorage.StandardStoreManager;
+import org.janusgraph.diskstorage.solr.Solr6Index;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,6 +102,8 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
 
     static {
         addHBase2Support();
+
+        addSolr6Index();
     }
 
     private static void addHBase2Support() {
@@ -117,6 +121,26 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
             field.set(null, immap);
 
             LOG.debug("Injected HBase2 support - {}", org.janusgraph.diskstorage.hbase2.HBaseStoreManager.class.getName());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void addSolr6Index() {
+        try {
+            Field field = StandardIndexProvider.class.getDeclaredField("ALL_MANAGER_CLASSES");
+            field.setAccessible(true);
+
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+            Map<String, String> customMap = new HashMap<>(StandardIndexProvider.getAllProviderClasses());
+            customMap.put("solr", Solr6Index.class.getName());
+            ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
+            field.set(null, immap);
+
+            LOG.debug("Injected solr6 index - {}", Solr6Index.class.getName());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
