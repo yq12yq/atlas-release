@@ -167,10 +167,14 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.atlas</groupId>
-                    <artifactId>atlas-common</artifactId>
-                    <type>test-jar</type>
+                    <artifactId>atlas-testtools</artifactId>
                     <version>${project.version}</version>
-                    <scope>test</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.fasterxml.jackson.core</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
         </profile>
@@ -186,10 +190,14 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.atlas</groupId>
-                    <artifactId>atlas-common</artifactId>
-                    <type>test-jar</type>
+                    <artifactId>atlas-testtools</artifactId>
                     <version>${project.version}</version>
-                    <scope>test</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.fasterxml.jackson.core</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
         </profile>
@@ -205,10 +213,8 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.atlas</groupId>
-                    <artifactId>atlas-common</artifactId>
-                    <type>test-jar</type>
+                    <artifactId>atlas-testtools</artifactId>
                     <version>${project.version}</version>
-                    <scope>test</scope>
                     <exclusions>
                         <exclusion>
                             <groupId>org.apache.lucene</groupId>
@@ -248,27 +254,23 @@
                     </properties>
                 </configuration>
             </plugin>
+
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>unpack</id>
-                        <phase>compile</phase>
+                        <id>copy-resources</id>
+                        <phase>validate</phase>
                         <goals>
-                            <goal>unpack</goal>
+                            <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.apache.atlas</groupId>
-                                    <artifactId>atlas-common</artifactId>
-                                    <type>test-jar</type>
-                                    <version>${project.version}</version>
-                                    <excludes>org/**, META-INF/**</excludes>
-                                    <outputDirectory>${project.build.directory}/local_solr</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/solr</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/../test-tools/src/main/resources/solr</directory>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
