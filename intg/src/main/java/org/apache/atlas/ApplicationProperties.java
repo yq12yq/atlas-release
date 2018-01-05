@@ -44,6 +44,7 @@ public final class ApplicationProperties extends PropertiesConfiguration {
     public static final String  GRAPHDB_BACKEND_CONF       = "atlas.graphdb.backend";
     public static final String  STORAGE_BACKEND_CONF       = "atlas.graph.storage.backend";
     public static final String  INDEX_BACKEND_CONF         = "atlas.graph.index.search.backend";
+    public static final String  INDEX_MAP_NAME_CONF        = "atlas.graph.index.search.map-name";
     public static final String  SOLR_WAIT_SEARCHER_CONF    = "atlas.graph.index.search.solr.wait-searcher";
     public static final String  GRAPHBD_BACKEND_TITAN0     = "titan0";
     public static final String  GRAPHBD_BACKEND_TITAN1     = "titan1";
@@ -54,6 +55,7 @@ public final class ApplicationProperties extends PropertiesConfiguration {
     public static final String  INDEX_BACKEND_SOLR5        = "solr5";
     public static final String  DEFAULT_GRAPHDB_BACKEND    = GRAPHBD_BACKEND_JANUS;
     public static final boolean DEFAULT_SOLR_WAIT_SEARCHER = true;
+    public static final boolean DEFAULT_INDEX_MAP_NAME     = false;
 
     private static volatile Configuration instance = null;
 
@@ -259,6 +261,10 @@ public final class ApplicationProperties extends PropertiesConfiguration {
             clearPropertyDirect(SOLR_WAIT_SEARCHER_CONF);
             addPropertyDirect(SOLR_WAIT_SEARCHER_CONF, DEFAULT_SOLR_WAIT_SEARCHER);
             LOG.info("Setting solr-wait-searcher property '" + DEFAULT_SOLR_WAIT_SEARCHER + "'");
+
+            clearPropertyDirect(INDEX_MAP_NAME_CONF);
+            addPropertyDirect(INDEX_MAP_NAME_CONF, DEFAULT_INDEX_MAP_NAME);
+            LOG.info("Setting index.search.map-name property '" + DEFAULT_INDEX_MAP_NAME + "'");
         }
 
         String storageBackend = getString(STORAGE_BACKEND_CONF);
