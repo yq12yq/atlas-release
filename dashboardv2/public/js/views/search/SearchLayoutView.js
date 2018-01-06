@@ -105,7 +105,9 @@ define(['require',
                         pageOffset: null,
                         pageLimit: null,
                         entityFilters: null,
-                        includeDE: null
+                        includeDE: null,
+                        excludeST:null,
+                        excludeSC : null
                     }
                 };
                 if (!this.value) {
@@ -125,6 +127,12 @@ define(['require',
                         saveSearchAdvanceCollection = new VSearchList(),
                         saveSearchCollection = new VSearchList();
                     saveSearchCollection.url = UrlLinks.saveSearchApiUrl();
+                    saveSearchBaiscCollection.fullCollection.comparator = function(model) {
+                        return model.get('name').toLowerCase();
+                    }
+                    saveSearchAdvanceCollection.fullCollection.comparator = function(model) {
+                        return model.get('name').toLowerCase();
+                    }
                     var obj = {
                         value: that.value,
                         searchVent: that.searchVent,
@@ -139,11 +147,9 @@ define(['require',
                                 urlObj = Utils.getUrlState.getQueryParams();
                             if (urlObj) {
                                 // includeDE value in because we need to send "true","false" to the server.
-                                if (urlObj.includeDE == "true") {
-                                    urlObj.includeDE = true;
-                                } else {
-                                    urlObj.includeDE = false;
-                                }
+                                urlObj.includeDE = urlObj.includeDE == "true" ? true : false;
+                                urlObj.excludeSC = urlObj.excludeSC == "true" ? true : false;
+                                urlObj.excludeST = urlObj.excludeST == "true" ? true : false;
                             }
                             return _.extend({}, queryObj, urlObj, {
                                 'entityFilters': entityObj ? entityObj[queryObj.type] : null,
@@ -163,18 +169,18 @@ define(['require',
                     }
                     that.RSaveSearchBasic.show(new SaveSearchView(_.extend(obj, {
                         isBasic: true,
-                        collection: saveSearchBaiscCollection
+                        collection: saveSearchBaiscCollection.fullCollection
                     })));
                     that.RSaveSearchAdvance.show(new SaveSearchView(_.extend(obj, {
                         isBasic: false,
-                        collection: saveSearchAdvanceCollection
+                        collection: saveSearchAdvanceCollection.fullCollection
                     })));
 
                     function fetchSaveSearchCollection() {
                         saveSearchCollection.fetch({
                             success: function(collection, data) {
-                                saveSearchAdvanceCollection.reset(_.where(data, { "searchType": "ADVANCED" }));
-                                saveSearchBaiscCollection.reset(_.where(data, { "searchType": "BASIC" }));
+                                saveSearchAdvanceCollection.fullCollection.reset(_.where(data, { "searchType": "ADVANCED" }));
+                                saveSearchBaiscCollection.fullCollection.reset(_.where(data, { "searchType": "BASIC" }));
                             },
                             silent: true
                         });
@@ -184,18 +190,14 @@ define(['require',
             },
             bindEvents: function(param) {
                 this.listenTo(this.typeHeaders, "reset", function(value) {
-                    this.renderTypeTagList();
-                    this.setValues();
-                    this.ui.typeLov.select2({
-                        placeholder: "Select",
-                        allowClear: true
-                    });
-                    this.ui.tagLov.select2({
-                        placeholder: "Select",
-                        allowClear: true
-                    });
-                    this.checkForButtonVisiblity();
+                    this.initializeValues();
                 }, this);
+            },
+            initializeValues: function() {
+                this.renderTypeTagList();
+                this.setValues();
+                this.checkForButtonVisiblity();
+                this.renderSaveSearch();
             },
             makeFilterButtonActive: function(filtertypeParam) {
                 var filtertype = ['entityFilters', 'tagFilters'],
@@ -306,17 +308,7 @@ define(['require',
             },
             onRender: function() {
                 // array of tags which is coming from url
-                this.renderTypeTagList();
-                this.setValues();
-                this.ui.typeLov.select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
-                this.ui.tagLov.select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
-                this.renderSaveSearch();
+                this.initializeValues();
             },
             updateQueryObject: function(param) {
                 if (param && param.searchType) {
@@ -345,7 +337,7 @@ define(['require',
             },
             onRefreshButton: function() {
                 this.fetchCollection();
-                //to check url query param contain type or not 
+                //to check url query param contain type or not
                 var checkURLValue = Utils.getUrlState.getQueryParams(this.url);
                 if (this.searchVent && (_.has(checkURLValue, "tag") || _.has(checkURLValue, "type") || _.has(checkURLValue, "query"))) {
                     this.searchVent.trigger('search:refresh');
@@ -396,7 +388,7 @@ define(['require',
                     var rule = queryBuilderRef.queryBuilder('getRules');
                 }
                 if (rule) {
-                    var ruleUrl = CommonViewFunction.attributeFilter.generateUrl(rule.rules);
+                    var ruleUrl = CommonViewFunction.attributeFilter.generateUrl({ "value": rule.rules, "formatedDateToLong": true });
                     this.searchTableFilters[filtertype][(isTag ? this.value.tag : this.value.type)] = ruleUrl;
                     this.makeFilterButtonActive(filtertype);
                     if (!isTag && this.value && this.value.type && this.searchTableColumns) {
@@ -420,10 +412,7 @@ define(['require',
                 this.ui.typeLov.empty();
                 var typeStr = '<option></option>',
                     tagStr = typeStr;
-                this.typeHeaders.fullCollection.comparator = function(model) {
-                    return Utils.getName(model.toJSON(), 'name').toLowerCase();
-                }
-                this.typeHeaders.fullCollection.sort().each(function(model) {
+                this.typeHeaders.fullCollection.each(function(model) {
                     var name = Utils.getName(model.toJSON(), 'name');
                     if (model.get('category') == 'ENTITY') {
                         typeStr += '<option>' + (name) + '</option>';
@@ -437,6 +426,14 @@ define(['require',
                 });
                 that.ui.typeLov.html(typeStr);
                 that.ui.tagLov.html(tagStr);
+                this.ui.typeLov.select2({
+                    placeholder: "Select",
+                    allowClear: true
+                });
+                this.ui.tagLov.select2({
+                    placeholder: "Select",
+                    allowClear: true
+                });
             },
             setValues: function(paramObj) {
                 var arr = [],
@@ -507,11 +504,9 @@ define(['require',
                     if (columnList) {
                         params['attributes'] = columnList.join(',');
                     }
-                    if (_.isUndefinedNull(this.value.includeDE)) {
-                        params['includeDE'] = false;
-                    } else {
-                        params['includeDE'] = this.value.includeDE;
-                    }
+                    params['includeDE'] = _.isUndefinedNull(this.value.includeDE) ? false : this.value.includeDE;
+                    params['excludeST'] = _.isUndefinedNull(this.value.excludeST) ? false : this.value.excludeST;
+                    params['excludeSC'] = _.isUndefinedNull(this.value.excludeSC) ? false : this.value.excludeSC;
                 }
                 if (!_.isUndefinedNull(this.value.pageLimit)) {
                     params['pageLimit'] = this.value.pageLimit;

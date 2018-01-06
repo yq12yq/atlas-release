@@ -18,6 +18,7 @@
 
 define(['require',
     'backbone',
+    'table-dragger',
     'hbs!tmpl/search/SearchResultLayoutView_tmpl',
     'modules/Modal',
     'models/VEntity',
@@ -29,7 +30,7 @@ define(['require',
     'utils/Messages',
     'utils/Enums',
     'utils/UrlLinks'
-], function(require, Backbone, SearchResultLayoutViewTmpl, Modal, VEntity, Utils, Globals, VSearchList, VCommon, CommonViewFunction, Messages, Enums, UrlLinks) {
+], function(require, Backbone, tableDragger, SearchResultLayoutViewTmpl, Modal, VEntity, Utils, Globals, VSearchList, VCommon, CommonViewFunction, Messages, Enums, UrlLinks) {
     'use strict';
 
     var SearchResultLayoutView = Backbone.Marionette.LayoutView.extend(
@@ -61,6 +62,8 @@ define(['require',
                 addAssignTag: "[data-id='addAssignTag']",
                 createEntity: "[data-id='createEntity']",
                 checkDeletedEntity: "[data-id='checkDeletedEntity']",
+                checkSubClassification: "[data-id='checkSubClassification']",
+                checkSubType: "[data-id='checkSubType']",
                 colManager: "[data-id='colManager']",
                 containerCheckBox: "[data-id='containerCheckBox']",
                 columnEmptyInfo: "[data-id='columnEmptyInfo']",
@@ -137,7 +140,9 @@ define(['require',
                 events["click " + this.ui.nextData] = "onClicknextData";
                 events["click " + this.ui.previousData] = "onClickpreviousData";
                 events["click " + this.ui.createEntity] = 'onClickCreateEntity';
-                events["click " + this.ui.checkDeletedEntity] = 'onCheckDeletedEntity';
+                events["click " + this.ui.checkDeletedEntity] = 'onCheckExcludeIncludeResult';
+                events["click " + this.ui.checkSubClassification] = 'onCheckExcludeIncludeResult';
+                events["click " + this.ui.checkSubType] = 'onCheckExcludeIncludeResult';
                 return events;
             },
             /**
@@ -145,7 +150,7 @@ define(['require',
              * @constructs
              */
             initialize: function(options) {
-                _.extend(this, _.pick(options, 'value', 'initialView', 'isTypeTagNotExists', 'entityDefCollection', 'typeHeaders', 'searchVent', 'enumDefCollection', 'tagCollection', 'searchTableColumns'));
+                _.extend(this, _.pick(options, 'value', 'initialView', 'isTypeTagNotExists', 'classificationDefCollection', 'entityDefCollection', 'typeHeaders', 'searchVent', 'enumDefCollection', 'tagCollection', 'searchTableColumns'));
                 this.entityModel = new VEntity();
                 this.searchCollection = new VSearchList();
                 this.limit = 25;
@@ -155,6 +160,7 @@ define(['require',
                 this.bradCrumbList = [];
                 this.arr = [];
                 this.searchType = 'Basic Search';
+                this.columnOrder = null;
                 if (this.value) {
                     if (this.value.searchType && this.value.searchType == 'dsl') {
                         this.searchType = 'Advanced Search';
@@ -266,13 +272,13 @@ define(['require',
                             saveState: false
                         },
                         visibilityControlOpts: {
-                            buttonTemplate: _.template("<button class='btn btn-action btn-md pull-right'>Columns&nbsp<i class='fa fa-caret-down'></i></button>")
+                            buttonTemplate: _.template("<button class='btn btn-action btn-sm pull-right'>Columns&nbsp<i class='fa fa-caret-down'></i></button>")
                         },
                         el: this.ui.colManager
                     },
                     gridOpts: {
                         emptyText: 'No Record found!',
-                        className: 'table table-hover backgrid table-quickMenu'
+                        className: 'table table-hover backgrid table-quickMenu colSort'
                     },
                     filterOpts: {},
                     paginatorOpts: {}
@@ -285,6 +291,13 @@ define(['require',
                         if (value && value.includeDE) {
                             this.ui.checkDeletedEntity.prop('checked', true);
                         }
+                        if (value && value.excludeSC) {
+                            this.ui.checkSubClassification.prop('checked', true);
+                        }
+                        if (value && value.excludeST) {
+                            this.ui.checkSubType.prop('checked', true);
+                        }
+
                     } else {
                         value = {
                             'query': null,
@@ -387,7 +400,7 @@ define(['require',
                         }
 
                         if (!dataLength && that.offset >= that.limit && ((options && options.next) || goToPage) && (options && !options.fromUrl)) {
-                            /* User clicks on next button and server returns 
+                            /* User clicks on next button and server returns
                             empty response then disabled the next button without rendering table*/
 
                             that.hideLoader();
@@ -417,7 +430,7 @@ define(['require',
 
 
                         /*Next button check.
-                        It's outside of Previous button else condition 
+                        It's outside of Previous button else condition
                         because when user comes from 2 page to 1 page than we need to check next button.*/
                         if (dataLength < that.limit) {
                             that.ui.nextData.attr('disabled', true);
@@ -465,6 +478,13 @@ define(['require',
                     silent: true,
                     reset: true
                 }
+                if (this.value) {
+                    var checkBoxValue = {
+                        'excludeDeletedEntities': (this.value.includeDE ? false : true),
+                        'includeSubClassifications': (this.value.excludeSC ? false : true),
+                        'includeSubTypes': (this.value.excludeST ? false : true)
+                    }
+                }
                 if (value) {
                     if (value.searchType) {
                         this.searchCollection.url = UrlLinks.searchApiUrl(value.searchType);
@@ -480,28 +500,24 @@ define(['require',
                     }
                     if (isPostMethod) {
                         this.searchCollection.filterObj = _.extend({}, filterObj);
-                        apiObj['data'] = _.extend({
-                            'excludeDeletedEntities': (this.value && this.value.includeDE ? false : true)
-                        }, filterObj, _.pick(this.searchCollection.queryParams, 'query', 'excludeDeletedEntities', 'limit', 'offset', 'typeName', 'classification'))
+                        apiObj['data'] = _.extend(checkBoxValue, filterObj, _.pick(this.searchCollection.queryParams, 'query', 'excludeDeletedEntities', 'limit', 'offset', 'typeName', 'classification'))
                         Globals.searchApiCallRef = this.searchCollection.getBasicRearchResult(apiObj);
                     } else {
                         apiObj.data = null;
                         this.searchCollection.filterObj = null;
                         if (this.value.profileDBView) {
-                            _.extend(this.searchCollection.queryParams, { 'excludeDeletedEntities': (this.value && this.value.includeDE ? false : true) });
+                            _.extend(this.searchCollection.queryParams, checkBoxValue);
                         }
                         Globals.searchApiCallRef = this.searchCollection.fetch(apiObj);
                     }
                 } else {
                     if (isPostMethod) {
-                        apiObj['data'] = _.extend({
-                            'excludeDeletedEntities': (this.value && this.value.includeDE ? false : true)
-                        }, filterObj, _.pick(this.searchCollection.queryParams, 'query', 'excludeDeletedEntities', 'limit', 'offset', 'typeName', 'classification'));
+                        apiObj['data'] = _.extend(checkBoxValue, filterObj, _.pick(this.searchCollection.queryParams, 'query', 'excludeDeletedEntities', 'limit', 'offset', 'typeName', 'classification'));
                         Globals.searchApiCallRef = this.searchCollection.getBasicRearchResult(apiObj);
                     } else {
                         apiObj.data = null;
                         if (this.value.profileDBView) {
-                            _.extend(this.searchCollection.queryParams, { 'excludeDeletedEntities': (this.value && this.value.includeDE ? false : true) });
+                            _.extend(this.searchCollection.queryParams, checkBoxValue);
                         }
                         Globals.searchApiCallRef = this.searchCollection.fetch(apiObj);
                     }
@@ -527,7 +543,7 @@ define(['require',
                         },
                         setPositions: function() {
                             _.each(this.models, function(model, index) {
-                                model.set("displayOrder", index + 1, { silent: true });
+                                model.set("displayOrder", (that.columnOrder == null ? index : that.columnOrder[model.get('label')]) + 1, { silent: true });
                             });
                             return this;
                         }
@@ -545,8 +561,18 @@ define(['require',
                     }
                     that.$(".ellipsis .inputAssignTag").hide();
                     that.renderBreadcrumb();
+                    tableDragger(document.querySelector(".colSort")).on('drop', function(from, to, el) {
+                        that.columnOrder = that.getColumnOrder(el.querySelectorAll('th'));
+                    });
                     that.checkTableFetch();
                 });
+            },
+            getColumnOrder: function(arr) {
+                var obj = {};
+                for (var i = 0; i < arr.length; ++i) {
+                    obj[(arr[i].innerText == "" ? 'Select' : arr[i].innerText)] = i;
+                }
+                return obj;
             },
             renderBreadcrumb: function() {
                 var that = this;
@@ -848,6 +874,7 @@ define(['require',
                         tagList: that.getTagList(guid, multiple),
                         showLoader: that.showLoader.bind(that),
                         hideLoader: that.hideLoader.bind(that),
+                        collection: that.classificationDefCollection,
                         enumDefCollection: that.enumDefCollection
                     });
                 });
@@ -872,13 +899,13 @@ define(['require',
                 }
             },
             showLoader: function() {
-                this.$('.fontLoader:not(.for-ignore)').show();
-                this.$('.tableOverlay').show();
+                this.$('.fontLoader:not(.for-ignore)').addClass('show');
+                this.$('.tableOverlay').addClass('show');
             },
             hideLoader: function() {
-                this.$('.fontLoader:not(.for-ignore)').hide();
+                this.$('.fontLoader:not(.for-ignore)').removeClass('show');
                 this.$('.ellipsis,.pagination-box').show(); // only for first time
-                this.$('.tableOverlay').hide();
+                this.$('.tableOverlay').removeClass('show');
             },
             checkedValue: function(e) {
                 var guid = "",
@@ -1010,13 +1037,14 @@ define(['require',
                     });
                 });
             },
-            onCheckDeletedEntity: function(e) {
-                var includeDE = false;
+            onCheckExcludeIncludeResult: function(e) {
+                var flag = false,
+                    val = $(e.currentTarget).attr('data-value');
                 if (e.target.checked) {
-                    includeDE = true;
+                    flag = true;
                 }
                 if (this.value) {
-                    this.value.includeDE = includeDE;
+                    this.value[val] = flag;
                     this.triggerUrl();
                 }
                 _.extend(this.searchCollection.queryParams, { limit: this.limit, offset: this.offset });

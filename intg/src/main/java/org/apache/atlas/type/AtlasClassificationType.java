@@ -44,9 +44,11 @@ public class AtlasClassificationType extends AtlasStructType {
     private static final Logger LOG = LoggerFactory.getLogger(AtlasClassificationType.class);
 
     private final AtlasClassificationDef classificationDef;
+    private final String                 typeQryStr;
 
     private List<AtlasClassificationType> superTypes               = Collections.emptyList();
     private Set<String>                   allSuperTypes            = Collections.emptySet();
+    private Set<String>                   subTypes                 = Collections.emptySet();
     private Set<String>                   allSubTypes              = Collections.emptySet();
     private Set<String>                   typeAndAllSubTypes       = Collections.emptySet();
     private String                        typeAndAllSubTypesQryStr = "";
@@ -55,6 +57,7 @@ public class AtlasClassificationType extends AtlasStructType {
         super(classificationDef);
 
         this.classificationDef = classificationDef;
+        this.typeQryStr        = AtlasAttribute.escapeIndexQueryValue(Collections.singleton(getTypeName()));
     }
 
     public AtlasClassificationType(AtlasClassificationDef classificationDef, AtlasTypeRegistry typeRegistry)
@@ -62,6 +65,7 @@ public class AtlasClassificationType extends AtlasStructType {
         super(classificationDef);
 
         this.classificationDef = classificationDef;
+        this.typeQryStr        = AtlasAttribute.escapeIndexQueryValue(Collections.singleton(getTypeName()));
 
         resolveReferences(typeRegistry);
     }
@@ -93,6 +97,7 @@ public class AtlasClassificationType extends AtlasStructType {
         this.allSuperTypes      = Collections.unmodifiableSet(allS);
         this.allAttributes      = Collections.unmodifiableMap(allA);
         this.uniqAttributes     = getUniqueAttributes(this.allAttributes);
+        this.subTypes           = new HashSet<>(); // this will be populated in resolveReferencesPhase2()
         this.allSubTypes        = new HashSet<>(); // this will be populated in resolveReferencesPhase2()
         this.typeAndAllSubTypes = new HashSet<>(); // this will be populated in resolveReferencesPhase2()
 
@@ -103,20 +108,31 @@ public class AtlasClassificationType extends AtlasStructType {
     void resolveReferencesPhase2(AtlasTypeRegistry typeRegistry) throws AtlasBaseException {
         super.resolveReferencesPhase2(typeRegistry);
 
+        for (AtlasClassificationType superType : superTypes) {
+            superType.addSubType(this);
+        }
+
         for (String superTypeName : allSuperTypes) {
             AtlasClassificationType superType = typeRegistry.getClassificationTypeByName(superTypeName);
-            superType.addSubType(this);
+            superType.addToAllSubTypes(this);
         }
     }
 
     @Override
     void resolveReferencesPhase3(AtlasTypeRegistry typeRegistry) throws AtlasBaseException {
+        subTypes                 = Collections.unmodifiableSet(subTypes);
         allSubTypes              = Collections.unmodifiableSet(allSubTypes);
         typeAndAllSubTypes       = Collections.unmodifiableSet(typeAndAllSubTypes);
         typeAndAllSubTypesQryStr = ""; // will be computed on next access
+
+        classificationDef.setSubTypes(subTypes);
     }
 
     private void addSubType(AtlasClassificationType subType) {
+        subTypes.add(subType.getTypeName());
+    }
+
+    private void addToAllSubTypes(AtlasClassificationType subType) {
         allSubTypes.add(subType.getTypeName());
         typeAndAllSubTypes.add(subType.getTypeName());
     }
@@ -127,9 +143,13 @@ public class AtlasClassificationType extends AtlasStructType {
 
     public Set<String> getAllSuperTypes() { return allSuperTypes; }
 
+    public Set<String> getSubTypes() { return subTypes; }
+
     public Set<String> getAllSubTypes() { return allSubTypes; }
 
     public Set<String> getTypeAndAllSubTypes() { return typeAndAllSubTypes; }
+
+    public String getTypeQryStr() { return typeQryStr; }
 
     public String getTypeAndAllSubTypesQryStr() {
         if (StringUtils.isEmpty(typeAndAllSubTypesQryStr)) {

@@ -384,8 +384,8 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
         return '<div class="tagList btn-inline btn-fixed-width">' + atags + addTag + '</div>';
     }
     CommonViewFunction.generateQueryOfFilter = function(value) {
-        var entityFilters = CommonViewFunction.attributeFilter.extractUrl(value.entityFilters),
-            tagFilters = CommonViewFunction.attributeFilter.extractUrl(value.tagFilters),
+        var entityFilters = CommonViewFunction.attributeFilter.extractUrl({ "value": value.entityFilters, "formatDate": true }),
+            tagFilters = CommonViewFunction.attributeFilter.extractUrl({ "value": value.tagFilters, "formatDate": true }),
             queryArray = [],
             objToString = function(filterObj) {
                 var tempObj = [];
@@ -457,19 +457,13 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
                 if (!_.isUndefinedNull(val)) {
                     if (k == "attributes") {
                         val = val.split(',');
-                    } else if (k == "tagFilters") {
+                    } else if (_.contains(["tagFilters","entityFilters"],k)) {
                         val = CommonViewFunction.attributeFilter.generateAPIObj(val);
-                    } else if (k == "entityFilters") {
-                        val = CommonViewFunction.attributeFilter.generateAPIObj(val);
-                    } else if (k == "includeDE") {
-                        if (val) {
-                            val = false;
-                        } else {
-                            val = true;
-                        }
+                    } else if (_.contains(["includeDE","excludeST","excludeSC"],k)) {
+                        val = val ? false : true;
                     }
                 }
-                if (k == "includeDE") {
+                if (_.contains(["includeDE","excludeST","excludeSC"],k)) {
                     val = _.isUndefinedNull(val) ? true : val;
                 }
                 obj.searchParameters[v] = val;
@@ -499,14 +493,12 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
                             _.each(val.criterion, function(obj) {
                                 var attributeDef = _.findWhere(attributeDefs, { 'name': obj.attributeName });
                                 if (attributeDef) {
-                                    if (attributeDef.typeName == "date") {
-                                        obj.attributeValue = moment(parseInt(obj.attributeValue)).format('MM/DD/YYYY h:mm A');
-                                    }
+                                    obj.attributeValue = obj.attributeValue;
                                     obj['attributeType'] = attributeDef.typeName;
                                 }
                             });
                         }
-                        val = CommonViewFunction.attributeFilter.generateUrl(val.criterion);
+                        val = CommonViewFunction.attributeFilter.generateUrl({ "value": val.criterion });
                     } else if (k == "entityFilters") {
                         if (entityDefCollection) {
                             var entityDef = entityDefCollection.fullCollection.findWhere({ 'name': value.typeName }),
@@ -518,20 +510,14 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
                             _.each(val.criterion, function(obj) {
                                 var attributeDef = _.findWhere(attributeDefs, { 'name': obj.attributeName });
                                 if (attributeDef) {
-                                    if (attributeDef.typeName == "date") {
-                                        obj.attributeValue = moment(parseInt(obj.attributeValue)).format('MM/DD/YYYY h:mm A');
-                                    }
+                                    obj.attributeValue = obj.attributeValue;
                                     obj['attributeType'] = attributeDef.typeName;
                                 }
                             });
                         }
-                        val = CommonViewFunction.attributeFilter.generateUrl(val.criterion);
-                    } else if (k == "includeDE") {
-                        if (val) {
-                            val = false;
-                        } else {
-                            val = true;
-                        }
+                        val = CommonViewFunction.attributeFilter.generateUrl({ "value": val.criterion });
+                    } else if (_.contains(["includeDE","excludeST","excludeSC"],k)) {
+                        val = val ? false : true;
                     }
                 }
                 obj[k] = val;
@@ -540,12 +526,16 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
         }
     }
     CommonViewFunction.attributeFilter = {
-        generateUrl: function(attrObj) {
-            var attrQuery = [];
+        generateUrl: function(options) {
+            var attrQuery = [],
+                attrObj = options.value,
+                formatedDateToLong = options.formatedDateToLong;
             if (attrObj) {
                 _.each(attrObj, function(obj) {
-                    var url = [(obj.id || obj.attributeName), mapApiOperatorToUI(obj.operator), _.trim(obj.value || obj.attributeValue)],
-                        type = (obj.type || obj.attributeType);
+                    var type = (obj.type || obj.attributeType),
+                        //obj.value will come as an object when selected type is Date and operator is isNull or not_null;
+                        value = (_.isObject(obj.value) ? "" : _.trim(obj.value || obj.attributeValue)),
+                        url = [(obj.id || obj.attributeName), mapApiOperatorToUI(obj.operator), (type === 'date' && formatedDateToLong && value.length ? Date.parse(value) : value)];
                     if (type) {
                         url.push(type);
                     }
@@ -579,12 +569,18 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
                     return "ends_with";
                 } else if (oper == "contains") {
                     return "contains";
+                } else if (oper == "notNull") {
+                    return "not_null";
+                } else if (oper == "isNull") {
+                    return "is_null";
                 }
                 return oper;
             }
         },
-        extractUrl: function(urlObj) {
-            var attrObj = [];
+        extractUrl: function(options) {
+            var attrObj = [],
+                urlObj = options.value,
+                formatDate = options.formatDate;
             if (urlObj && urlObj.length) {
                 _.each(urlObj.split(":,:"), function(obj) {
                     var temp = obj.split("::");
@@ -592,6 +588,7 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
                     if (temp[3]) {
                         finalObj['type'] = temp[3];
                     }
+                    finalObj.value = finalObj.type === 'date' && formatDate && finalObj.value.length ? moment(parseInt(finalObj.value)).format('MM/DD/YYYY h:mm A') : finalObj.value;
                     attrObj.push(finalObj);
                 });
                 return attrObj;
@@ -603,7 +600,7 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
             if (url && url.length) {
                 var parsObj = {
                     "condition": 'AND',
-                    "criterion": convertKeyAndExtractObj(this.extractUrl(url))
+                    "criterion": convertKeyAndExtractObj(this.extractUrl({ "value": url }))
                 }
                 return parsObj;
             } else {
@@ -617,7 +614,7 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
                     tempObj = {
                         "attributeName": rulObj.id,
                         "operator": mapUiOperatorToAPI(rulObj.operator),
-                        "attributeValue": _.trim(rulObj.type === "date" ? Date.parse(rulObj.value) : rulObj.value)
+                        "attributeValue": _.trim(rulObj.value)
                     }
                     convertObj.push(tempObj);
                 });
@@ -643,6 +640,10 @@ define(['require', 'utils/Utils', 'modules/Modal', 'utils/Messages', 'utils/Enum
                     return "endsWith";
                 } else if (oper == "contains") {
                     return "contains";
+                } else if (oper == "not_null") {
+                    return "notNull";
+                } else if (oper == "is_null") {
+                    return "isNull";
                 }
                 return oper;
             }
