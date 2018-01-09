@@ -592,9 +592,9 @@
 
         <entity.repository.impl>org.apache.atlas.repository.audit.InMemoryEntityAuditRepository</entity.repository.impl>
 
-        <surefire.version>2.20.1</surefire.version>
-        <surefire.forkCount>2C</surefire.forkCount>
-        <failsafe.version>2.20.1</failsafe.version>
+        <surefire.version>2.18.1</surefire.version>
+        <surefire.forkCount>1C</surefire.forkCount>
+        <failsafe.version>2.18.1</failsafe.version>
         <atlas.surefire.options></atlas.surefire.options>
 
         <aspectj.runtime.version>1.8.7</aspectj.runtime.version>
