@@ -871,7 +871,7 @@ public class HiveHookIT extends HiveITBase {
 
         String tableId = assertTableIsRegistered(DEFAULT_DB, tableName);
         Referenceable tableEntity = atlasClient.getEntity(tableId);
-        final String createTime = (String)tableEntity.get(HiveMetaStoreBridge.CREATE_TIME);
+        final String createTime = String.valueOf(tableEntity.get(HiveMetaStoreBridge.CREATE_TIME));
         Assert.assertNotNull(createTime);
 
         String columnGuid = assertColumnIsRegistered(HiveMetaStoreBridge.getColumnQualifiedName(HiveMetaStoreBridge.getTableQualifiedName(CLUSTER_NAME, DEFAULT_DB, tableName), NAME));
@@ -912,7 +912,7 @@ public class HiveHookIT extends HiveITBase {
                 Referenceable sd = ((Referenceable) entity.get(HiveMetaStoreBridge.STORAGE_DESC));
                 String location = (String) sd.get(HiveMetaStoreBridge.LOCATION);
                 assertTrue(location.contains(newTableName));
-                Assert.assertEquals(entity.get(HiveMetaStoreBridge.CREATE_TIME), createTime);
+                Assert.assertEquals(String.valueOf(entity.get(HiveMetaStoreBridge.CREATE_TIME)), createTime);
             }
         });
     }
