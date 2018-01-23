@@ -623,6 +623,25 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <delete dir="${project.build.directory}/data"/>
+                                <delete dir="${project.build.directory}/logs"/>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
                 <configuration>
@@ -651,6 +670,18 @@
                             <value>application.log</value>
                         </systemProperty>
                         <systemProperty>
+                            <name>atlas.home</name>
+                            <value>${project.build.directory}</value>
+                        </systemProperty>
+                        <systemProperty>
+                            <key>atlas.conf</key>
+                            <value>${project.build.directory}/test-classes</value>
+                        </systemProperty>
+                        <systemProperty>
+                            <name>atlas.data</name>
+                            <value>${project.build.directory}/data</value>
+                        </systemProperty>
+                        <systemProperty>
                             <name>atlas.log.dir</name>
                             <value>${project.build.directory}/logs</value>
                         </systemProperty>
@@ -659,29 +690,8 @@
                             <value>${graphdb.backend.impl}</value>
                         </systemProperty>
                         <systemProperty>
-                            <name>keystore.file</name>
-                            <value>${project.build.directory}/atlas.keystore
-                            </value>
-                        </systemProperty>
-                        <systemProperty>
-                            <name>truststore.file</name>
-                            <value>${project.build.directory}/atlas.keystore</value>
-                        </systemProperty>
-                        <systemProperty>
-                            <name>atlas.home</name>
+                            <key>embedded.solr.directory</key>
                             <value>${project.build.directory}</value>
-                        </systemProperty>
-                        <systemProperty>
-                            <name>atlas.data</name>
-                            <value>${project.build.directory}/data</value>
-                        </systemProperty>
-                        <systemProperty>
-                            <name>atlas.graphdb.backend</name>
-                            <value>${graphdb.backend.impl}</value>
-                        </systemProperty>
-                        <systemProperty>
-                            <key>atlas.conf</key>
-                            <value>${project.build.directory}/../../typesystem/target/test-classes</value>
                         </systemProperty>
                     </systemProperties>
                     <stopKey>atlas-stop</stopKey>
