@@ -29,11 +29,12 @@ import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityCreateReq
 import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityDeleteRequest;
 import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityUpdateRequest;
 import org.apache.commons.configuration.Configuration;
-import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
-import org.apache.hadoop.hbase.ipc.RpcServer;
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptor;
+import org.apache.hadoop.hbase.client.TableDescriptor;
+import org.apache.hadoop.hbase.coprocessor.MasterCoprocessorEnvironment;
+import org.apache.hadoop.hbase.coprocessor.ObserverContext;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ShutdownHookManager;
@@ -44,6 +45,7 @@ import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -125,8 +127,8 @@ public class HBaseAtlasHook extends AtlasHook {
 
             sync = atlasProperties.getBoolean(CONF_SYNC, false);
             executor = new ThreadPoolExecutor(minThreads, maxThreads, keepAliveTime, TimeUnit.MILLISECONDS,
-                                              new LinkedBlockingQueue<Runnable>(queueSize), 
-                                              new ThreadFactoryBuilder().setNameFormat("Atlas Logger %d").build());
+                    new LinkedBlockingQueue<Runnable>(queueSize),
+                    new ThreadFactoryBuilder().setNameFormat("Atlas Logger %d").build());
 
             ShutdownHookManager.get().addShutdownHook(new Thread() {
                 @Override
@@ -239,9 +241,9 @@ public class HBaseAtlasHook extends AtlasHook {
         LOG.info("Delete NameSpace {}", nameSpaceQualifiedName);
 
         hbaseOperationContext.addMessage(new EntityDeleteRequest(hbaseOperationContext.getUser(),
-                                                                 HBaseDataTypes.HBASE_NAMESPACE.getName(),
-                                                                 REFERENCEABLE_ATTRIBUTE_NAME,
-                                                                 nameSpaceQualifiedName));
+                HBaseDataTypes.HBASE_NAMESPACE.getName(),
+                REFERENCEABLE_ATTRIBUTE_NAME,
+                nameSpaceQualifiedName));
     }
 
     private void createOrUpdateTableInstance(HBaseOperationContext hbaseOperationContext) {
@@ -280,9 +282,9 @@ public class HBaseAtlasHook extends AtlasHook {
         LOG.info("Delete Table {}", tableQualifiedName);
 
         hbaseOperationContext.addMessage(new EntityDeleteRequest(hbaseOperationContext.getUser(),
-                                                                 HBaseDataTypes.HBASE_TABLE.getName(),
-                                                                 REFERENCEABLE_ATTRIBUTE_NAME,
-                                                                 tableQualifiedName));
+                HBaseDataTypes.HBASE_TABLE.getName(),
+                REFERENCEABLE_ATTRIBUTE_NAME,
+                tableQualifiedName));
     }
 
     private void createOrUpdateColumnFamilyInstance(HBaseOperationContext hbaseOperationContext) {
@@ -320,9 +322,9 @@ public class HBaseAtlasHook extends AtlasHook {
         LOG.info("Delete ColumnFamily {}", columnFamilyQualifiedName);
 
         hbaseOperationContext.addMessage(new EntityDeleteRequest(hbaseOperationContext.getUser(),
-                                                                 HBaseDataTypes.HBASE_COLUMN_FAMILY.getName(),
-                                                                 REFERENCEABLE_ATTRIBUTE_NAME,
-                                                                 columnFamilyQualifiedName));
+                HBaseDataTypes.HBASE_COLUMN_FAMILY.getName(),
+                REFERENCEABLE_ATTRIBUTE_NAME,
+                columnFamilyQualifiedName));
     }
 
 
@@ -436,11 +438,11 @@ public class HBaseAtlasHook extends AtlasHook {
     private List<Referenceable> buildColumnFamiliesRef(HBaseOperationContext hbaseOperationContext, Referenceable nameSpaceRef, Referenceable tableRef) {
         List<Referenceable> entities = new ArrayList<>();
 
-        HColumnDescriptor[] hColumnDescriptors = hbaseOperationContext.gethColumnDescriptors();
+        ColumnFamilyDescriptor[] columnFamilyDescriptors = hbaseOperationContext.gethColumnDescriptors();
 
-        if (hColumnDescriptors != null) {
-            for (HColumnDescriptor hColumnDescriptor : hColumnDescriptors) {
-                Referenceable columnFamilyRef = buildColumnFamilyRef(hbaseOperationContext, hColumnDescriptor, nameSpaceRef, tableRef);
+        if (columnFamilyDescriptors != null) {
+            for (ColumnFamilyDescriptor columnFamilyDescriptor : columnFamilyDescriptors) {
+                Referenceable columnFamilyRef = buildColumnFamilyRef(hbaseOperationContext, columnFamilyDescriptor, nameSpaceRef, tableRef);
 
                 entities.add(columnFamilyRef);
             }
@@ -449,9 +451,9 @@ public class HBaseAtlasHook extends AtlasHook {
         return entities;
     }
 
-    private Referenceable buildColumnFamilyRef(HBaseOperationContext hbaseOperationContext, HColumnDescriptor hColumnDescriptor, Referenceable nameSpaceRef, Referenceable tableReference) {
+    private Referenceable buildColumnFamilyRef(HBaseOperationContext hbaseOperationContext, ColumnFamilyDescriptor columnFamilyDescriptor, Referenceable nameSpaceRef, Referenceable tableReference) {
         Referenceable columnFamilyRef  = new Referenceable(HBaseDataTypes.HBASE_COLUMN_FAMILY.getName());
-        String        columnFamilyName = hColumnDescriptor.getNameAsString();
+        String        columnFamilyName = columnFamilyDescriptor.getNameAsString();
         String        tableName        = (String) tableReference.get(ATTR_NAME);
         String        namespace        = (String) nameSpaceRef.get(ATTR_NAME);
 
@@ -465,7 +467,7 @@ public class HBaseAtlasHook extends AtlasHook {
         Date now = new Date(System.currentTimeMillis());
 
         switch (hbaseOperationContext.getOperation()) {
-            case CREATE_COLUMN_FAMILY:
+            case CREATE_COLUMN_FAMILY :
                 columnFamilyRef.set(ATTR_TABLE, tableReference);
                 columnFamilyRef.set(ATTR_CREATE_TIME, now);
                 columnFamilyRef.set(ATTR_MODIFIED_TIME, now);
@@ -475,7 +477,12 @@ public class HBaseAtlasHook extends AtlasHook {
                 columnFamilyRef.set(ATTR_TABLE, tableReference);
                 columnFamilyRef.set(ATTR_MODIFIED_TIME, now);
                 break;
-
+            case CREATE_TABLE:
+            case ALTER_TABLE:
+                columnFamilyRef.set(ATTR_TABLE, tableReference.getId());
+                columnFamilyRef.set(ATTR_CREATE_TIME, now);
+                columnFamilyRef.set(ATTR_MODIFIED_TIME, now);
+                break;
             default:
                 columnFamilyRef.set(ATTR_TABLE, tableReference.getId());
         }
@@ -484,9 +491,9 @@ public class HBaseAtlasHook extends AtlasHook {
     }
 
     private String getTableName(HBaseOperationContext hbaseOperationContext) {
-        HTableDescriptor tableDescriptor = hbaseOperationContext.gethTableDescriptor();
+        TableDescriptor tableDescriptor = hbaseOperationContext.gethTableDescriptor();
 
-        return (tableDescriptor != null) ? tableDescriptor.getNameAsString() : null;
+        return (tableDescriptor != null) ? tableDescriptor.getTableName().getNameAsString() : null;
     }
 
     private void notifyAsPrivilegedAction(final HBaseOperationContext hbaseOperationContext) {
@@ -542,15 +549,17 @@ public class HBaseAtlasHook extends AtlasHook {
         notifyEntities(messages, maxRetries);
     }
 
-    public void sendHBaseNameSpaceOperation(final NamespaceDescriptor namespaceDescriptor, final String nameSpace, final OPERATION operation) {
+    public void sendHBaseNameSpaceOperation(final NamespaceDescriptor namespaceDescriptor, final String nameSpace, final OPERATION operation, ObserverContext<MasterCoprocessorEnvironment> ctx) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.sendHBaseNameSpaceOperation()");
         }
         try {
-            final UserGroupInformation ugi                   = getUGI();
+            final UserGroupInformation ugi  = getUGI(ctx);
+            final User user                 = getActiveUser(ctx);
+            final String userName           = user.getShortName();
             HBaseOperationContext      hbaseOperationContext = null;
             if (executor == null) {
-                hbaseOperationContext = handleHBaseNameSpaceOperation(namespaceDescriptor, nameSpace, operation);
+                hbaseOperationContext = handleHBaseNameSpaceOperation(namespaceDescriptor, nameSpace, operation, ugi, userName);
                 if (hbaseOperationContext != null) {
                     notifyAsPrivilegedAction(hbaseOperationContext);
                 }
@@ -568,7 +577,7 @@ public class HBaseAtlasHook extends AtlasHook {
                                 ugi.doAs(new PrivilegedExceptionAction<Object>() {
                                     @Override
                                     public Object run() {
-                                        hbaseOperationContext = handleHBaseNameSpaceOperation(namespaceDescriptor, nameSpace, operation);
+                                        hbaseOperationContext = handleHBaseNameSpaceOperation(namespaceDescriptor, nameSpace, operation, ugi, userName);
                                         return hbaseOperationContext;
                                     }
                                 });
@@ -590,15 +599,17 @@ public class HBaseAtlasHook extends AtlasHook {
         }
     }
 
-    public void sendHBaseTableOperation(final HTableDescriptor hTableDescriptor, final TableName tableName, final OPERATION operation) {
+    public void sendHBaseTableOperation(final TableDescriptor tableDescriptor, final TableName tableName, final OPERATION operation, ObserverContext<MasterCoprocessorEnvironment> ctx) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.sendHBaseTableOperation()");
         }
         try {
-            final UserGroupInformation ugi                   = getUGI();
+            final UserGroupInformation ugi  = getUGI(ctx);
+            final User user                 = getActiveUser(ctx);
+            final String username           = user.getShortName();
             HBaseOperationContext      hbaseOperationContext = null;
             if (executor == null) {
-                hbaseOperationContext = handleHBaseTableOperation(hTableDescriptor, tableName, operation);
+                hbaseOperationContext = handleHBaseTableOperation(tableDescriptor, tableName, operation,ugi,username);
                 if (hbaseOperationContext != null) {
                     notifyAsPrivilegedAction(hbaseOperationContext);
                 }
@@ -619,7 +630,7 @@ public class HBaseAtlasHook extends AtlasHook {
                                 ugi.doAs(new PrivilegedExceptionAction<Object>() {
                                     @Override
                                     public Object run() {
-                                        hbaseOperationContext = handleHBaseTableOperation(hTableDescriptor, tableName, operation);
+                                        hbaseOperationContext = handleHBaseTableOperation(tableDescriptor, tableName, operation, ugi, username);
                                         return hbaseOperationContext;
                                     }
                                 });
@@ -641,15 +652,18 @@ public class HBaseAtlasHook extends AtlasHook {
         }
     }
 
-    public void sendHBaseColumnFamilyOperation(final HColumnDescriptor hColumnDescriptor, final TableName tableName, final String columnFamily, final OPERATION operation) {
+    public void sendHBaseColumnFamilyOperation(final ColumnFamilyDescriptor columnFamilyDescriptor, final TableName tableName, final String columnFamily, final OPERATION operation,
+                                               ObserverContext<MasterCoprocessorEnvironment> ctx) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.sendHBaseColumnFamilyOperation()");
         }
         try {
-            final UserGroupInformation ugi                   = getUGI();
+            final UserGroupInformation ugi  = getUGI(ctx);
+            final User user                 = getActiveUser(ctx);
+            final String username           = user.getShortName();
             HBaseOperationContext      hbaseOperationContext = null;
             if (executor == null) {
-                hbaseOperationContext = handleHBaseColumnFamilyOperation(hColumnDescriptor, tableName, columnFamily, operation);
+                hbaseOperationContext = handleHBaseColumnFamilyOperation(columnFamilyDescriptor, tableName, columnFamily, operation,ugi,username);
                 if (hbaseOperationContext != null) {
                     notifyAsPrivilegedAction(hbaseOperationContext);
                 }
@@ -670,7 +684,7 @@ public class HBaseAtlasHook extends AtlasHook {
                                 ugi.doAs(new PrivilegedExceptionAction<Object>() {
                                     @Override
                                     public Object run() {
-                                        hbaseOperationContext = handleHBaseColumnFamilyOperation(hColumnDescriptor, tableName, columnFamily, operation);
+                                        hbaseOperationContext = handleHBaseColumnFamilyOperation(columnFamilyDescriptor, tableName, columnFamily, operation, ugi, username);
                                         return hbaseOperationContext;
                                     }
                                 });
@@ -693,14 +707,10 @@ public class HBaseAtlasHook extends AtlasHook {
         }
     }
 
-    private HBaseOperationContext handleHBaseNameSpaceOperation(NamespaceDescriptor namespaceDescriptor, String nameSpace, OPERATION operation) {
+    private HBaseOperationContext handleHBaseNameSpaceOperation(NamespaceDescriptor namespaceDescriptor, String nameSpace, OPERATION operation, UserGroupInformation ugi, String userName) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.handleHBaseNameSpaceOperation()");
         }
-
-        UserGroupInformation ugi      = getUGI();
-        User                 user     = getActiveUser();
-        String               userName = user.getShortName();
 
         HBaseOperationContext hbaseOperationContext = new HBaseOperationContext(namespaceDescriptor, nameSpace, operation, ugi, userName, userName);
         createAtlasInstances(hbaseOperationContext);
@@ -712,24 +722,21 @@ public class HBaseAtlasHook extends AtlasHook {
         return hbaseOperationContext;
     }
 
-    private HBaseOperationContext handleHBaseTableOperation(HTableDescriptor hTableDescriptor, TableName tableName, OPERATION operation) {
+    private HBaseOperationContext handleHBaseTableOperation(TableDescriptor tableDescriptor, TableName tableName, OPERATION operation, UserGroupInformation ugi, String userName) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.handleHBaseTableOperation()");
         }
 
-        UserGroupInformation ugi                = getUGI();
-        User                 user               = getActiveUser();
-        String               userName           = user.getShortName();
         Map<String, String>  hbaseConf          = null;
         String               owner              = null;
         String               tableNameSpace     = null;
         TableName            hbaseTableName     = null;
-        HColumnDescriptor[]  hColumnDescriptors = null;
+        ColumnFamilyDescriptor[]  columnFamilyDescriptors = null;
 
-        if (hTableDescriptor != null) {
-            owner = hTableDescriptor.getOwnerString();
-            hbaseConf = hTableDescriptor.getConfiguration();
-            hbaseTableName = hTableDescriptor.getTableName();
+        if (tableDescriptor != null) {
+            owner = tableDescriptor.getOwnerString();
+            hbaseConf = null;
+            hbaseTableName = tableDescriptor.getTableName();
             if (hbaseTableName != null) {
                 tableNameSpace = hbaseTableName.getNamespaceAsString();
                 if (tableNameSpace == null) {
@@ -742,11 +749,11 @@ public class HBaseAtlasHook extends AtlasHook {
             owner = userName;
         }
 
-        if (hTableDescriptor != null) {
-            hColumnDescriptors = hTableDescriptor.getColumnFamilies();
+        if (tableDescriptor != null) {
+            columnFamilyDescriptors = tableDescriptor.getColumnFamilies();
         }
 
-        HBaseOperationContext hbaseOperationContext = new HBaseOperationContext(tableNameSpace, hTableDescriptor, tableName, hColumnDescriptors, operation, ugi, userName, owner, hbaseConf);
+        HBaseOperationContext hbaseOperationContext = new HBaseOperationContext(tableNameSpace, tableDescriptor, tableName, columnFamilyDescriptors, operation, ugi, userName, owner, hbaseConf);
         createAtlasInstances(hbaseOperationContext);
 
         if (LOG.isDebugEnabled()) {
@@ -755,27 +762,24 @@ public class HBaseAtlasHook extends AtlasHook {
         return hbaseOperationContext;
     }
 
-    private HBaseOperationContext handleHBaseColumnFamilyOperation(HColumnDescriptor hColumnDescriptor, TableName tableName, String columnFamily, OPERATION operation) {
+    private HBaseOperationContext handleHBaseColumnFamilyOperation(ColumnFamilyDescriptor columnFamilyDescriptor, TableName tableName, String columnFamily, OPERATION operation, UserGroupInformation ugi, String userName) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.handleHBaseColumnFamilyOperation()");
         }
 
-        UserGroupInformation ugi       = getUGI();
-        User                 user      = getActiveUser();
-        String               userName  = user.getShortName();
         String               owner     = userName;
-        Map<String, String>  hbaseConf = null;
+        Map<String, String>  hbaseConf = new HashMap<>();
 
         String tableNameSpace = tableName.getNamespaceAsString();
         if (tableNameSpace == null) {
             tableNameSpace = tableName.getNameWithNamespaceInclAsString();
         }
 
-        if (hColumnDescriptor != null) {
-            hbaseConf = hColumnDescriptor.getConfiguration();
+        if (columnFamilyDescriptor != null) {
+            hbaseConf = columnFamilyDescriptor.getConfiguration();
         }
 
-        HBaseOperationContext hbaseOperationContext = new HBaseOperationContext(tableNameSpace, tableName, hColumnDescriptor, columnFamily, operation, ugi, userName, owner, hbaseConf);
+        HBaseOperationContext hbaseOperationContext = new HBaseOperationContext(tableNameSpace, tableName, columnFamilyDescriptor, columnFamily, operation, ugi, userName, owner, hbaseConf);
         createAtlasInstances(hbaseOperationContext);
 
         if (LOG.isDebugEnabled()) {
@@ -784,26 +788,12 @@ public class HBaseAtlasHook extends AtlasHook {
         return hbaseOperationContext;
     }
 
-    private User getActiveUser() {
-        User user = RpcServer.getRequestUser();
-        if (user == null) {
-            // for non-rpc handling, fallback to system user
-            try {
-                user = User.getCurrent();
-            } catch (IOException e) {
-                LOG.error("Unable to find the current user");
-                user = null;
-            }
-        }
-        return user;
-    }
-
-    private UserGroupInformation getUGI() {
+    private UserGroupInformation getUGI(ObserverContext<?> ctx) {
         UserGroupInformation ugi  = null;
-        User                 user = getActiveUser();
-
+        User                 user = null;
         try {
-            ugi = UserGroupInformation.getLoginUser();
+            user = getActiveUser(ctx);
+            ugi  = UserGroupInformation.getLoginUser();
         } catch (Exception e) {
             // not setting the UGI here
         }
@@ -816,5 +806,9 @@ public class HBaseAtlasHook extends AtlasHook {
 
         LOG.info("HBaseAtlasHook: UGI: {}",  ugi);
         return ugi;
+    }
+
+    private User getActiveUser(ObserverContext<?> ctx) throws IOException {
+        return (User)ctx.getCaller().orElse(User.getCurrent());
     }
 }
