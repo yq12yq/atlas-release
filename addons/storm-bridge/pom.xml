@@ -444,8 +444,6 @@
                             <value>${project.build.directory}/logs</value>
                         </systemProperty>
                         <systemProperty>
-                        </systemProperty>
-                        <systemProperty>
                             <name>atlas.graphdb.backend</name>
                             <value>${graphdb.backend.impl}</value>
                         </systemProperty>
