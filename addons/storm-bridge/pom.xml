@@ -109,13 +109,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-util</artifactId>
-            <version>${jetty.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- to bring up atlas server for integration tests -->
 
         <dependency>
@@ -423,31 +416,33 @@
                     <webApp>
                         <contextPath>/</contextPath>
                         <descriptor>${project.basedir}/../../webapp/src/test/webapp/WEB-INF/web.xml</descriptor>
+                        <extraClasspath>${project.basedir}/../../webapp/target/test-classes/</extraClasspath>
                     </webApp>
                     <useTestScope>true</useTestScope>
                     <systemProperties>
-                        <force>true</force>
                         <systemProperty>
-                            <name>atlas.home</name>
-                            <value>${project.build.directory}</value>
+                            <name>log4j.configuration</name>
+                            <value>file://${project.basedir}/../../distro/src/conf/atlas-log4j.xml</value>
                         </systemProperty>
                         <systemProperty>
-                            <key>atlas.conf</key>
-                            <value>${project.build.directory}/test-classes</value>
-                        </systemProperty>
-                        <systemProperty>
-                            <name>atlas.data</name>
-                            <value>${project.build.directory}/data</value>
+                            <name>atlas.log.file</name>
+                            <value>application.log</value>
                         </systemProperty>
                         <systemProperty>
                             <name>atlas.log.dir</name>
                             <value>${project.build.directory}/logs</value>
                         </systemProperty>
                         <systemProperty>
+                            <name>atlas.data</name>
+                            <value>${project.build.directory}/data</value>
                         </systemProperty>
                         <systemProperty>
-                            <name>atlas.graphdb.backend</name>
-                            <value>${graphdb.backend.impl}</value>
+                            <key>atlas.conf</key>
+                            <value>${project.build.directory}/../../../typesystem/target/test-classes</value>
+                        </systemProperty>
+                        <systemProperty>
+                            <key>atlas.home</key>
+                            <value>${project.basedir}/target</value>
                         </systemProperty>
                     </systemProperties>
                     <stopKey>atlas-stop</stopKey>
