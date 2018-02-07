@@ -26,6 +26,7 @@ import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.RegionInfo;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
+import org.apache.hadoop.hbase.client.SnapshotDescription;
 import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.apache.hadoop.hbase.coprocessor.MasterCoprocessor;
 import org.apache.hadoop.hbase.coprocessor.MasterCoprocessorEnvironment;
@@ -207,7 +208,6 @@ public class HBaseAtlasCoprocessor implements MasterCoprocessor, MasterObserver,
             LOG.debug("<== HBaseAtlasCoprocessor.preDeleteNamespace()");
         }
     }
-
     @Override
     public void postModifyNamespace(ObserverContext<MasterCoprocessorEnvironment> ctx, NamespaceDescriptor ns) throws IOException {
         if(LOG.isDebugEnabled()) {
@@ -223,6 +223,42 @@ public class HBaseAtlasCoprocessor implements MasterCoprocessor, MasterObserver,
 
         if(LOG.isDebugEnabled()) {
             LOG.debug("<== HBaseAtlasCoprocessor.preModifyNamespace()");
+        }
+    }
+
+    @Override
+    public void postCloneSnapshot(ObserverContext<MasterCoprocessorEnvironment> observerContext, SnapshotDescription snapshot, TableDescriptor tableDescriptor) throws IOException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("==> HBaseAtlasCoprocessor.postCloneSnapshot()");
+        }
+
+        try {
+            activatePluginClassLoader();
+            implMasterObserver.postCloneSnapshot(observerContext,snapshot,tableDescriptor);
+        } finally {
+            deactivatePluginClassLoader();
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("<== HBaseAtlasCoprocessor.postCloneSnapshot()");
+        }
+    }
+
+    @Override
+    public void postRestoreSnapshot(ObserverContext<MasterCoprocessorEnvironment> observerContext, SnapshotDescription snapshot, TableDescriptor tableDescriptor) throws IOException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("==> HBaseAtlasCoprocessor.postRestoreSnapshot()");
+        }
+
+        try {
+            activatePluginClassLoader();
+            implMasterObserver.postRestoreSnapshot(observerContext,snapshot,tableDescriptor);
+        } finally {
+            deactivatePluginClassLoader();
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("<== HBaseAtlasCoprocessor.postRestoreSnapshot()");
         }
     }
 

@@ -23,6 +23,7 @@ import org.apache.atlas.hbase.bridge.HBaseAtlasHook;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
 import org.apache.hadoop.hbase.client.RegionInfo;
+import org.apache.hadoop.hbase.client.SnapshotDescription;
 import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.apache.hadoop.hbase.coprocessor.MasterCoprocessor;
 import org.apache.hadoop.hbase.coprocessor.BulkLoadObserver;
@@ -48,11 +49,11 @@ public class HBaseAtlasCoprocessor implements MasterCoprocessor, MasterObserver,
     @Override
     public void postCreateTable(ObserverContext<MasterCoprocessorEnvironment> observerContext, TableDescriptor tableDescriptor, RegionInfo[] hRegionInfos) throws IOException {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("==> HBaseAtlasCoprocessoror.postCreateTable()");
+            LOG.debug("==> HBaseAtlasCoprocessor.postCreateTable()");
         }
         hbaseAtlasHook.sendHBaseTableOperation(tableDescriptor, null, HBaseAtlasHook.OPERATION.CREATE_TABLE, observerContext);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("<== HBaseAtlasCoprocessoror.postCreateTable()");
+            LOG.debug("<== HBaseAtlasCoprocessor.postCreateTable()");
         }
     }
 
@@ -116,6 +117,33 @@ public class HBaseAtlasCoprocessor implements MasterCoprocessor, MasterObserver,
             LOG.debug("<== HBaseAtlasCoprocessor.postModifyNamespace()");
         }
     }
+
+    @Override
+    public void postCloneSnapshot(ObserverContext<MasterCoprocessorEnvironment> observerContext, SnapshotDescription snapshot, TableDescriptor tableDescriptor) throws IOException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("==> HBaseAtlasCoprocessor.postCloneSnapshot()");
+        }
+
+        hbaseAtlasHook.sendHBaseTableOperation(tableDescriptor, null, HBaseAtlasHook.OPERATION.CREATE_TABLE, observerContext);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("<== HBaseAtlasCoprocessor.postCloneSnapshot()");
+        }
+    }
+
+    @Override
+    public void postRestoreSnapshot(ObserverContext<MasterCoprocessorEnvironment> observerContext, SnapshotDescription snapshot, TableDescriptor tableDescriptor) throws IOException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("==> HBaseAtlasCoprocessor.postRestoreSnapshot()");
+        }
+
+        hbaseAtlasHook.sendHBaseTableOperation(tableDescriptor, snapshot.getTableName(), HBaseAtlasHook.OPERATION.ALTER_TABLE, observerContext);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("<== HBaseAtlasCoprocessor.postRestoreSnapshot()");
+        }
+    }
+
 }
 
 
