@@ -94,6 +94,36 @@ public class HBaseAtlasHook extends AtlasHook {
     public static final String ATTR_OWNER           = "owner";
     public static final String ATTR_NAME            = "name";
 
+    // column addition metadata
+    public static final String ATTR_TABLE_MAX_FILESIZE              = "maxFileSize";
+    public static final String ATTR_TABLE_ISREADONLY                = "isReadOnly";
+    public static final String ATTR_TABLE_ISCOMPACTION_ENABLED      = "isCompactionEnabled";
+    public static final String ATTR_TABLE_ISNORMALIZATION_ENABLED   = "isNormalizationEnabled";
+    public static final String ATTR_TABLE_REPLICATION_PER_REGION    = "replicasPerRegion";
+    public static final String ATTR_TABLE_DURABLILITY               = "durability";
+
+    // column family additional metadata
+    public static final String ATTR_CF_BLOOMFILTER_TYPE             = "bloomFilterType";
+    public static final String ATTR_CF_COMPRESSION_TYPE             = "compressionType";
+    public static final String ATTR_CF_COMPACTION_COMPRESSION_TYPE  = "compactionCompressionType";
+    public static final String ATTR_CF_ENCRYPTION_TYPE              = "encryptionType";
+    public static final String ATTR_CF_INMEMORY_COMPACTION_POLICY   = "inMemoryCompactionPolicy";
+    public static final String ATTR_CF_KEEP_DELETE_CELLS            = "keepDeletedCells";
+    public static final String ATTR_CF_MAX_VERSIONS                 = "maxVersions";
+    public static final String ATTR_CF_MIN_VERSIONS                 = "minVersions";
+    public static final String ATTR_CF_DATA_BLOCK_ENCODING          = "dataBlockEncoding";
+    public static final String ATTR_CF_STORAGE_POLICY               = "StoragePolicy";
+    public static final String ATTR_CF_TTL                          = "ttl";
+    public static final String ATTR_CF_BLOCK_CACHE_ENABLED          = "blockCacheEnabled";
+    public static final String ATTR_CF_CACHED_BLOOM_ON_WRITE        = "cacheBloomsOnWrite";
+    public static final String ATTR_CF_CACHED_DATA_ON_WRITE         = "cacheDataOnWrite";
+    public static final String ATTR_CF_CACHED_INDEXES_ON_WRITE      = "cacheIndexesOnWrite";
+    public static final String ATTR_CF_EVICT_BLOCK_ONCLOSE          = "evictBlocksOnClose";
+    public static final String ATTR_CF_PREFETCH_BLOCK_ONOPEN        = "prefetchBlocksOnOpen";
+    public static final String ATTR_CF_NEW_VERSION_BEHAVIOR         = "newVersionBehavior";
+    public static final String ATTR_CF_MOB_ENABLED                  = "isMobEnabled";
+    public static final String ATTR_CF_MOB_COMPATCTPARTITION_POLICY = "mobCompactPartitionPolicy";
+
     private static final String REFERENCEABLE_ATTRIBUTE_NAME = "qualifiedName";
     private              String clusterName                  = null;
 
@@ -424,12 +454,26 @@ public class HBaseAtlasHook extends AtlasHook {
         table.setAttribute(ATTR_PARAMETERS, hbaseOperationContext.getHbaseConf());
         table.setAttribute(ATTR_NAMESPACE, AtlasTypeUtil.getAtlasObjectId(nameSpace));
 
+        TableDescriptor tableDescriptor = hbaseOperationContext.gethTableDescriptor();
+        if (tableDescriptor != null) {
+            table.setAttribute(ATTR_TABLE_MAX_FILESIZE, tableDescriptor.getMaxFileSize());
+            table.setAttribute(ATTR_TABLE_REPLICATION_PER_REGION, tableDescriptor.getRegionReplication());
+            table.setAttribute(ATTR_TABLE_ISREADONLY, tableDescriptor.getMaxFileSize());
+            table.setAttribute(ATTR_TABLE_ISNORMALIZATION_ENABLED, tableDescriptor.isNormalizationEnabled());
+            table.setAttribute(ATTR_TABLE_ISCOMPACTION_ENABLED, tableDescriptor.isCompactionEnabled());
+            table.setAttribute(ATTR_TABLE_DURABLILITY, (tableDescriptor.getDurability() != null ? tableDescriptor.getDurability().name() : null));
+        }
+
         switch (operation) {
             case CREATE_TABLE:
                 table.setAttribute(ATTR_CREATE_TIME, now);
                 table.setAttribute(ATTR_MODIFIED_TIME, now);
                 break;
+            case CREATE_COLUMN_FAMILY:
+                table.setAttribute(ATTR_MODIFIED_TIME, now);
+                break;
             case ALTER_TABLE:
+            case ALTER_COLUMN_FAMILY:
                 table.setAttribute(ATTR_MODIFIED_TIME, now);
                 break;
             default:
@@ -468,19 +512,37 @@ public class HBaseAtlasHook extends AtlasHook {
         columnFamily.setAttribute(ATTR_OWNER, hbaseOperationContext.getOwner());
         columnFamily.setAttribute(ATTR_TABLE, AtlasTypeUtil.getAtlasObjectId(table));
 
+        if (columnFamilyDescriptor!= null) {
+            columnFamily.setAttribute(ATTR_CF_BLOCK_CACHE_ENABLED, columnFamilyDescriptor.isBlockCacheEnabled());
+            columnFamily.setAttribute(ATTR_CF_BLOOMFILTER_TYPE, (columnFamilyDescriptor.getBloomFilterType() != null ? columnFamilyDescriptor.getBloomFilterType().name():null));
+            columnFamily.setAttribute(ATTR_CF_CACHED_BLOOM_ON_WRITE, columnFamilyDescriptor.isCacheBloomsOnWrite());
+            columnFamily.setAttribute(ATTR_CF_CACHED_DATA_ON_WRITE, columnFamilyDescriptor.isCacheBloomsOnWrite());
+            columnFamily.setAttribute(ATTR_CF_CACHED_INDEXES_ON_WRITE, columnFamilyDescriptor.isCacheIndexesOnWrite());
+            columnFamily.setAttribute(ATTR_CF_COMPACTION_COMPRESSION_TYPE, (columnFamilyDescriptor.getCompactionCompressionType() != null ? columnFamilyDescriptor.getCompactionCompressionType().name():null));
+            columnFamily.setAttribute(ATTR_CF_COMPRESSION_TYPE, (columnFamilyDescriptor.getCompressionType() != null ? columnFamilyDescriptor.getCompressionType().name():null));
+            columnFamily.setAttribute(ATTR_CF_DATA_BLOCK_ENCODING, (columnFamilyDescriptor.getDataBlockEncoding() != null ? columnFamilyDescriptor.getDataBlockEncoding().name():null));
+            columnFamily.setAttribute(ATTR_CF_ENCRYPTION_TYPE, columnFamilyDescriptor.getEncryptionType());
+            columnFamily.setAttribute(ATTR_CF_EVICT_BLOCK_ONCLOSE, columnFamilyDescriptor.isEvictBlocksOnClose());
+            columnFamily.setAttribute(ATTR_CF_INMEMORY_COMPACTION_POLICY, (columnFamilyDescriptor.getInMemoryCompaction() != null ? columnFamilyDescriptor.getInMemoryCompaction().name():null));
+            columnFamily.setAttribute(ATTR_CF_KEEP_DELETE_CELLS, ( columnFamilyDescriptor.getKeepDeletedCells() != null ? columnFamilyDescriptor.getKeepDeletedCells().name():null));
+            columnFamily.setAttribute(ATTR_CF_MAX_VERSIONS, columnFamilyDescriptor.getMaxVersions());
+            columnFamily.setAttribute(ATTR_CF_MIN_VERSIONS, columnFamilyDescriptor.getMinVersions());
+            columnFamily.setAttribute(ATTR_CF_NEW_VERSION_BEHAVIOR, columnFamilyDescriptor.isNewVersionBehavior());
+            columnFamily.setAttribute(ATTR_CF_MOB_ENABLED, columnFamilyDescriptor.isMobEnabled());
+            columnFamily.setAttribute(ATTR_CF_MOB_COMPATCTPARTITION_POLICY, ( columnFamilyDescriptor.getMobCompactPartitionPolicy() != null ? columnFamilyDescriptor.getMobCompactPartitionPolicy().name():null));
+            columnFamily.setAttribute(ATTR_CF_PREFETCH_BLOCK_ONOPEN, columnFamilyDescriptor.isPrefetchBlocksOnOpen());
+            columnFamily.setAttribute(ATTR_CF_STORAGE_POLICY, columnFamilyDescriptor.getStoragePolicy());
+            columnFamily.setAttribute(ATTR_CF_TTL, columnFamilyDescriptor.getTimeToLive());
+        }
+
         switch (hbaseOperationContext.getOperation()) {
             case CREATE_COLUMN_FAMILY:
+            case CREATE_TABLE:
                 columnFamily.setAttribute(ATTR_CREATE_TIME, now);
                 columnFamily.setAttribute(ATTR_MODIFIED_TIME, now);
                 break;
 
             case ALTER_COLUMN_FAMILY:
-                columnFamily.setAttribute(ATTR_MODIFIED_TIME, now);
-                break;
-
-            case CREATE_TABLE:
-            case ALTER_TABLE:
-                columnFamily.setAttribute(ATTR_CREATE_TIME, now);
                 columnFamily.setAttribute(ATTR_MODIFIED_TIME, now);
                 break;
 
