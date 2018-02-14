@@ -351,3 +351,4 @@ BUG-77446: fix Atlas hook to resolve Hive service check failure with NoClassDefF
 BUG-77993: upgrade frontend-maven-plugin to latest
 ATLAS-2421: updated Atlas notificaiton module to support V2 data structures; updated HBase hook to use V2 notifications
 ATLAS-2439: updated Sqoop hook to use V2 notifications
+ATLAS-2439: updated Sqoop hook to use V2 notifications (#2)
