@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Iterator;
 
 /**
@@ -37,10 +38,10 @@ import java.util.Iterator;
  */
 public final class ApplicationProperties extends PropertiesConfiguration {
     public static final String ATLAS_CONFIGURATION_DIRECTORY_PROPERTY = "atlas.conf";
-
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationProperties.class);
 
     public static final String  APPLICATION_PROPERTIES     = "atlas-application.properties";
+
     public static final String  GRAPHDB_BACKEND_CONF       = "atlas.graphdb.backend";
     public static final String  STORAGE_BACKEND_CONF       = "atlas.graph.storage.backend";
     public static final String  INDEX_BACKEND_CONF         = "atlas.graph.index.search.backend";
@@ -56,6 +57,12 @@ public final class ApplicationProperties extends PropertiesConfiguration {
     public static final String  DEFAULT_GRAPHDB_BACKEND    = GRAPHBD_BACKEND_JANUS;
     public static final boolean DEFAULT_SOLR_WAIT_SEARCHER = true;
     public static final boolean DEFAULT_INDEX_MAP_NAME     = false;
+
+    public static final SimpleEntry<String, String> DB_CACHE_CONF               = new SimpleEntry<>("atlas.graph.cache.db-cache", "true");
+    public static final SimpleEntry<String, String> DB_CACHE_CLEAN_WAIT_CONF    = new SimpleEntry<>("atlas.graph.cache.db-cache-clean-wait", "20");
+    public static final SimpleEntry<String, String> DB_CACHE_SIZE_CONF          = new SimpleEntry<>("atlas.graph.cache.db-cache-size", "0.5");
+    public static final SimpleEntry<String, String> DB_TX_CACHE_SIZE_CONF       = new SimpleEntry<>("atlas.graph.cache.tx-cache.size", "15000");
+    public static final SimpleEntry<String, String> DB_CACHE_TX_DIRTY_SIZE_CONF = new SimpleEntry<>("atlas.graph.cache.tx-dirty-size", "120");
 
     private static volatile Configuration instance = null;
 
@@ -237,7 +244,6 @@ public final class ApplicationProperties extends PropertiesConfiguration {
         return inStr;
     }
 
-
     private void setDefaults() {
         String graphDbBackend = getString(GRAPHDB_BACKEND_CONF);
 
@@ -305,5 +311,28 @@ public final class ApplicationProperties extends PropertiesConfiguration {
             }
         }
 
+        setDbCacheConfDefaults();
+    }
+
+    void setDefault(SimpleEntry<String, String> keyValueDefault, String currentValue) {
+        if (StringUtils.isNotEmpty(currentValue)) {
+            return;
+        }
+
+        clearPropertyDirect(keyValueDefault.getKey());
+        addPropertyDirect(keyValueDefault.getKey(), keyValueDefault.getValue());
+        LOG.info("Property (set to default) {} = {}", keyValueDefault.getKey(), keyValueDefault.getValue());
+    }
+
+    private void setDbCacheConfDefaults() {
+        SimpleEntry<String, String> keyValues[] = new SimpleEntry[]{ DB_CACHE_CONF, DB_CACHE_CLEAN_WAIT_CONF,
+                                                                     DB_CACHE_SIZE_CONF, DB_TX_CACHE_SIZE_CONF,
+                                                                     DB_CACHE_TX_DIRTY_SIZE_CONF };
+
+        for(SimpleEntry<String, String> kv : keyValues) {
+            String currentValue = getString(kv.getKey());
+
+            setDefault(kv, currentValue);
+        }
     }
 }
