@@ -458,7 +458,7 @@ public class HBaseAtlasHook extends AtlasHook {
         if (tableDescriptor != null) {
             table.setAttribute(ATTR_TABLE_MAX_FILESIZE, tableDescriptor.getMaxFileSize());
             table.setAttribute(ATTR_TABLE_REPLICATION_PER_REGION, tableDescriptor.getRegionReplication());
-            table.setAttribute(ATTR_TABLE_ISREADONLY, tableDescriptor.getMaxFileSize());
+            table.setAttribute(ATTR_TABLE_ISREADONLY, tableDescriptor.isReadOnly());
             table.setAttribute(ATTR_TABLE_ISNORMALIZATION_ENABLED, tableDescriptor.isNormalizationEnabled());
             table.setAttribute(ATTR_TABLE_ISCOMPACTION_ENABLED, tableDescriptor.isCompactionEnabled());
             table.setAttribute(ATTR_TABLE_DURABLILITY, (tableDescriptor.getDurability() != null ? tableDescriptor.getDurability().name() : null));
