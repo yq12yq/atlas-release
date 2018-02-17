@@ -382,7 +382,11 @@ public class HBaseAtlasHook extends AtlasHook {
      * @return Unique qualified name to identify the Table instance in Atlas.
      */
     public static String getColumnFamilyQualifiedName(String clusterName, String nameSpace, String tableName, String columnFamily) {
-        return String.format("%s.%s.%s@%s", nameSpace.toLowerCase(), stripNameSpace(tableName.toLowerCase()), columnFamily.toLowerCase(), clusterName);
+        if (clusterName == null || nameSpace == null || tableName == null || columnFamily == null) {
+            return null;
+        } else {
+            return String.format("%s.%s.%s@%s", nameSpace.toLowerCase(), stripNameSpace(tableName.toLowerCase()), columnFamily.toLowerCase(), clusterName);
+        }
     }
 
     /**
@@ -394,7 +398,11 @@ public class HBaseAtlasHook extends AtlasHook {
      * @return Unique qualified name to identify the Table instance in Atlas.
      */
     public static String getTableQualifiedName(String clusterName, String nameSpace, String tableName) {
-        return String.format("%s.%s@%s", nameSpace.toLowerCase(), stripNameSpace(tableName.toLowerCase()), clusterName);
+        if (clusterName == null || nameSpace == null || tableName == null) {
+            return null;
+        } else {
+            return String.format("%s.%s@%s", nameSpace.toLowerCase(), stripNameSpace(tableName.toLowerCase()), clusterName);
+        }
     }
 
     /**
@@ -405,7 +413,11 @@ public class HBaseAtlasHook extends AtlasHook {
      * @return Unique qualified name to identify the HBase NameSpace instance in Atlas.
      */
     public static String getNameSpaceQualifiedName(String clusterName, String nameSpace) {
-        return String.format("%s@%s", nameSpace.toLowerCase(), clusterName);
+        if (clusterName == null || nameSpace == null) {
+            return null;
+        } else {
+            return String.format("%s@%s", nameSpace.toLowerCase(), clusterName);
+        }
     }
 
     private static String stripNameSpace(String tableName) {
@@ -628,7 +640,7 @@ public class HBaseAtlasHook extends AtlasHook {
         try {
             final UserGroupInformation ugi  = getUGI(ctx);
             final User user                 = getActiveUser(ctx);
-            final String userName           = user.getShortName();
+            final String userName           = (user != null) ? user.getShortName() : null;
             HBaseOperationContext      hbaseOperationContext = null;
             if (executor == null) {
                 hbaseOperationContext = handleHBaseNameSpaceOperation(namespaceDescriptor, nameSpace, operation, ugi, userName);
@@ -678,7 +690,7 @@ public class HBaseAtlasHook extends AtlasHook {
         try {
             final UserGroupInformation ugi  = getUGI(ctx);
             final User user                 = getActiveUser(ctx);
-            final String username           = user.getShortName();
+            final String username           = (user != null) ? user.getShortName() : null;
             HBaseOperationContext      hbaseOperationContext = null;
             if (executor == null) {
                 hbaseOperationContext = handleHBaseTableOperation(tableDescriptor, tableName, operation,ugi,username);
@@ -732,7 +744,7 @@ public class HBaseAtlasHook extends AtlasHook {
         try {
             final UserGroupInformation ugi  = getUGI(ctx);
             final User user                 = getActiveUser(ctx);
-            final String username           = user.getShortName();
+            final String username           = (user != null) ? user.getShortName() : null;
             HBaseOperationContext      hbaseOperationContext = null;
             if (executor == null) {
                 hbaseOperationContext = handleHBaseColumnFamilyOperation(columnFamilyDescriptor, tableName, columnFamily, operation,ugi,username);
