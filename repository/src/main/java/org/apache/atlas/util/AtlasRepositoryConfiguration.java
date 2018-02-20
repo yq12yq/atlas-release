@@ -56,6 +56,7 @@ public class AtlasRepositoryConfiguration {
 
     private static Integer       typeUpdateLockMaxWaitTimeInSeconds = null;
     private static List<String>  skippedOperations                  = null;
+    private static final String ENTITY_NOTIFICATION_VERSION_PROPERTY = "atlas.notification.entity.version";
 
     /**
      * Configures whether the full text vertex property is populated.  Turning this off
@@ -64,6 +65,19 @@ public class AtlasRepositoryConfiguration {
      */
     public static boolean isFullTextSearchEnabled() throws AtlasException {
         return ApplicationProperties.get().getBoolean(ENABLE_FULLTEXT_SEARCH_PROPERTY, true);
+    }
+
+    public static boolean isV2EntityNotificationEnabled() {
+        boolean ret;
+        try {
+            String notificationVersion = ApplicationProperties.get().getString(ENTITY_NOTIFICATION_VERSION_PROPERTY, "v1");
+
+            return StringUtils.equalsIgnoreCase(notificationVersion, "v1");
+        } catch (AtlasException e) {
+            ret = true;
+        }
+
+        return ret;
     }
 
     private static final String AUDIT_REPOSITORY_IMPLEMENTATION_PROPERTY = "atlas.EntityAuditRepository.impl";
