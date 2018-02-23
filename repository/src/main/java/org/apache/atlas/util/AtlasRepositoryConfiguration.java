@@ -72,7 +72,7 @@ public class AtlasRepositoryConfiguration {
         try {
             String notificationVersion = ApplicationProperties.get().getString(ENTITY_NOTIFICATION_VERSION_PROPERTY, "v1");
 
-            return StringUtils.equalsIgnoreCase(notificationVersion, "v1");
+            return StringUtils.equalsIgnoreCase(notificationVersion, "v2");
         } catch (AtlasException e) {
             ret = true;
         }
