@@ -631,6 +631,7 @@
         <module>addons/sqoop-bridge</module>
         <module>addons/storm-bridge-shim</module>
         <module>addons/storm-bridge</module>
+        <module>tools/atlas-migration-exporter</module>
 	
         <module>distro</module>
     </modules>
