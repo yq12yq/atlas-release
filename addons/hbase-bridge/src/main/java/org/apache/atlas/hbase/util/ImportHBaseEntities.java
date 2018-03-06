@@ -112,7 +112,7 @@ public class ImportHBaseEntities extends ImportHBaseEntitiesBase {
                     break;
                 }
             }
-            String namespace =  tableDescriptor.getTableName().getNamespaceAsString();
+            String namespace =  tableDescriptor.getTableName().getNameWithNamespaceInclAsString();
             NamespaceDescriptor nsDescriptor = hbaseAdmin.getNamespaceDescriptor(namespace);
             AtlasEntity nsEntity = createOrUpdateNameSpace(nsDescriptor);
             ColumnFamilyDescriptor[] columnFamilyDescriptors = tableDescriptor.getColumnFamilies();
