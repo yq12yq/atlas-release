@@ -18,10 +18,6 @@
 package org.apache.atlas.kafka;
 
 import com.google.common.annotations.VisibleForTesting;
-import kafka.metrics.KafkaMetricsReporter;
-import kafka.server.KafkaConfig;
-import kafka.server.KafkaServer;
-import kafka.utils.Time;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.notification.AbstractNotification;
@@ -42,13 +38,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import scala.Option;
-import scala.collection.mutable.Buffer;
 
 import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Kafka specific access point to the Atlas notification framework.
