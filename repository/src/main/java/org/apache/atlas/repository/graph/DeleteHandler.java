@@ -93,7 +93,25 @@ public abstract class DeleteHandler {
            // Record all deletion candidate GUIDs in RequestContext
            // and gather deletion candidate vertices.
            for (VertexInfo vertexInfo : compositeVertices) {
-               requestContext.recordEntityDelete(vertexInfo.getGuid(), vertexInfo.getTypeName());
+               ClassType                   entityType = typeSystem.getDataType(ClassType.class, vertexInfo.getTypeName());
+               ITypedReferenceableInstance entity     = entityType.createInstance(new Id(vertexInfo.getGuid(), 0, vertexInfo.getTypeName()));
+
+               // populate unique attributes only
+               for (AttributeInfo attributeInfo : entityType.fieldMapping().fields.values()) {
+                   if (!attributeInfo.isUnique) {
+                       continue;
+                   }
+
+                   DataTypes.TypeCategory attrTypeCategory = attributeInfo.dataType().getTypeCategory();
+
+                   if (attrTypeCategory == DataTypes.TypeCategory.PRIMITIVE) {
+                       GraphToTypedInstanceMapper.mapVertexToPrimitive(vertexInfo.getVertex(), entity, attributeInfo);
+                   } else if (attrTypeCategory == DataTypes.TypeCategory.ENUM) {
+                       GraphToTypedInstanceMapper.mapVertexToEnum(vertexInfo.getVertex(), entity, attributeInfo);
+                   }
+               }
+
+               requestContext.recordEntityDelete(entity);
                deletionCandidateVertices.add(vertexInfo.getVertex());
            }
        }
