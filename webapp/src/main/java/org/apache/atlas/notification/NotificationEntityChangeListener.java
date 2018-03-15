@@ -23,12 +23,16 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.listener.EntityChangeListener;
 import org.apache.atlas.notification.entity.EntityNotification;
 import org.apache.atlas.notification.entity.EntityNotificationImpl;
+import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.repository.graph.GraphHelper;
 import org.apache.atlas.typesystem.IReferenceableInstance;
 import org.apache.atlas.typesystem.IStruct;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
 import org.apache.atlas.typesystem.Referenceable;
 import org.apache.atlas.typesystem.Struct;
+import org.apache.atlas.typesystem.persistence.Id;
+import org.apache.atlas.typesystem.types.AttributeInfo;
+import org.apache.atlas.typesystem.types.ClassType;
 import org.apache.atlas.typesystem.types.FieldMapping;
 import org.apache.atlas.typesystem.types.TraitType;
 import org.apache.atlas.typesystem.types.TypeSystem;
@@ -170,19 +174,23 @@ public class NotificationEntityChangeListener implements EntityChangeListener {
                 continue;
             }
 
-            Referenceable       entity                  = new Referenceable(entityDefinition);
-            Map<String, Object> attributesMap           = entity.getValuesMap();
-            List<String>        entityNotificationAttrs = getNotificationAttributes(entity.getTypeName());
+            Referenceable       referenceable           = new Referenceable(entityDefinition);
+            Map<String, Object> attributesMap           = referenceable.getValuesMap();
+            List<String>        entityNotificationAttrs = getNotificationAttributes(referenceable.getTypeName());
 
             if (MapUtils.isNotEmpty(attributesMap) && CollectionUtils.isNotEmpty(entityNotificationAttrs)) {
-                for (String entityAttr : attributesMap.keySet()) {
-                    if (!entityNotificationAttrs.contains(entityAttr)) {
-                        entity.setNull(entityAttr);
+                ClassType classType = typeSystem.getDataType(ClassType.class, entityDefinition.getTypeName());
+
+                for (AttributeInfo attrInfo : classType.fieldMapping().fields.values()) {
+                    String attrName = attrInfo.name;
+
+                    if (!attrInfo.isUnique && !"clusterName".equalsIgnoreCase(attrName) && !entityNotificationAttrs.contains(attrName)) {
+                        referenceable.setNull(attrName);
                     }
                 }
             }
 
-            EntityNotificationImpl notification = new EntityNotificationImpl(entity, operationType, getAllTraits(entity, typeSystem));
+            EntityNotificationImpl notification = new EntityNotificationImpl(referenceable, operationType, typeSystem);
 
             messages.add(notification);
         }
