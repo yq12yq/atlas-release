@@ -9,7 +9,7 @@ ATLAS-2439: updated Sqoop hook to use V2 notifications
 ATLAS-2422: added support to export all entities of given types
 ATLAS-2421: updated Atlas notificaiton module to support V2 data structures; updated HBase hook to use V2 notifications
 ATLAS-2352: add configuration to specify validity for authentication token
-
+ATLAS-2229: DSL changes to use V2 data structures (fix DSL query errors)
 ATLAS-1921: basic-search UI: added range validation for entity/trait attributes
 ATLAS-2329: Atlas UI Multiple Hovers appears if user click on another tag which is incorrect
 ATLAS-2169: delete request fails when hard-delete is configured
