@@ -1,3 +1,40 @@
+2.6.5
+
+ATLAS-2468: Basic search issue with numeric NEQ within OR clause
+BUG-97180: Nimbus-JOSE-JWT upgrade
+BUG-97178: Spring dependency changes
+ATLAS-2443: include unique attributes in entity-delete notifications
+ATLAS-2442: Fix for read-only permission to allow read entity when http method is POST
+ATLAS-2439: updated Sqoop hook to use V2 notifications
+ATLAS-2422: added support to export all entities of given types
+ATLAS-2421: updated Atlas notificaiton module to support V2 data structures; updated HBase hook to use V2 notifications
+ATLAS-2352: add configuration to specify validity for authentication token
+
+ATLAS-1921: basic-search UI: added range validation for entity/trait attributes
+ATLAS-2329: Atlas UI Multiple Hovers appears if user click on another tag which is incorrect
+ATLAS-2169: delete request fails when hard-delete is configured
+ATLAS-2339: UI - Modifications in columns in Basic search result view affects DSL also.
+ATLAS-2272: UI - Save the state of dragged columns using save search API.
+ATLAS-2310: Fix URL encoding incase of HA in passive node which caused wrong redirection url.
+ATLAS-2332: support for attributes having nested collection datatype
+ATLAS-2319: UI - deleting a tag which at 25+ position needs a refresh
+ATLAS-2318: UI - clicking on child tag twice, parent tag is selected
+ATLAS-2307: basic-search enhancement to optionally exclude sub-type entities and sub-classification-types (UI)
+ATLAS-2295: UI updates for classifications
+ATLAS-2320: basic-search with wildcard classification fails when full-text query is specified
+ATLAS-2312: Use ThreadLocal DateFormat objects to avoid simultaneous use from multiple threads
+ATLAS-2282: Saved favorite search appears only on refresh after creation when there are 25+ favorite searches .
+ATLAS-2284: Add Hbase-Common jar for hive packaging to fix hbase tables NoClassDef issue while import-hive
+ATLAS-2296: basic search enhancement to optionally exclude sub-type entities and sub-classifications
+ATLAS-2285: UI fix in handling of date attributes during saved searche rename
+ATLAS-1964: UI, Support to resize and order columns in Search table
+Atlas-2294: type creation populates description field with empty string when no value is provided
+ATLAS-2283: add subTypes field in AtlasClassificationDef and AtlasEntityDef
+ATLAS-2289: separate embedded kafka/zookeeper start/stop from KafkaNotification
+ATLAS-2281: UI fix to address error in saving tag/type attribute filter queries with null/not-null filters
+ATLAS-2286: fix attribute kafka_topic.topic to set isUnique=false
+ATLAS-2276: update Hive hook to add an option to retain case-sensitivity of path in hdfs_path entities
+
 2.6.4
 
 ATLAS-2284: added jersey-multipart jar to Hive hook packaging
@@ -349,4 +386,3 @@ BUG-74353: Kafka server startup fix
 BUG-76279: Remove problematic tests
 BUG-77446: fix Atlas hook to resolve Hive service check failure with NoClassDefFound exception
 BUG-77993: upgrade frontend-maven-plugin to latest
-ATLAS-2310:- Fix URL encoding incase of HA in passive node which caused wrong redirection url. (bpgergo via nixonrodrigues).
