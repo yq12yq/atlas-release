@@ -106,10 +106,13 @@ public class ImportHBaseEntities extends ImportHBaseEntitiesBase {
         List<TableDescriptor> tableDescriptors = hbaseAdmin.listTableDescriptors(Pattern.compile(tableName));
         if (!tableDescriptors.isEmpty()) {
             for (TableDescriptor tblDescriptor : tableDescriptors) {
-                ret = tableNameStr = tblDescriptor.getTableName().getNameWithNamespaceInclAsString();
-                if (tableName.equals(tableNameStr)) {
-                    tableDescriptor = tblDescriptor;
-                    break;
+                String tblNameWithNameSpace     = tblDescriptor.getTableName().getNameWithNamespaceInclAsString();
+                String tblNameWithOutNameSpace  = tblDescriptor.getTableName().getNameAsString();
+                tableDescriptor = tblDescriptor;
+                if (tableName.equals(tblNameWithNameSpace)) {
+                    tableNameStr = tblNameWithNameSpace;
+                } else if (tableName.equals(tblNameWithOutNameSpace)) {
+                    tableNameStr = tblNameWithOutNameSpace;
                 }
             }
             String namespace =  tableDescriptor.getTableName().getNamespaceAsString();
