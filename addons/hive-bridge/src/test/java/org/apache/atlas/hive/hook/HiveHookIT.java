@@ -196,12 +196,12 @@ public class HiveHookIT extends HiveITBase {
     }
 
     private Set<ReadEntity> getInputs(String inputName, Entity.Type entityType) throws HiveException {
-        final ReadEntity entity = new ReadEntity();
+        final ReadEntity entity;
 
         if (Entity.Type.DFS_DIR.equals(entityType)) {
-            entity.setTyp(Entity.Type.DFS_DIR);
+            entity = new TestReadEntity(lower(new Path(inputName).toString()), entityType);
         } else {
-            entity.setTyp(entityType);
+            entity = new TestReadEntity(getQualifiedTblName(inputName), entityType);
         }
 
         if (entityType == Entity.Type.TABLE) {
@@ -212,12 +212,12 @@ public class HiveHookIT extends HiveITBase {
     }
 
     private Set<WriteEntity> getOutputs(String inputName, Entity.Type entityType) throws HiveException {
-        final WriteEntity entity = new WriteEntity();
+        final WriteEntity entity;
 
         if (Entity.Type.DFS_DIR.equals(entityType) || Entity.Type.LOCAL_DIR.equals(entityType)) {
-            entity.setTyp(entityType);
+            entity = new WriteEntity(lower(new Path(inputName).toString()), entityType);
         } else {
-            entity.setTyp(entityType);
+            entity = new WriteEntity(getQualifiedTblName(inputName), entityType);
         }
 
         if (entityType == Entity.Type.TABLE) {
@@ -1531,17 +1531,13 @@ public class HiveHookIT extends HiveITBase {
     }
 
     private WriteEntity getPartitionOutput() {
-        WriteEntity partEntity = new WriteEntity();
-
-        partEntity.setTyp(Entity.Type.PARTITION);
+        WriteEntity partEntity = new WriteEntity(PART_FILE, Entity.Type.PARTITION);
 
         return partEntity;
     }
 
     private ReadEntity getPartitionInput() {
-        ReadEntity partEntity = new ReadEntity();
-
-        partEntity.setTyp(Entity.Type.PARTITION);
+        ReadEntity partEntity = new TestReadEntity(PART_FILE, Entity.Type.PARTITION);
 
         return partEntity;
     }
@@ -1599,19 +1595,7 @@ public class HiveHookIT extends HiveITBase {
 
         runCommand(query);
 
-        String dbQualifiedName = HiveMetaStoreBridge.getDBQualifiedName(CLUSTER_NAME, dbName);
-
-        Thread.sleep(5000);
-
-        try {
-            atlasClientV2.getEntityByAttribute(HiveDataTypes.HIVE_DB.getName(), Collections.singletonMap(ATTRIBUTE_QUALIFIED_NAME, dbQualifiedName));
-        } catch (AtlasServiceException e) {
-            if (e.getStatus() == ClientResponse.Status.NOT_FOUND) {
-                return;
-            }
-        }
-
-        fail(String.format("Entity was not supposed to exist for typeName = %s, attributeName = %s, attributeValue = %s", HiveDataTypes.HIVE_DB.getName(), ATTRIBUTE_QUALIFIED_NAME, dbQualifiedName));
+        assertDBIsNotRegistered(dbName);
     }
 
     @Test
@@ -2048,5 +2032,22 @@ public class HiveHookIT extends HiveITBase {
         runCommand("create " + (isExternal ? " EXTERNAL " : "") + (isTemporary ? "TEMPORARY " : "") + "table " + tableName + "(id int, name string) comment 'table comment' " + (isPartitioned ? " partitioned by(dt string)" : "") + location);
 
         return tableName;
+    }
+
+    // ReadEntity class doesn't offer a constructor that takes (name, type). A hack to get the tests going!
+    private static class TestReadEntity extends ReadEntity {
+        private final String      name;
+        private final Entity.Type type;
+
+        public TestReadEntity(String name, Entity.Type type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        @Override
+        public String getName() { return name; }
+
+        @Override
+        public Entity.Type getType() { return type; }
     }
 }
