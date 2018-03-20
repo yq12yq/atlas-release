@@ -21,6 +21,7 @@ package org.apache.atlas.hbase.util;
 
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.hook.AtlasHookException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
@@ -35,24 +36,12 @@ import java.util.regex.Pattern;
 
 public class ImportHBaseEntities extends ImportHBaseEntitiesBase {
     private static final Logger LOG = LoggerFactory.getLogger(ImportHBaseEntities.class);
-    private static final String NAMESPACE_FLAG = "-n";
-    private static final String TABLE_FLAG     = "-t";
-    private static final String NAMESPACE_FULL_FLAG = "--namespace";
-    private static final String TABLE_FULL_FLAG     = "--tablename";
-    private static String       namespaceToImport;
-    private static String       tableToImport;
 
     public static void main(String[] args) throws AtlasHookException {
         try {
-            if (checkArgs(args)) {
-                ImportHBaseEntities importHBaseEntities = new ImportHBaseEntities(args);
-                if (importNameSpace) {
-                    namespaceToImport = cmd.getOptionValue("n");
-                } else if (importTable) {
-                    tableToImport = cmd.getOptionValue("t");
-                }
-                importHBaseEntities.execute();
-            }
+            ImportHBaseEntities importHBaseEntities = new ImportHBaseEntities(args);
+
+            importHBaseEntities.execute();
         } catch(Exception e) {
             throw new AtlasHookException("ImportHBaseEntities failed.", e);
         }
@@ -67,24 +56,30 @@ public class ImportHBaseEntities extends ImportHBaseEntitiesBase {
         if (hbaseAdmin != null) {
             if (StringUtils.isEmpty(namespaceToImport) && StringUtils.isEmpty(tableToImport)) {
                 NamespaceDescriptor[] namespaceDescriptors = hbaseAdmin.listNamespaceDescriptors();
+
                 if (!ArrayUtils.isEmpty(namespaceDescriptors)) {
                     for (NamespaceDescriptor namespaceDescriptor : namespaceDescriptors) {
                         String namespace = namespaceDescriptor.getName();
+
                         importNameSpace(namespace);
                     }
                 }
+
                 TableDescriptor[] tableDescriptors = hbaseAdmin.listTables();
+
                 if (!ArrayUtils.isEmpty(tableDescriptors)) {
                     for (TableDescriptor tableDescriptor : tableDescriptors) {
                         String tblName = tableDescriptor.getTableName().getNameAsString();
+
                         importTable(tblName);
                     }
                 }
+
                 ret = true;
-            } else if (!StringUtils.isEmpty(namespaceToImport)){
+            } else if (StringUtils.isNotEmpty(namespaceToImport)) {
                 importNameSpace(namespaceToImport);
                 ret = true;
-            } else  if (!StringUtils.isEmpty(tableToImport)) {
+            } else if (StringUtils.isNotEmpty(tableToImport)) {
                 importTable(tableToImport);
                 ret = true;
             }
@@ -94,50 +89,43 @@ public class ImportHBaseEntities extends ImportHBaseEntitiesBase {
 
     public String importNameSpace(final String nameSpace) throws Exception {
         NamespaceDescriptor namespaceDescriptor = hbaseAdmin.getNamespaceDescriptor(nameSpace);
+
         createOrUpdateNameSpace(namespaceDescriptor);
+
         return namespaceDescriptor.getName();
     }
 
     public String importTable(final String tableName) throws Exception {
-        String ret = null;
-
-        TableDescriptor tableDescriptor = null;
-        String          tableNameStr    = null;
+        String                ret              = null;
         List<TableDescriptor> tableDescriptors = hbaseAdmin.listTableDescriptors(Pattern.compile(tableName));
-        if (!tableDescriptors.isEmpty()) {
+
+        if (CollectionUtils.isNotEmpty(tableDescriptors)) {
+            TableDescriptor tableDescriptor = null;
+            String          tableNameStr    = null;
+
             for (TableDescriptor tblDescriptor : tableDescriptors) {
-                String tblNameWithNameSpace     = tblDescriptor.getTableName().getNameWithNamespaceInclAsString();
-                String tblNameWithOutNameSpace  = tblDescriptor.getTableName().getNameAsString();
+                String tblNameWithNameSpace    = tblDescriptor.getTableName().getNameWithNamespaceInclAsString();
+                String tblNameWithOutNameSpace = tblDescriptor.getTableName().getNameAsString();
+
                 tableDescriptor = tblDescriptor;
+
                 if (tableName.equals(tblNameWithNameSpace)) {
                     tableNameStr = tblNameWithNameSpace;
                 } else if (tableName.equals(tblNameWithOutNameSpace)) {
                     tableNameStr = tblNameWithOutNameSpace;
                 }
             }
-            String namespace =  tableDescriptor.getTableName().getNamespaceAsString();
-            NamespaceDescriptor nsDescriptor = hbaseAdmin.getNamespaceDescriptor(namespace);
-            AtlasEntity nsEntity = createOrUpdateNameSpace(nsDescriptor);
+
+            String                   namespace               = tableDescriptor.getTableName().getNamespaceAsString();
+            NamespaceDescriptor      nsDescriptor            = hbaseAdmin.getNamespaceDescriptor(namespace);
+            AtlasEntity              nsEntity                = createOrUpdateNameSpace(nsDescriptor);
             ColumnFamilyDescriptor[] columnFamilyDescriptors = tableDescriptor.getColumnFamilies();
+
             createOrUpdateTable(namespace, tableNameStr, nsEntity, tableDescriptor, columnFamilyDescriptors);
+
+            ret = tableNameStr;
         }
 
-        return ret;
-    }
-
-    private static boolean checkArgs(String[] args) throws Exception {
-        boolean ret = true;
-        String option = args.length > 0 ? args[0] : null;
-        String value  = args.length > 1 ? args[1] : null;
-
-        if (option != null && value == null) {
-            if (option.equalsIgnoreCase(NAMESPACE_FLAG) || option.equalsIgnoreCase(NAMESPACE_FULL_FLAG) ||
-                    option.equalsIgnoreCase(TABLE_FLAG) || option.equalsIgnoreCase(TABLE_FULL_FLAG)) {
-                System.out.println("Usage: import-hive.sh [-n <namespace> OR --namespace <namespace>] [-t <table> OR --table <table>]");
-                ret = false;
-                throw new Exception("Missing arguments..");
-            }
-        }
         return ret;
     }
 }

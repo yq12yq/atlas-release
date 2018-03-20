@@ -50,6 +50,10 @@ import java.util.*;
 public class ImportHBaseEntitiesBase {
     private static final Logger LOG = LoggerFactory.getLogger(ImportHBaseEntitiesBase.class);
 
+    static final String NAMESPACE_FLAG         = "-n";
+    static final String TABLE_FLAG             = "-t";
+    static final String NAMESPACE_FULL_FLAG    = "--namespace";
+    static final String TABLE_FULL_FLAG        = "--tablename";
     static final String  ATLAS_ENDPOINT        = "atlas.rest.address";
     static final String  DEFAULT_ATLAS_URL     = "http://localhost:21000/";
     static final String  NAMESPACE_TYPE        = "hbase_namespace";
@@ -91,22 +95,25 @@ public class ImportHBaseEntitiesBase {
     public static final String ATTR_CF_EVICT_BLOCK_ONCLOSE          = "evictBlocksOnClose";
     public static final String ATTR_CF_PREFETCH_BLOCK_ONOPEN        = "prefetchBlocksOnOpen";
 
-    protected final Admin                      hbaseAdmin;
-    protected final boolean                    failOnError;
-    protected static boolean                   importNameSpace;
-    protected static boolean                   importTable;
-    protected static CommandLine               cmd;
-    private final AtlasClientV2                atlasClientV2;
-    private final UserGroupInformation         ugi;
-    private final String                       clusterName;
-    private final HashMap<String, AtlasEntity> nameSpaceCache     = new HashMap<>();
-    private final HashMap<String, AtlasEntity> tableCache         = new HashMap<>();
-    private final HashMap<String, AtlasEntity> columnFamilyCache  = new HashMap<>();
+    public static final String HBASE_NAMESPACE_QUALIFIED_NAME            = "%s@%s";
+    public static final String HBASE_TABLE_QUALIFIED_NAME_FORMAT         = "%s:%s@%s";
+    public static final String HBASE_COLUMN_FAMILY_QUALIFIED_NAME_FORMAT = "%s:%s.%s@%s";
+
+    protected final Admin                        hbaseAdmin;
+    protected final boolean                      failOnError;
+    protected final String                       namespaceToImport;
+    protected final String                       tableToImport;
+    private   final AtlasClientV2                atlasClientV2;
+    private   final UserGroupInformation         ugi;
+    private   final String                       clusterName;
+    private   final HashMap<String, AtlasEntity> nameSpaceCache     = new HashMap<>();
+    private   final HashMap<String, AtlasEntity> tableCache         = new HashMap<>();
+    private   final HashMap<String, AtlasEntity> columnFamilyCache  = new HashMap<>();
 
 
     protected ImportHBaseEntitiesBase(String[] args) throws Exception {
-        Options                   options;
-        CommandLineParser         parser;
+        checkArgs(args);
+
         Configuration atlasConf = ApplicationProperties.get();
         String[]      urls      = atlasConf.getStringArray(ATLAS_ENDPOINT);
 
@@ -124,24 +131,29 @@ public class ImportHBaseEntitiesBase {
             atlasClientV2 = new AtlasClientV2(ugi, ugi.getShortUserName(), urls);
         }
 
-        options = new Options();
+        Options options = new Options();
         options.addOption("n","namespace", true, "namespace");
         options.addOption("t", "table", true, "tablename");
         options.addOption("failOnError", false, "failOnError");
 
-        parser  = new BasicParser();
-        cmd     = parser.parse(options, args);
+        CommandLineParser parser = new BasicParser();
+        CommandLine       cmd    = parser.parse(options, args);
 
-        clusterName = atlasConf.getString(HBASE_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
-        failOnError = cmd.hasOption("failOnError");
-        importNameSpace = cmd.hasOption("n");
-        importTable = cmd.hasOption("t");
+        clusterName       = atlasConf.getString(HBASE_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
+        failOnError       = cmd.hasOption("failOnError");
+        namespaceToImport = cmd.getOptionValue("n");
+        tableToImport     = cmd.getOptionValue("t");
 
         org.apache.hadoop.conf.Configuration conf = HBaseConfiguration.create();
-        LOG.info("getHBaseStatus: checking HbaseAvailability with the new config");
+
+        LOG.info("createHBaseClient(): checking HBase availability..");
+
         HBaseAdmin.available(conf);
-        LOG.info("getHBaseStatus: no exception: HbaseAvailability true");
+
+        LOG.info("createHBaseClient(): HBase is available");
+
         Connection conn  = ConnectionFactory.createConnection(conf);
+
         hbaseAdmin = conn.getAdmin();
     }
 
@@ -352,6 +364,20 @@ public class ImportHBaseEntitiesBase {
         return ret;
     }
 
+    private void checkArgs(String[] args) throws Exception {
+        String option = args.length > 0 ? args[0] : null;
+        String value  = args.length > 1 ? args[1] : null;
+
+        if (option != null && value == null) {
+            if (option.equalsIgnoreCase(NAMESPACE_FLAG) || option.equalsIgnoreCase(NAMESPACE_FULL_FLAG) ||
+                    option.equalsIgnoreCase(TABLE_FLAG) || option.equalsIgnoreCase(TABLE_FULL_FLAG)) {
+
+                System.out.println("Usage: import-hbase.sh [-n <namespace> OR --namespace <namespace>] [-t <table> OR --table <table>]");
+
+                throw new Exception("Incorrect arguments..");
+            }
+        }
+    }
     /**
      * Construct the qualified name used to uniquely identify a ColumnFamily instance in Atlas.
      * @param clusterName Name of the cluster to which the Hbase component belongs
@@ -362,8 +388,7 @@ public class ImportHBaseEntitiesBase {
      */
     private static String getColumnFamilyQualifiedName(String clusterName, String nameSpace, String tableName, String columnFamily) {
         tableName = stripNameSpace(tableName.toLowerCase());
-
-        return String.format("%s.%s.%s@%s", nameSpace.toLowerCase(), tableName, columnFamily.toLowerCase(), clusterName);
+        return String.format(HBASE_COLUMN_FAMILY_QUALIFIED_NAME_FORMAT, nameSpace.toLowerCase(), tableName, columnFamily.toLowerCase(), clusterName);
     }
 
     /**
@@ -375,8 +400,7 @@ public class ImportHBaseEntitiesBase {
      */
     private static String getTableQualifiedName(String clusterName, String nameSpace, String tableName) {
         tableName = stripNameSpace(tableName.toLowerCase());
-
-        return String.format("%s.%s@%s", nameSpace.toLowerCase(), tableName, clusterName);
+        return String.format(HBASE_TABLE_QUALIFIED_NAME_FORMAT, nameSpace.toLowerCase(), tableName, clusterName);
     }
 
     /**
@@ -386,7 +410,7 @@ public class ImportHBaseEntitiesBase {
      * @return Unique qualified name to identify the HBase NameSpace instance in Atlas.
      */
     private static String getNameSpaceQualifiedName(String clusterName, String nameSpace) {
-        return String.format("%s@%s", nameSpace.toLowerCase(), clusterName);
+        return String.format(HBASE_NAMESPACE_QUALIFIED_NAME, nameSpace.toLowerCase(), clusterName);
     }
 
     private static String stripNameSpace(String tableName){
