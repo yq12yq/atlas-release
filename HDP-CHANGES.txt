@@ -235,3 +235,4 @@ ATLAS-2421: updated Atlas notificaiton module to support V2 data structures; upd
 ATLAS-2439: updated Sqoop hook to use V2 notifications
 ATLAS-2439: updated Sqoop hook to use V2 notifications (#2)
 ATLAS-2491: Hive hook should use v2 notifications
+ATLAS-2491: Hive hook using V2 notifications (#2) (Cherry picked from commit ae23e78369ce765c5353923754374bbd74c1bd47) (Cherry picked from commit 4e27bf0866312e914be384c637c2e3e87b89c62e)
