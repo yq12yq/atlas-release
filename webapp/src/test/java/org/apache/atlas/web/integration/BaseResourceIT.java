@@ -677,24 +677,4 @@ public abstract class BaseResourceIT {
     protected JSONArray searchByDSL(String dslQuery) throws AtlasServiceException {
         return atlasClientV1.searchByDSL(dslQuery, 10, 0);
     }
-
-    protected void initNotificationService() throws Exception {
-        Configuration applicationProperties = ApplicationProperties.get();
-
-        applicationProperties.setProperty("atlas.kafka.data", "target/" + RandomStringUtils.randomAlphanumeric(5));
-
-        kafkaNotification     = new KafkaNotification(applicationProperties);
-        notificationInterface = kafkaNotification;
-
-        kafkaNotification.start();
-
-        Thread.sleep(2000);
-    }
-
-    protected void cleanUpNotificationService() {
-        if (kafkaNotification != null) {
-            kafkaNotification.close();
-            kafkaNotification.stop();
-        }
-    }
 }
