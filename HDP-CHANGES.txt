@@ -1,5 +1,6 @@
 2.6.5
 
+ATLAS-2500: added additional headers in HTTP response
 ATLAS-2468: Basic search issue with numeric NEQ within OR clause
 BUG-97180: Nimbus-JOSE-JWT upgrade
 BUG-97178: Spring dependency changes
