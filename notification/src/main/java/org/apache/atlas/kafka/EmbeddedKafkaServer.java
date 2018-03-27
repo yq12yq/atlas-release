@@ -20,7 +20,7 @@ package org.apache.atlas.kafka;
 import kafka.metrics.KafkaMetricsReporter;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
-import kafka.utils.Time;
+import org.apache.kafka.common.utils.Time;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.service.Service;
@@ -35,8 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import scala.Option;
-import scala.collection.Seq;
-import scala.collection.mutable.MutableList;
+import scala.collection.mutable.Buffer;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -46,6 +45,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 
 @Component
@@ -138,7 +138,10 @@ public class EmbeddedKafkaServer implements Service {
         brokerConfig.setProperty("log.dirs", constructDir("kafka").getAbsolutePath());
         brokerConfig.setProperty("log.flush.interval.messages", String.valueOf(1));
 
-		kafkaServer = new KafkaServer(KafkaConfig.fromProps(brokerConfig), new SystemTime(), Option.apply(this.getClass().getName()), new MutableList<KafkaMetricsReporter>());
+        List<KafkaMetricsReporter>   metrics          = new ArrayList<>();
+        Buffer<KafkaMetricsReporter> metricsReporters = scala.collection.JavaConversions.asScalaBuffer(metrics);
+
+        kafkaServer = new KafkaServer(KafkaConfig.fromProps(brokerConfig), new SystemTime(), Option.apply(this.getClass().getName()), metricsReporters);
 
         kafkaServer.startup();
 
@@ -187,7 +190,7 @@ public class EmbeddedKafkaServer implements Service {
 
         @Override
         public long hiResClockMs() {
-            return nanoseconds();
+            return TimeUnit.NANOSECONDS.toMillis(nanoseconds());
         }
     }
 }
