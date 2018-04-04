@@ -1703,7 +1703,10 @@
                     <version>2.7</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
-                        <nonFilteredFileExtensions>zip</nonFilteredFileExtensions>
+                        <nonFilteredFileExtensions>
+                            <nonFilteredFileExtension>zip</nonFilteredFileExtension>
+                            <nonFilteredFileExtension>json</nonFilteredFileExtension>
+                        </nonFilteredFileExtensions>
                     </configuration>
                 </plugin>
 
