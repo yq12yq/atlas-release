@@ -56,6 +56,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -455,6 +456,7 @@ public class HBaseBridge {
 
         try {
             ret = findEntityInAtlas(HBaseDataTypes.HBASE_NAMESPACE.getName(), nsQualifiedName);
+            clearRelationshipAttributes(ret);
         } catch (Exception e) {
             ret = null; // entity doesn't exist in Atlas
         }
@@ -467,6 +469,7 @@ public class HBaseBridge {
 
         try {
             ret = findEntityInAtlas(HBaseDataTypes.HBASE_TABLE.getName(), tableQualifiedName);
+            clearRelationshipAttributes(ret);
         } catch (Exception e) {
             ret = null; // entity doesn't exist in Atlas
         }
@@ -479,6 +482,7 @@ public class HBaseBridge {
 
         try {
             ret = findEntityInAtlas(HBaseDataTypes.HBASE_COLUMN_FAMILY.getName(), columnFamilyQualifiedName);
+            clearRelationshipAttributes(ret);
         } catch (Exception e) {
             ret = null; // entity doesn't exist in Atlas
         }
@@ -663,5 +667,29 @@ public class HBaseBridge {
         System.out.println("        namespace1:tbl1");
         System.out.println("        namespace1:tbl2");
         System.out.println("        namespace2:tbl1");
+    }
+
+    private void clearRelationshipAttributes(AtlasEntityWithExtInfo entity) {
+        if (entity != null) {
+            clearRelationshipAttributes(entity.getEntity());
+
+            if (entity.getReferredEntities() != null) {
+                clearRelationshipAttributes(entity.getReferredEntities().values());
+            }
+        }
+    }
+
+    private void clearRelationshipAttributes(Collection<AtlasEntity> entities) {
+        if (entities != null) {
+            for (AtlasEntity entity : entities) {
+                clearRelationshipAttributes(entity);
+            }
+        }
+    }
+
+    private void clearRelationshipAttributes(AtlasEntity entity) {
+        if (entity != null && entity.getRelationshipAttributes() != null) {
+            entity.getRelationshipAttributes().clear();
+        }
     }
 }
