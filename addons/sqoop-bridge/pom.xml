@@ -418,13 +418,32 @@
                             <resources>
                                 <resource>
                                     <directory>${basedir}/../models</directory>
-                                    <filtering>true</filtering>
+                                    <includes>
+                                        <include>0000-Area0/0010-base_model.json</include>
+                                        <include>1000-Hadoop/**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-solr-resources</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/solr</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/../../test-tools/src/main/resources/solr</directory>
                                 </resource>
                             </resources>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
 </project>
