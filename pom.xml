@@ -746,6 +746,7 @@
         <module>addons/storm-bridge</module>
 	    <module>addons/hbase-bridge-shim</module>
         <module>addons/hbase-bridge</module>
+        <module>addons/kafka-bridge</module>
         <module>tools/atlas-migration-exporter</module>
 	
         <module>distro</module>
@@ -1440,6 +1441,11 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.atlas</groupId>
+                <artifactId>kafka-bridge</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- API documentation  -->
             <dependency>
