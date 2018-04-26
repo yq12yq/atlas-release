@@ -33,6 +33,7 @@ import org.apache.atlas.model.instance.AtlasEntityHeader;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.instance.AtlasRelationship;
+import org.apache.atlas.model.instance.AtlasRelationship.AtlasRelationshipWithExtInfo;
 import org.apache.atlas.model.instance.AtlasStruct;
 import org.apache.atlas.model.typedef.AtlasRelationshipDef;
 import org.apache.atlas.model.typedef.AtlasRelationshipDef.PropagateTags;
@@ -966,18 +967,34 @@ public final class EntityGraphRetriever {
     }
 
     public AtlasRelationship mapEdgeToAtlasRelationship(AtlasEdge edge) throws AtlasBaseException {
-        AtlasRelationship ret = new AtlasRelationship();
+        return mapEdgeToAtlasRelationship(edge, false).getRelationship();
+    }
 
-        mapSystemAttributes(edge, ret);
+    public AtlasRelationshipWithExtInfo mapEdgeToAtlasRelationshipWithExtInfo(AtlasEdge edge) throws AtlasBaseException {
+        return mapEdgeToAtlasRelationship(edge, true);
+    }
+
+    public AtlasRelationshipWithExtInfo mapEdgeToAtlasRelationship(AtlasEdge edge, boolean extendedInfo) throws AtlasBaseException {
+        AtlasRelationshipWithExtInfo ret = new AtlasRelationshipWithExtInfo();
+
+        mapSystemAttributes(edge, ret, extendedInfo);
 
         mapAttributes(edge, ret);
 
         return ret;
     }
 
-    private AtlasRelationship mapSystemAttributes(AtlasEdge edge, AtlasRelationship relationship) throws AtlasBaseException {
+    private AtlasRelationship.AtlasRelationshipWithExtInfo mapSystemAttributes(AtlasEdge edge, AtlasRelationshipWithExtInfo relationshipWithExtInfo, boolean extendedInfo) throws AtlasBaseException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Mapping system attributes for relationship");
+        }
+
+        AtlasRelationship relationship = relationshipWithExtInfo.getRelationship();
+
+        if (relationship == null) {
+            relationship = new AtlasRelationship();
+
+            relationshipWithExtInfo.setRelationship(relationship);
         }
 
         relationship.setGuid(getRelationshipGuid(edge));
@@ -1007,25 +1024,38 @@ public final class EntityGraphRetriever {
         relationship.setLabel(edge.getLabel());
         relationship.setPropagateTags(getPropagateTags(edge));
 
-        // set propagated and blocked propagated classifications
-        readClassificationsFromEdge(edge, relationship);
+        if (extendedInfo) {
+            addToReferredEntities(relationshipWithExtInfo, end1Vertex);
+            addToReferredEntities(relationshipWithExtInfo, end2Vertex);
+        }
 
-        return relationship;
+        // set propagated and blocked propagated classifications
+        readClassificationsFromEdge(edge, relationshipWithExtInfo, extendedInfo);
+
+        return relationshipWithExtInfo;
     }
 
-    private void readClassificationsFromEdge(AtlasEdge edge, AtlasRelationship relationship) throws AtlasBaseException {
+    private void readClassificationsFromEdge(AtlasEdge edge, AtlasRelationshipWithExtInfo relationshipWithExtInfo, boolean extendedInfo) throws AtlasBaseException {
         List<AtlasVertex>         classificationVertices    = getClassificationVertices(edge);
         List<String>              blockedClassificationIds  = getBlockedClassificationIds(edge);
         List<AtlasClassification> propagatedClassifications = new ArrayList<>();
         List<AtlasClassification> blockedClassifications    = new ArrayList<>();
+        AtlasRelationship         relationship              = relationshipWithExtInfo.getRelationship();
 
         for (AtlasVertex classificationVertex : classificationVertices) {
-            String classificationId = classificationVertex.getIdForDisplay();
+            String              classificationId = classificationVertex.getIdForDisplay();
+            AtlasClassification classification   = toAtlasClassification(classificationVertex);
+            String              entityGuid       = classification.getEntityGuid();
 
             if (blockedClassificationIds.contains(classificationId)) {
-                blockedClassifications.add(toAtlasClassification(classificationVertex));
+                blockedClassifications.add(classification);
             } else {
-                propagatedClassifications.add(toAtlasClassification(classificationVertex));
+                propagatedClassifications.add(classification);
+            }
+
+            // add entity headers to referred entities
+            if (extendedInfo) {
+                addToReferredEntities(relationshipWithExtInfo, entityGuid);
             }
         }
 
@@ -1033,8 +1063,23 @@ public final class EntityGraphRetriever {
         relationship.setBlockedPropagatedClassifications(blockedClassifications);
     }
 
-    private void mapAttributes(AtlasEdge edge, AtlasRelationship relationship) throws AtlasBaseException {
-        AtlasType objType = typeRegistry.getType(relationship.getTypeName());
+    private void addToReferredEntities(AtlasRelationshipWithExtInfo relationshipWithExtInfo, String guid) throws AtlasBaseException {
+        if (!relationshipWithExtInfo.referredEntitiesContains(guid)) {
+            addToReferredEntities(relationshipWithExtInfo, getEntityVertex(guid));
+        }
+    }
+
+    private void addToReferredEntities(AtlasRelationshipWithExtInfo relationshipWithExtInfo, AtlasVertex entityVertex) throws AtlasBaseException {
+        String entityGuid = getGuid(entityVertex);
+
+        if (!relationshipWithExtInfo.referredEntitiesContains(entityGuid)) {
+            relationshipWithExtInfo.addReferredEntity(entityGuid, toAtlasEntityHeader(entityVertex));
+        }
+    }
+
+    private void mapAttributes(AtlasEdge edge, AtlasRelationshipWithExtInfo relationshipWithExtInfo) throws AtlasBaseException {
+        AtlasRelationship relationship = relationshipWithExtInfo.getRelationship();
+        AtlasType         objType      = typeRegistry.getType(relationship.getTypeName());
 
         if (!(objType instanceof AtlasRelationshipType)) {
             throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_INVALID, relationship.getTypeName());
