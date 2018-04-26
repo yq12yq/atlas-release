@@ -139,9 +139,12 @@ public class HBaseBasedAuditRepository implements Service, EntityAuditRepository
         try {
             table = connection.getTable(tableName);
             List<Put> puts = new ArrayList<>(events.size());
-            for (EntityAuditEvent event : events) {
+
+            for (int index = 0; index < events.size(); index++) {
+                EntityAuditEvent event = events.get(index);
+
                 LOG.debug("Adding entity audit event {}", event);
-                Put put = new Put(getKey(event.getEntityId(), event.getTimestamp()));
+                Put put = new Put(getKey(event.getEntityId(), event.getTimestamp(), index));
                 addColumn(put, COLUMN_ACTION, event.getAction());
                 addColumn(put, COLUMN_USER, event.getUser());
                 addColumn(put, COLUMN_DETAIL, event.getDetails());
@@ -175,12 +178,14 @@ public class HBaseBasedAuditRepository implements Service, EntityAuditRepository
             table          = connection.getTable(tableName);
             List<Put> puts = new ArrayList<>(events.size());
 
-            for (EntityAuditEventV2 event : events) {
+            for (int index = 0; index < events.size(); index++) {
+                EntityAuditEventV2 event = events.get(index);
+
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Adding entity audit event {}", event);
                 }
 
-                Put put = new Put(getKey(event.getEntityId(), event.getTimestamp()));
+                Put put = new Put(getKey(event.getEntityId(), event.getTimestamp(), index));
 
                 addColumn(put, COLUMN_ACTION, event.getAction());
                 addColumn(put, COLUMN_USER, event.getUser());
@@ -231,7 +236,7 @@ public class HBaseBasedAuditRepository implements Service, EntityAuditRepository
 
             if (StringUtils.isEmpty(startKey)) {
                 //Set start row to entity id + max long value
-                byte[] entityBytes = getKey(entityId, Long.MAX_VALUE);
+                byte[] entityBytes = getKey(entityId, Long.MAX_VALUE, Integer.MAX_VALUE);
                 scan = scan.setStartRow(entityBytes);
             } else {
                 scan = scan.setStartRow(Bytes.toBytes(startKey));
@@ -343,7 +348,7 @@ public class HBaseBasedAuditRepository implements Service, EntityAuditRepository
                                   .setSmall(true);
             if (StringUtils.isEmpty(startKey)) {
                 //Set start row to entity id + max long value
-                byte[] entityBytes = getKey(entityId, Long.MAX_VALUE);
+                byte[] entityBytes = getKey(entityId, Long.MAX_VALUE, Integer.MAX_VALUE);
                 scan = scan.setStartRow(entityBytes);
             } else {
                 scan = scan.setStartRow(Bytes.toBytes(startKey));
@@ -438,6 +443,13 @@ public class HBaseBasedAuditRepository implements Service, EntityAuditRepository
             return Bytes.toString(rawValue);
         }
         return null;
+    }
+
+    private byte[] getKey(String id, Long ts, int index) {
+        assert id != null  : "entity id can't be null";
+        assert ts != null  : "timestamp can't be null";
+        String keyStr = id + FIELD_SEPARATOR + ts + FIELD_SEPARATOR + index;
+        return Bytes.toBytes(keyStr);
     }
 
     private EntityAuditEvent fromKey(byte[] keyBytes) {
