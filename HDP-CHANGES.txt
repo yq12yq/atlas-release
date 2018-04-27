@@ -238,3 +238,4 @@ ATLAS-2491: Hive hook should use v2 notifications
 ATLAS-2491: Hive hook using V2 notifications (#2) (Cherry picked from commit ae23e78369ce765c5353923754374bbd74c1bd47) (Cherry picked from commit 4e27bf0866312e914be384c637c2e3e87b89c62e)
 ATLAS-2524: fix Hive hook for incorrect handling of 'alter view as' operation
 ATLAS-2581: V2 Hive hook notifications - incorrect location for sd after moving table to a different database
+ATLAS-2611: fix for NPE in Hive hook
