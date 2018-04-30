@@ -18,7 +18,6 @@
 
 package org.apache.atlas.discovery;
 
-import com.google.common.base.Splitter;
 import com.thinkaurelius.titan.core.TitanGraph;
 import com.tinkerpop.blueprints.Vertex;
 import org.apache.atlas.ApplicationProperties;
@@ -28,20 +27,11 @@ import org.apache.atlas.AtlasProperties;
 import org.apache.atlas.GraphTransaction;
 import org.apache.atlas.discovery.graph.DefaultGraphPersistenceStrategy;
 import org.apache.atlas.discovery.graph.GraphBackedDiscoveryService;
-import org.apache.atlas.query.ClosureQuery;
-import org.apache.atlas.query.Expressions;
-import org.apache.atlas.query.GremlinEvaluator;
-import org.apache.atlas.query.GremlinQuery;
-import org.apache.atlas.query.GremlinQueryResult;
-import org.apache.atlas.query.GremlinTranslator;
-import org.apache.atlas.query.InputLineageClosureQuery;
-import org.apache.atlas.query.OutputLineageClosureQuery;
-import org.apache.atlas.query.QueryParams;
-import org.apache.atlas.query.QueryProcessor;
+import org.apache.atlas.query.*;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.MetadataRepository;
-import org.apache.atlas.repository.graph.GraphProvider;
 import org.apache.atlas.repository.graph.GraphHelper;
+import org.apache.atlas.repository.graph.GraphProvider;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
 import org.apache.atlas.typesystem.exception.EntityNotFoundException;
 import org.apache.atlas.typesystem.exception.SchemaNotFoundException;
@@ -60,8 +50,6 @@ import scala.collection.immutable.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.script.ScriptException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -318,7 +306,7 @@ public class DataSetLineageService implements LineageService {
         ITypedReferenceableInstance instance = metadataRepository.getEntityDefinition(guid);
         String typeName = instance.getTypeName();
         ClassType clsType = typeSystem.getDataType(ClassType.class, typeName);
-        if ( !clsType.superTypes.contains(AtlasClient.DATA_SET_SUPER_TYPE) ) {
+        if ( !clsType.getAllSuperTypeNames().contains(AtlasClient.DATA_SET_SUPER_TYPE) ) {
             throw new EntityNotFoundException("Dataset with guid = " + guid + " does not exist");
         }
         return Pair.of(instance, clsType);
