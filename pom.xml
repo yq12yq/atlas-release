@@ -538,7 +538,7 @@
         <zookeeper.version>3.4.6.3.0.0.0-SNAPSHOT</zookeeper.version>
         <hive.version>3.0.0.3.0.0.0-SNAPSHOT</hive.version>
         <calcite.version>1.14.0.3.0.0.0-SNAPSHOT</calcite.version>
-        <scala.version>2.11.8</scala.version>
+        <scala.version>2.11.12</scala.version>
         <janus.version>0.2.0</janus.version>
 
         <json.version>3.2.11</json.version>
