@@ -97,7 +97,7 @@ public abstract class AtlasHook {
             LOG.warn("Error in determining current user", excp);
         }
 
-        notificationInterface.setCurrentUser(currentUser);
+        notifInterface.setCurrentUser(currentUser);
 
         LOG.info("Created Atlas Hook");
     }
