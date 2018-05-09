@@ -73,3 +73,4 @@ Build Process
    addons/storm-bridge/target/storm-bridge-<version>.jar
 
 4. For more details on building and running Apache Atlas, please refer to http://atlas.apache.org/InstallationSteps.html
+Patch Upgrade - Wed May  9 12:35:43 UTC 2018
