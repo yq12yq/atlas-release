@@ -1524,7 +1524,7 @@ public class EntityGraphMapper {
             }
 
             if (isClassificationUpdated && CollectionUtils.isEmpty(entitiesToPropagateTo)) {
-                entitiesToPropagateTo = graphHelper.getImpactedVertices(guid);
+                entitiesToPropagateTo = graphHelper.getImpactedVerticesWithRestrictions(guid, classificationVertex.getIdForDisplay());
             }
 
             if (LOG.isDebugEnabled()) {
