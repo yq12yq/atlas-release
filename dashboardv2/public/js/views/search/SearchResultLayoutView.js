@@ -372,6 +372,9 @@ define(['require',
                     skipDefaultError: true,
                     sort: false,
                     success: function(dataOrCollection, response) {
+                        if (that.isDestroyed) {
+                            return;
+                        }
                         Globals.searchApiCallRef = undefined;
                         var isFirstPage = that.offset === 0,
                             dataLength = 0,
@@ -851,7 +854,7 @@ define(['require',
                         formatter: _.extend({}, Backgrid.CellFormatter.prototype, {
                             fromRaw: function(rawValue, model) {
                                 var obj = model.toJSON();
-                                if (obj.typeName && !(obj.typeName.startsWith("AtlasGlossary"))) {
+                                if (obj.typeName && !(_.startsWith(obj.typeName, "AtlasGlossary"))) {
                                     if (obj.status && Enums.entityStateReadOnly[obj.status]) {
                                         return '<div class="readOnly">' + CommonViewFunction.termForTable(obj); + '</div>';
                                     } else {

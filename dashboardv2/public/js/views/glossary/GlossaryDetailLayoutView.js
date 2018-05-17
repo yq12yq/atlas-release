@@ -22,8 +22,9 @@ define(['require',
     'utils/Utils',
     'utils/Messages',
     'utils/Globals',
-    'utils/CommonViewFunction'
-], function(require, Backbone, GlossaryDetailLayoutViewTmpl, Utils, Messages, Globals, CommonViewFunction) {
+    'utils/CommonViewFunction',
+    'collection/VGlossaryList'
+], function(require, Backbone, GlossaryDetailLayoutViewTmpl, Utils, Messages, Globals, CommonViewFunction, VGlossaryList) {
     'use strict';
 
     var GlossaryDetailLayoutView = Backbone.Marionette.LayoutView.extend(
@@ -77,12 +78,13 @@ define(['require',
                         this.onClickRemoveAssociationBtn(e);
                     } else {
                         var guid = $(e.currentTarget).data('guid'),
+                            gId = this.data.anchor && this.data.anchor.glossaryGuid,
                             categoryObj = _.find(this.data.categories, { "categoryGuid": guid });
                         this.glossary.selectedItem = { "type": "GlossaryCategory", "guid": guid, "model": categoryObj };
                         Utils.setUrl({
                             url: '#!/glossary/' + guid,
                             mergeBrowserUrl: false,
-                            urlParams: { gType: "category", viewType: "category", fromView: "glossary" },
+                            urlParams: { gType: "category", viewType: "category", fromView: "glossary", gId: gId },
                             trigger: true,
                             updateTabState: true
                         });
@@ -93,12 +95,13 @@ define(['require',
                         this.onClickRemoveAssociationBtn(e);
                     } else {
                         var guid = $(e.currentTarget).data('guid'),
+                            gId = this.data.anchor && this.data.anchor.glossaryGuid,
                             termObj = _.find(this.data.terms, { "termGuid": guid });
                         this.glossary.selectedItem = { "type": "GlossaryTerm", "guid": guid, "model": termObj };
                         Utils.setUrl({
                             url: '#!/glossary/' + guid,
                             mergeBrowserUrl: false,
-                            urlParams: { gType: "term", viewType: "term", fromView: "glossary" },
+                            urlParams: { gType: "term", viewType: "term", fromView: "glossary", gId: gId },
                             trigger: true,
                             updateTabState: true
                         });
@@ -306,13 +309,24 @@ define(['require',
             onClickAddTermBtn: function(e) {
                 var that = this;
                 require(['views/glossary/AssignTermLayoutView'], function(AssignTermLayoutView) {
+                    var glossary = that.glossaryCollection;
+                    if (that.value && that.value.gId) {
+                        var foundModel = that.glossaryCollection.find({ guid: that.value.gId });
+                        if (foundModel) {
+                            glossary = new VGlossaryList([foundModel.toJSON()], {
+                                comparator: function(item) {
+                                    return item.get("displayName");
+                                }
+                            });
+                        }
+                    }
                     var view = new AssignTermLayoutView({
                         categoryData: that.data,
                         isCategoryView: that.isCategoryView,
                         callback: function() {
                             that.getData();
                         },
-                        glossaryCollection: that.glossaryCollection
+                        glossaryCollection: glossary
                     });
                     view.modal.on('ok', function() {
                         that.hideLoader();
@@ -322,13 +336,24 @@ define(['require',
             onClickAddCategoryBtn: function(e) {
                 var that = this;
                 require(['views/glossary/AssignTermLayoutView'], function(AssignTermLayoutView) {
+                    var glossary = that.glossaryCollection;
+                    if (that.value && that.value.gId) {
+                        var foundModel = that.glossaryCollection.find({ guid: that.value.gId });
+                        if (foundModel) {
+                            glossary = new VGlossaryList([foundModel.toJSON()], {
+                                comparator: function(item) {
+                                    return item.get("displayName");
+                                }
+                            });
+                        }
+                    }
                     var view = new AssignTermLayoutView({
                         termData: that.data,
                         isTermView: that.isTermView,
                         callback: function() {
                             that.getData();
                         },
-                        glossaryCollection: that.glossaryCollection
+                        glossaryCollection: glossary
                     });
                     view.modal.on('ok', function() {
                         that.hideLoader();
@@ -404,15 +429,18 @@ define(['require',
             renderTagTableLayoutView: function(options) {
                 var that = this;
                 require(['views/tag/TagDetailTableLayoutView'], function(TagDetailTableLayoutView) {
-                    that.RTagTableLayoutView.show(new TagDetailTableLayoutView(_.extend({}, options, {
-                        "entityName": that.ui.title.text(),
-                        "fetchCollection": that.getData.bind(that),
-                        "entity": that.data
-                    })));
+                    if (that.RTagTableLayoutView) {
+                        that.RTagTableLayoutView.show(new TagDetailTableLayoutView(_.extend({}, options, {
+                            "entityName": that.ui.title.text(),
+                            "fetchCollection": that.getData.bind(that),
+                            "entity": that.data
+                        })));
+                    }
                 });
             },
             renderSearchResultLayoutView: function(options) {
                 var that = this;
+
                 require(['views/search/SearchResultLayoutView'], function(SearchResultLayoutView) {
                     var value = {
                         'tag': "PII",
@@ -429,11 +457,13 @@ define(['require',
             renderRelationLayoutView: function(options) {
                 var that = this;
                 require(['views/glossary/TermRelationAttributeLayoutView'], function(TermRelationAttributeLayoutView) {
-                    that.RRelationLayoutView.show(new TermRelationAttributeLayoutView(_.extend({}, options, {
-                        "entityName": that.ui.title.text(),
-                        "fetchCollection": that.getData.bind(that),
-                        "data": that.data
-                    })));
+                    if (that.RRelationLayoutView) {
+                        that.RRelationLayoutView.show(new TermRelationAttributeLayoutView(_.extend({}, options, {
+                            "entityName": that.ui.title.text(),
+                            "fetchCollection": that.getData.bind(that),
+                            "data": that.data
+                        })));
+                    }
                 });
             },
         });

@@ -26,6 +26,7 @@ import java.util.Arrays;
 
 public enum AtlasErrorCode {
     NO_SEARCH_RESULTS(204, "ATLAS-204-00-001", "Given search filter {0} did not yield any results"),
+    DATA_ACCESS_SAVE_FAILED(204, "ATLAS-204-00-002", "Save failed: {0} has no updates"),
 
     UNKNOWN_TYPE(400, "ATLAS-400-00-001", "Unknown type {0} for {1}.{2}"),
     CIRCULAR_REFERENCE(400, "ATLAS-400-00-002", "{0}: invalid supertypes - circular reference back to self {1}"),
@@ -142,6 +143,11 @@ public enum AtlasErrorCode {
     RELATIONSHIP_END_IS_NULL(400, "ATLAS-400-00-07D", "Relationship end is invalid. Expected {0} but is NULL"),
     INVALID_TERM_RELATION_TO_SELF(400, "ATLAS-400-00-07E", "Invalid Term relationship: Term can't have a relationship with self"),
     INVALID_CHILD_CATEGORY_DIFFERENT_GLOSSARY(400, "ATLAS-400-00-07F", "Invalid child category relationship: Child category (guid = {0}) belongs to different glossary"),
+    INVALID_TERM_DISSOCIATION(400, "ATLAS-400-00-080", "Given term (guid={0}) is not associated to entity(guid={1})"),
+    ATTRIBUTE_TYPE_INVALID(400, "ATLAS-400-00-081", "{0}.{1}: invalid attribute type. Attribute cannot be of type classification"),
+    MISSING_CATEGORY_DISPLAY_NAME(400, "ATLAS-400-00-082", "Category displayName is empty/null"),
+    INVALID_DISPLAY_NAME(400, "ATLAS-400-00-083", "displayName cannot contain following special chars ('@', '.')"),
+    TERM_HAS_ENTITY_ASSOCIATION(400, "ATLAS-400-00-086", "Term (guid={}) can't be deleted as it has been assigned to {} entities."),
 
     UNAUTHORIZED_ACCESS(403, "ATLAS-403-00-001", "{0} is not authorized to perform {1}"),
 
@@ -194,7 +200,6 @@ public enum AtlasErrorCode {
     SQOOP_HOOK(500, "ATLAS-500-00-00F", "SqoopHook: {0}"),
     HIVE_HOOK(500, "ATLAS-500-00-010", "HiveHook: {0}"),
     HIVE_HOOK_METASTORE_BRIDGE(500, "ATLAS-500-00-011", "HiveHookMetaStoreBridge: {0}"),
-    DATA_ACCESS_SAVE_FAILED(500, "ATLAS-500-00-012", "Save failed: {0}"),
     DATA_ACCESS_LOAD_FAILED(500, "ATLAS-500-00-013", "Load failed: {0}"),
     ENTITY_NOTIFICATION_FAILED(500, "ATLAS-500-00-014", "Notification failed for operation: {0} : {1}");
 
