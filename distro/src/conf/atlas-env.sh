@@ -60,3 +60,9 @@ export MANAGE_LOCAL_HBASE=${hbase.embedded}
 
 # indicates whether or not a local instance of Solr should be started for Atlas
 export MANAGE_LOCAL_SOLR=${solr.embedded}
+
+# indicates whether or not cassandra is the embedded backend for Atlas
+export MANAGE_EMBEDDED_CASSANDRA=${cassandra.embedded}
+
+# indicates whether or not a local instance of Elasticsearch should be started for Atlas
+export MANAGE_LOCAL_ELASTICSEARCH=${elasticsearch.managed}
