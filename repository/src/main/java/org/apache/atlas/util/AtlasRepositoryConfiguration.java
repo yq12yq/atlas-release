@@ -70,7 +70,7 @@ public class AtlasRepositoryConfiguration {
     public static boolean isV2EntityNotificationEnabled() {
         boolean ret;
         try {
-            String notificationVersion = ApplicationProperties.get().getString(ENTITY_NOTIFICATION_VERSION_PROPERTY, "v1");
+            String notificationVersion = ApplicationProperties.get().getString(ENTITY_NOTIFICATION_VERSION_PROPERTY, "v2");
 
             return StringUtils.equalsIgnoreCase(notificationVersion, "v2");
         } catch (AtlasException e) {
