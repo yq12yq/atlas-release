@@ -9,7 +9,6 @@ If GRAPH-PROVIDER is not set, the default graph backend is adopted. This is curr
 
 In order to build with a specific (non-default) graph backend set the GRAPH-PROVDER system variable.
 
-If GRAPH-PROVIDER is set to titan0, the build will contain Titan 0.5.4
 If GRAPH-PROVIDER is set to janus, the build will contain JanusGraph 0.2.0 (i.e. the default above)
 
 For example, to build Atlas with the janus graph-provider:
