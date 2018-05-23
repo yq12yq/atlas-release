@@ -36,10 +36,12 @@ import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.graphdb.GraphDatabase;
 import org.apache.atlas.repository.graphdb.janus.migration.AtlasGraphSONReader;
 import org.apache.atlas.repository.graphdb.janus.migration.ReaderStatusManager;
+import org.apache.atlas.repository.graphdb.janus.migration.ElementProcessors;
 import org.apache.atlas.repository.graphdb.janus.serializer.BigDecimalSerializer;
 import org.apache.atlas.repository.graphdb.janus.serializer.BigIntegerSerializer;
 import org.apache.atlas.repository.graphdb.janus.serializer.TypeCategorySerializer;
 import org.apache.atlas.runner.LocalSolrRunner;
+import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.commons.configuration.Configuration;
@@ -284,7 +286,7 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
         return ret;
     }
 
-    public static void loadLegacyGraphSON(Map<String, String> relationshipCache, InputStream fs) throws AtlasBaseException {
+    public static void loadLegacyGraphSON(AtlasTypeRegistry typeRegistry, InputStream fs) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
 
         try {
@@ -295,9 +297,10 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
             }
 
             AtlasGraphSONReader legacyGraphSONReader = AtlasGraphSONReader.build().
-                    relationshipCache(relationshipCache).
+                    relationshipCache(new ElementProcessors(typeRegistry)).
                     schemaDB(getGraphInstance()).
-                    bulkLoadingDB(getBulkLoadingGraphInstance()).create();
+                    bulkLoadingDB(getBulkLoadingGraphInstance()).
+                    create();
 
             legacyGraphSONReader.readGraph(fs);
         } catch (Exception ex) {
