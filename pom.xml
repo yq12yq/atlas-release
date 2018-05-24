@@ -651,11 +651,10 @@
         These profiles are mutually exclusive and should be activated by setting the system
         property GRAPH-PROVIDER.
         This can be optionally specified when invoking mvn:
-           e.g. mvn clean install -DGRAPH-PROVIDER=titan0
+           e.g. mvn clean install -DGRAPH-PROVIDER=janus
         The settings for GRAPH-PROVIDER have the following effects:
         * If GRAPH-PROVIDER is not specified, the graph-provider-default profile is activated.
-        * If GRAPH-PROVIDER is set to titan0, the graph-provider-titan0 profile is activated.
-        * If GRAPH-PROVIDER is set to anything else, the build will fail.
+        * If GRAPH-PROVIDER is set to janus, the graph-provider-janus profile is activated.
         Do not activate the graph-provider selection profiles using -P.
         -->
 

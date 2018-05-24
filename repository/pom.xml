@@ -89,6 +89,19 @@
             <artifactId>mockito-all</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.cassandra</groupId>
+            <artifactId>cassandra-all</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <version>2.1.8</version>
+        </dependency>
+
+
         <!-- Test dependencies -->
 
         <dependency>
@@ -159,6 +172,39 @@
             <artifactId>guice-multibindings</artifactId>
             <version>4.1.0</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+            <version>3.1.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.dropwizard.metrics</groupId>
+                    <artifactId>metrics-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.cassandraunit</groupId>
+            <artifactId>cassandra-unit</artifactId>
+            <version>2.0.2.2</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
     </dependencies>
@@ -202,29 +248,6 @@
                     <exclusions>
                         <exclusion>
                             <groupId>com.fasterxml.jackson.core</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>graph-provider-titan0</id>
-            <activation>
-                <property>
-                    <name>GRAPH-PROVIDER</name>
-                    <value>titan0</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.atlas</groupId>
-                    <artifactId>atlas-testtools</artifactId>
-                    <version>${project.version}</version>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.apache.lucene</groupId>
                             <artifactId>*</artifactId>
                         </exclusion>
                     </exclusions>

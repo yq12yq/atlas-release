@@ -21,17 +21,13 @@ package org.apache.atlas.repository.migration;
 import com.google.inject.Inject;
 import org.apache.atlas.TestModules;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.repository.graph.GraphHelper;
 import org.apache.atlas.repository.graphdb.AtlasEdgeDirection;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
-import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.testng.annotations.Guice;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.util.List;
 
-import static org.testng.Assert.assertEquals;
 
 @Guice(modules = TestModules.TestOnlyModule.class)
 public class HiveParititionTest extends  MigrationBaseAsserts {
@@ -41,7 +37,7 @@ public class HiveParititionTest extends  MigrationBaseAsserts {
         super(graph);
     }
 
-    @Test(enabled = false)
+    @Test
     public void fileImporterTest() throws IOException, AtlasBaseException {
         final int EXPECTED_TOTAL_COUNT = 141;
         final int EXPECTED_DB_COUNT = 1;
@@ -50,8 +46,6 @@ public class HiveParititionTest extends  MigrationBaseAsserts {
 
         runFileImporter("parts_db");
 
-        assertPartitionKeyProperty(getVertex("hive_table", "t1"), 1);
-        assertPartitionKeyProperty(getVertex("hive_table", "tv1"), 1);
         assertHiveVertices(EXPECTED_DB_COUNT, EXPECTED_TABLE_COUNT, EXPECTED_COLUMN_COUNT);
 
         assertTypeCountNameGuid("hive_db", 1, "parts_db", "ae30d78b-51b4-42ab-9436-8d60c8f68b95");
@@ -61,10 +55,5 @@ public class HiveParititionTest extends  MigrationBaseAsserts {
         assertEdges("hive_table", "tv1", AtlasEdgeDirection.OUT, 1, 1, "hive_db_tables");
 
         assertMigrationStatus(EXPECTED_TOTAL_COUNT);
-    }
-
-    private void assertPartitionKeyProperty(AtlasVertex vertex, int expectedCount) {
-        List<String> keys = GraphHelper.getListProperty(vertex, "hive_table.partitionKeys");
-        assertEquals(keys.size(), expectedCount);
     }
 }

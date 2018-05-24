@@ -25,8 +25,7 @@ import org.apache.atlas.repository.graphdb.AtlasVertex;
 import java.util.Collection;
 
 /**
- * Interfaces that provides a thin wrapper around GraphQuery (used by Titan0) and
- * TitanGraphQuery (used by Titan 1).
+ * Interfaces that provides a thin wrapper around JanusGraphQuery (used by JanusGraph) 
  *
  * This abstraction  allows TitanGraphQuery to work on any version of Titan.
  *

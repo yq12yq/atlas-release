@@ -47,8 +47,6 @@ public final class ApplicationProperties extends PropertiesConfiguration {
     public static final String  INDEX_BACKEND_CONF         = "atlas.graph.index.search.backend";
     public static final String  INDEX_MAP_NAME_CONF        = "atlas.graph.index.search.map-name";
     public static final String  SOLR_WAIT_SEARCHER_CONF    = "atlas.graph.index.search.solr.wait-searcher";
-    public static final String  GRAPHBD_BACKEND_TITAN0     = "titan0";
-    public static final String  GRAPHBD_BACKEND_TITAN1     = "titan1";
     public static final String  GRAPHBD_BACKEND_JANUS      = "janus";
     public static final String  STORAGE_BACKEND_HBASE      = "hbase";
     public static final String  STORAGE_BACKEND_HBASE2     = "hbase2";
@@ -278,10 +276,6 @@ public final class ApplicationProperties extends PropertiesConfiguration {
         if (StringUtils.isEmpty(storageBackend)) {
             if (graphDbBackend.contains(GRAPHBD_BACKEND_JANUS)) {
                 storageBackend = STORAGE_BACKEND_HBASE2;
-            } else if (graphDbBackend.contains(GRAPHBD_BACKEND_TITAN0)) {
-                storageBackend = STORAGE_BACKEND_HBASE;
-            } else if (graphDbBackend.contains(GRAPHBD_BACKEND_TITAN1)) {
-                storageBackend = STORAGE_BACKEND_HBASE;
             }
 
             if (StringUtils.isNotEmpty(storageBackend)) {
@@ -297,10 +291,6 @@ public final class ApplicationProperties extends PropertiesConfiguration {
         if (StringUtils.isEmpty(indexBackend)) {
             if (graphDbBackend.contains(GRAPHBD_BACKEND_JANUS)) {
                 indexBackend = INDEX_BACKEND_SOLR;
-            } else if (graphDbBackend.contains(GRAPHBD_BACKEND_TITAN0)) {
-                indexBackend = INDEX_BACKEND_SOLR5;
-            } else if (graphDbBackend.contains(GRAPHBD_BACKEND_TITAN1)) {
-                indexBackend = INDEX_BACKEND_SOLR5;
             }
 
             if (StringUtils.isNotEmpty(indexBackend)) {
