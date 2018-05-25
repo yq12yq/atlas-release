@@ -61,8 +61,6 @@ public class RelationshipCacheGeneratorTest {
     public void createLookup() {
         final String PROCESS_INPUT_KEY = "__Process.inputs";
         final String PROCESS_OUTPUT_KEY = "__Process.outputs";
-        String ONE_TO_TWO_STR = ONE_TO_TWO.toString();
-        String TWO_TO_ONE_STR = TWO_TO_ONE.toString();
 
         Map<String, RelationshipCacheGenerator.TypeInfo> cache = RelationshipCacheGenerator.get(typeRegistry);
         assertEquals(cache.size(), getLegacyAttributeCount() - 1);
