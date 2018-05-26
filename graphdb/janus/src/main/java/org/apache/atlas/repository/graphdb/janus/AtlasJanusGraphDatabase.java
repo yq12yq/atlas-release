@@ -30,18 +30,12 @@ import java.util.Map;
 import com.google.common.collect.ImmutableMap;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
-import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.impexp.MigrationStatus;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.graphdb.GraphDatabase;
-import org.apache.atlas.repository.graphdb.janus.migration.AtlasGraphSONReader;
-import org.apache.atlas.repository.graphdb.janus.migration.ReaderStatusManager;
-import org.apache.atlas.repository.graphdb.janus.migration.ElementProcessors;
 import org.apache.atlas.repository.graphdb.janus.serializer.BigDecimalSerializer;
 import org.apache.atlas.repository.graphdb.janus.serializer.BigIntegerSerializer;
 import org.apache.atlas.repository.graphdb.janus.serializer.TypeCategorySerializer;
 import org.apache.atlas.runner.LocalSolrRunner;
-import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.commons.configuration.Configuration;
@@ -57,6 +51,10 @@ import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.schema.JanusGraphManagement;
 import org.janusgraph.graphdb.tinkerpop.JanusGraphIoRegistry;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
 
 /**
  * Default implementation for Graph Provider that doles out Titan Graph.
@@ -284,37 +282,5 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
         } catch (AtlasException ignored) { }
 
         return ret;
-    }
-
-    public static void loadLegacyGraphSON(AtlasTypeRegistry typeRegistry, InputStream fs) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-
-        try {
-            LOG.info("Starting loadLegacyGraphSON...");
-
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "loadLegacyGraphSON");
-            }
-
-            AtlasGraphSONReader legacyGraphSONReader = AtlasGraphSONReader.build().
-                    relationshipCache(new ElementProcessors(typeRegistry)).
-                    schemaDB(getGraphInstance()).
-                    bulkLoadingDB(getBulkLoadingGraphInstance()).
-                    create();
-
-            legacyGraphSONReader.readGraph(fs);
-        } catch (Exception ex) {
-            LOG.error("Error loading loadLegacyGraphSON2", ex);
-
-            throw new AtlasBaseException(ex);
-        } finally {
-            AtlasPerfTracer.log(perf);
-
-            LOG.info("Done! loadLegacyGraphSON.");
-        }
-    }
-
-    public static MigrationStatus getMigrationStatus() {
-        return ReaderStatusManager.get(getGraphInstance());
     }
 }
