@@ -34,27 +34,17 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>../tools/atlas-migration-exporter/src/main/resources</directory>
+            <directory>../tools/atlas-migration-exporter</directory>
             <outputDirectory>.</outputDirectory>
             <includes>
-                <include>*.py</include>
-                <include>migrationContext.xml</include>
-                <include>atlas-log4j.xml</include>
                 <include>README</include>
+                <include>*.py</include>
+                <include>atlas-log4j.xml</include>
+                <include>atlas-migration-*.jar</include>
+                <include>migrationContext.xml</include>
             </includes>
             <fileMode>0755</fileMode>
             <directoryMode>0755</directoryMode>
-        </fileSet>
-        <fileSet>
-            <directory>../tools/atlas-migration-exporter/target</directory>
-            <outputDirectory>.</outputDirectory>
-            <includes>
-                <include>atlas-migration-*.jar</include>
-            </includes>
-            <excludes>
-                <exclude>*-test-sources.jar</exclude>
-                <exclude>*-sources.jar</exclude>
-            </excludes>
         </fileSet>
     </fileSets>
 </assembly>
