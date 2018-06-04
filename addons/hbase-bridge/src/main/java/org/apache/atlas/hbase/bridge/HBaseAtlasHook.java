@@ -101,6 +101,7 @@ public class HBaseAtlasHook extends AtlasHook {
     public static final String ATTR_TABLE_ISNORMALIZATION_ENABLED   = "isNormalizationEnabled";
     public static final String ATTR_TABLE_REPLICATION_PER_REGION    = "replicasPerRegion";
     public static final String ATTR_TABLE_DURABLILITY               = "durability";
+    public static final String ATTR_TABLE_NORMALIZATION_ENABLED     = "isNormalizationEnabled";
 
     // column family additional metadata
     public static final String ATTR_CF_BLOOMFILTER_TYPE             = "bloomFilterType";
@@ -478,6 +479,7 @@ public class HBaseAtlasHook extends AtlasHook {
             table.setAttribute(ATTR_TABLE_ISNORMALIZATION_ENABLED, tableDescriptor.isNormalizationEnabled());
             table.setAttribute(ATTR_TABLE_ISCOMPACTION_ENABLED, tableDescriptor.isCompactionEnabled());
             table.setAttribute(ATTR_TABLE_DURABLILITY, (tableDescriptor.getDurability() != null ? tableDescriptor.getDurability().name() : null));
+            table.setAttribute(ATTR_TABLE_NORMALIZATION_ENABLED, tableDescriptor.isNormalizationEnabled());
         }
 
         switch (operation) {
