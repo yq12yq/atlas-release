@@ -88,6 +88,7 @@ public class HBaseBridge {
     private static final String ATTR_TABLE_ISCOMPACTION_ENABLED      = "isCompactionEnabled";
     private static final String ATTR_TABLE_REPLICATION_PER_REGION    = "replicasPerRegion";
     private static final String ATTR_TABLE_DURABLILITY               = "durability";
+    private static final String ATTR_TABLE_NORMALIZATION_ENABLED     = "isNormalizationEnabled";
 
     // column family metadata
     private static final String ATTR_CF_BLOOMFILTER_TYPE             = "bloomFilterType";
@@ -541,6 +542,7 @@ public class HBaseBridge {
         ret.setAttribute(ATTR_TABLE_ISREADONLY, htd.isReadOnly());
         ret.setAttribute(ATTR_TABLE_ISCOMPACTION_ENABLED, htd.isCompactionEnabled());
         ret.setAttribute(ATTR_TABLE_DURABLILITY, (htd.getDurability() != null ? htd.getDurability().name() : null));
+        ret.setAttribute(ATTR_TABLE_NORMALIZATION_ENABLED, htd.isNormalizationEnabled());
 
         return ret;
     }
