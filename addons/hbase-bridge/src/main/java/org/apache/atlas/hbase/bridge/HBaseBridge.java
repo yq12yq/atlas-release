@@ -107,6 +107,10 @@ public class HBaseBridge {
     private static final String ATTR_CF_EVICT_BLOCK_ONCLOSE          = "evictBlocksOnClose";
     private static final String ATTR_CF_PREFETCH_BLOCK_ONOPEN        = "prefetchBlocksOnOpen";
     private static final String ATTRIBUTE_QUALIFIED_NAME             = "qualifiedName";
+    private static final String ATTR_CF_INMEMORY_COMPACTION_POLICY   = "inMemoryCompactionPolicy";
+    private static final String ATTR_CF_MOB_COMPATCTPARTITION_POLICY = "mobCompactPartitionPolicy";
+    private static final String ATTR_CF_MOB_ENABLED                  = "isMobEnabled";
+    private static final String ATTR_CF_NEW_VERSION_BEHAVIOR         = "newVersionBehavior";
 
     private static final String HBASE_NAMESPACE_QUALIFIED_NAME            = "%s@%s";
     private static final String HBASE_TABLE_QUALIFIED_NAME_FORMAT         = "%s:%s@%s";
@@ -580,6 +584,10 @@ public class HBaseBridge {
         ret.setAttribute(ATTR_CF_MIN_VERSIONS, hcdt.getMinVersions());
         ret.setAttribute(ATTR_CF_PREFETCH_BLOCK_ONOPEN, hcdt.isPrefetchBlocksOnOpen());
         ret.setAttribute(ATTR_CF_TTL, hcdt.getTimeToLive());
+        ret.setAttribute(ATTR_CF_INMEMORY_COMPACTION_POLICY, (hcdt.getInMemoryCompaction() != null ? hcdt.getInMemoryCompaction().name():null));
+        ret.setAttribute(ATTR_CF_MOB_COMPATCTPARTITION_POLICY, ( hcdt.getMobCompactPartitionPolicy() != null ? hcdt.getMobCompactPartitionPolicy().name():null));
+        ret.setAttribute(ATTR_CF_MOB_ENABLED,hcdt.isMobEnabled());
+        ret.setAttribute(ATTR_CF_NEW_VERSION_BEHAVIOR,hcdt.isNewVersionBehavior());
 
         return ret;
     }
