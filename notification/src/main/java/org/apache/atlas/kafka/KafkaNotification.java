@@ -87,6 +87,7 @@ public class KafkaNotification extends AbstractNotification implements Service {
     private KafkaConsumer consumer = null;
     private KafkaProducer producer = null;
     private Long pollTimeOutMs = 1000L;
+    private static final String DEFAULT_CONSUMER_CLOSED_ERROR_MESSAGE = "This consumer has already been closed.";
 
     private static final Map<NotificationType, String> TOPIC_MAP = new HashMap<NotificationType, String>() {
         {
@@ -99,6 +100,7 @@ public class KafkaNotification extends AbstractNotification implements Service {
     String getTopicName(NotificationType notificationType) {
         return TOPIC_MAP.get(notificationType);
     }
+    private       String        consumerClosedErrorMsg;
 
     // ----- Constructors ----------------------------------------------------
 
@@ -112,11 +114,12 @@ public class KafkaNotification extends AbstractNotification implements Service {
     @Inject
     public KafkaNotification(Configuration applicationProperties) throws AtlasException {
         super(applicationProperties);
-        Configuration subsetConfiguration =
-                ApplicationProperties.getSubsetConfiguration(applicationProperties, PROPERTY_PREFIX);
-        properties = ConfigurationConverter.getProperties(subsetConfiguration);
-        //override to store offset in kafka
-        //todo do we need ability to replay?
+
+        Configuration kafkaConf = ApplicationProperties.getSubsetConfiguration(applicationProperties, PROPERTY_PREFIX);
+
+        properties             = ConfigurationConverter.getProperties(kafkaConf);
+        pollTimeOutMs          = kafkaConf.getLong("poll.timeout.ms", 1000);
+        consumerClosedErrorMsg = kafkaConf.getString("error.message.consumer_closed", DEFAULT_CONSUMER_CLOSED_ERROR_MESSAGE);
 
         //Override default configs
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
@@ -129,11 +132,11 @@ public class KafkaNotification extends AbstractNotification implements Service {
                 "org.apache.kafka.common.serialization.StringDeserializer");
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        pollTimeOutMs = subsetConfiguration.getLong("poll.timeout.ms", 1000);
-        boolean oldApiCommitEnbleFlag = subsetConfiguration.getBoolean("auto.commit.enable",false);
+        pollTimeOutMs = kafkaConf.getLong("poll.timeout.ms", 1000);
+        boolean oldApiCommitEnbleFlag = kafkaConf.getBoolean("auto.commit.enable",false);
         //set old autocommit value if new autoCommit property is not set.
-        properties.put("enable.auto.commit", subsetConfiguration.getBoolean("enable.auto.commit", oldApiCommitEnbleFlag));
-        properties.put("session.timeout.ms", subsetConfiguration.getString("session.timeout.ms", "30000"));
+        properties.put("enable.auto.commit", kafkaConf.getBoolean("enable.auto.commit", oldApiCommitEnbleFlag));
+        properties.put("session.timeout.ms", kafkaConf.getString("session.timeout.ms", "30000"));
 
     }
 
@@ -241,8 +244,8 @@ public class KafkaNotification extends AbstractNotification implements Service {
     }
 
 
-    public KafkaConsumer  getKafkaConsumer(Properties consumerProperties, NotificationType type, boolean autoCommitEnabled) {
-        if(this.consumer == null) {
+    public KafkaConsumer getKafkaConsumer(Properties consumerProperties, NotificationType type, boolean autoCommitEnabled) {
+        if (consumer == null || !isKafkaConsumerOpen(consumer)) {
             try {
                 String topic = TOPIC_MAP.get(type);
                 consumerProperties.put("enable.auto.commit", autoCommitEnabled);
@@ -375,5 +378,20 @@ public class KafkaNotification extends AbstractNotification implements Service {
         public String getMessage() {
             return message;
         }
+    }
+
+    // kafka-client doesn't have method to check if consumer is open, hence checking list topics and catching exception
+    private boolean isKafkaConsumerOpen(KafkaConsumer consumer) {
+        boolean ret = true;
+
+        try {
+            consumer.listTopics();
+        } catch (IllegalStateException ex) {
+            if (ex.getMessage().equalsIgnoreCase(consumerClosedErrorMsg)) {
+                ret = false;
+            }
+        }
+
+        return ret;
     }
 }
