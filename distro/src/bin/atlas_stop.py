@@ -68,7 +68,6 @@ def main():
 
     # stop solr
     if mc.is_solr_local(confdir):
-
         mc.run_solr(mc.solrBinDir(atlas_home), "stop", None, mc.solrPort(), None, True)
 
     if mc.is_cassandra_local(confdir):
