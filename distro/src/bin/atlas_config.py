@@ -442,6 +442,7 @@ def is_solr(confdir):
     confdir = os.path.join(confdir, CONF_FILE)
     return grep(confdir, SOLR_INDEX_CONF_ENTRY) is not None
 
+
 def is_cassandra_local(configdir):
     if os.environ.get(MANAGE_EMBEDDED_CASSANDRA, "False").lower() == 'false':
         return False
