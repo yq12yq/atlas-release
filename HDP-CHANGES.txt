@@ -1,5 +1,6 @@
 HDP Changes
 
+ATLAS-2786: Honor ZK server ensemble provided in configuration
 ATLAS-1333: fix for incorrect json4s library version in Atlas Storm hook
 ATLAS-1469: User provided values for tag attributes should be evaluated for its data type.
 ATLAS-1470: Tag is not associated to an entity when incorrect value for byte type is provided
