@@ -21,20 +21,24 @@ package org.apache.atlas.security;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
 import org.apache.hadoop.util.StringUtils;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
+import static org.testng.AssertJUnit.assertNotNull;
+import static org.testng.AssertJUnit.fail;
 
 
 //Unstable test. Disabling
 @Test(enabled=false)
-public class InMemoryJAASConfigurationTest extends TestCase {
+public class InMemoryJAASConfigurationTest {
 
     private static final String ATLAS_JAAS_PROP_FILE = "atlas-jaas.properties";
 
+    @BeforeMethod
     protected void setUp() throws Exception {
-        super.setUp();
         try {
             InMemoryJAASConfiguration.init(ATLAS_JAAS_PROP_FILE);
         } catch(Throwable t) {
@@ -42,21 +46,17 @@ public class InMemoryJAASConfigurationTest extends TestCase {
         }
     }
 
-    protected void tearDown() throws Exception {
-        super.tearDown();
-    }
-
     @Test(enabled=false)
     public void testGetAppConfigurationEntryStringForKafkaClient() {
         AppConfigurationEntry[] entries =
                 Configuration.getConfiguration().getAppConfigurationEntry("KafkaClient");
-        Assert.assertNotNull(entries);
-        Assert.assertEquals(1, entries.length);
+        assertNotNull(entries);
+        assertEquals(1, entries.length);
         String principal = (String) entries[0].getOptions().get("principal");
-        Assert.assertNotNull(principal);
+        assertNotNull(principal);
         String[] components = principal.split("[/@]");
-        Assert.assertEquals(3, components.length);
-        Assert.assertEquals(false, StringUtils.equalsIgnoreCase(components[1], "_HOST"));
+        assertEquals(3, components.length);
+        assertEquals(false, StringUtils.equalsIgnoreCase(components[1], "_HOST"));
 
     }
 
@@ -64,25 +64,25 @@ public class InMemoryJAASConfigurationTest extends TestCase {
     public void testGetAppConfigurationEntryStringForMyClient() {
         AppConfigurationEntry[] entries =
                 Configuration.getConfiguration().getAppConfigurationEntry("myClient");
-        Assert.assertNotNull(entries);
-        Assert.assertEquals(2, entries.length);
+        assertNotNull(entries);
+        assertEquals(2, entries.length);
         String principal = (String) entries[0].getOptions().get("principal");
-        Assert.assertNotNull(principal);
+        assertNotNull(principal);
         String[] components = principal.split("[/@]");
-        Assert.assertEquals(3, components.length);
-        Assert.assertEquals(true, StringUtils.equalsIgnoreCase(components[1], "abcd"));
+        assertEquals(3, components.length);
+        assertEquals(true, StringUtils.equalsIgnoreCase(components[1], "abcd"));
 
         principal = (String) entries[1].getOptions().get("principal");
-        Assert.assertNotNull(principal);
+        assertNotNull(principal);
         components = principal.split("[/@]");
-        Assert.assertEquals(2, components.length);
+        assertEquals(2, components.length);
     }
 
     @Test(enabled=false)
     public void testGetAppConfigurationEntryStringForUnknownClient() {
         AppConfigurationEntry[] entries =
                 Configuration.getConfiguration().getAppConfigurationEntry("UnknownClient");
-        Assert.assertNull(entries);
+        assertNull(entries);
     }
 
 }

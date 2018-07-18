@@ -18,10 +18,10 @@
 
 package org.apache.atlas.repository.graph;
 
-import static junit.framework.Assert.assertTrue;
 import static org.apache.atlas.typesystem.types.utils.TypesUtil.createClassTypeDef;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Set;

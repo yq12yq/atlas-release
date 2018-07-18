@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.Properties;
 import org.apache.atlas.web.dao.UserDao;
 import org.apache.atlas.web.model.User;
-import org.junit.Assert;
+import org.testng.Assert;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.testng.annotations.Test;

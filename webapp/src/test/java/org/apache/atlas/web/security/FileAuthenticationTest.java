@@ -24,7 +24,7 @@ import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.web.TestUtils;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
+import org.testng.Assert;
 import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

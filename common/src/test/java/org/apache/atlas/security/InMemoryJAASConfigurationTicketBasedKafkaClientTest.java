@@ -21,18 +21,20 @@ package org.apache.atlas.security;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.AssertJUnit.fail;
 
 @Test
-public class InMemoryJAASConfigurationTicketBasedKafkaClientTest extends TestCase {
+public class InMemoryJAASConfigurationTicketBasedKafkaClientTest {
 
     private static final String ATLAS_JAAS_PROP_FILE = "atlas-jaas.properties";
 
+    @BeforeMethod
     protected void setUp() throws Exception {
-        super.setUp();
         try {
             InMemoryJAASConfiguration.init(ATLAS_JAAS_PROP_FILE);
             InMemoryJAASConfiguration.setConfigSectionRedirect("KafkaClient", "ticketBased-KafkaClient");
@@ -41,18 +43,14 @@ public class InMemoryJAASConfigurationTicketBasedKafkaClientTest extends TestCas
         }
     }
 
-    protected void tearDown() throws Exception {
-        super.tearDown();
-    }
-
 
     @Test
     public void testGetAppConfigurationEntryStringForticketBasedKafkaClient() {
 
         AppConfigurationEntry[] entries =
                 Configuration.getConfiguration().getAppConfigurationEntry("KafkaClient");
-        Assert.assertNotNull(entries);
-        Assert.assertEquals((String) entries[0].getOptions().get("useTicketCache"), "true");
+        assertNotNull(entries);
+        assertEquals((String) entries[0].getOptions().get("useTicketCache"), "true");
     }
 
 
