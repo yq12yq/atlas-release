@@ -53,7 +53,37 @@ distro/target/apache-atlas-${project.version}-sources.tar.gz</verbatim>
 
 ---++++ Installing Atlas
 <verbatim>
-tar -xzvf apache-atlas-${project.version}-bin.tar.gz
+tar -xzvf apache-atlas-${project.version}-server.tar.gz
+cd atlas-${project.version}</verbatim>
+
+---++++ Running Apache Atlas with Local Apache HBase & Apache Solr
+To run Apache Atlas with local Apache HBase & Apache Solr instances that are started/stopped along with Atlas start/stop, run following commands:
+<verbatim>
+export MANAGE_LOCAL_HBASE=true
+export MANAGE_LOCAL_SOLR=true
+
+bin/atlas_start.py</verbatim>
+
+---++++ Using Apache Atlas
+   * To verify if Apache Atlas server is up and running, run curl command as shown below:
+<verbatim>
+  curl -u username:password http://localhost:21000/api/atlas/admin/version
+
+  {"Description":"Metadata Management and Data Governance Platform over Hadoop","Version":"1.0.0","Name":"apache-atlas"}</verbatim>
+
+   * Run quick start to load sample model and data
+<verbatim>
+  bin/quick_start.py
+  Enter username for atlas :-
+  Enter password for atlas :-
+</verbatim>
+
+   * Access Apache Atlas UI using a browser: http://localhost:21000
+
+---++++ Stopping Apache Atlas Server
+To stop Apache Atlas, run following command:
+<verbatim>
+bin/atlas_stop.py</verbatim>
 
 cd atlas-${project.version}</verbatim>
 
