@@ -20,7 +20,10 @@ package org.apache.atlas.notification;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
+import org.apache.atlas.RequestContextV1;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.listener.EntityChangeListener;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.notification.entity.EntityNotification;
 import org.apache.atlas.notification.entity.EntityNotificationImpl;
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
@@ -39,6 +42,9 @@ import org.apache.atlas.typesystem.types.TypeSystem;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.configuration.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -57,8 +63,11 @@ import java.util.Set;
 @Component
 public class NotificationEntityChangeListener implements EntityChangeListener {
 
-    private final NotificationInterface notificationInterface;
-    private final TypeSystem typeSystem;
+    private static final Logger LOG = LoggerFactory.getLogger(NotificationEntityChangeListener.class);;
+
+    private final        NotificationInterface  notificationInterface;
+    private final        TypeSystem             typeSystem;
+    private final        AtlasInstanceConverter instanceConverter;
 
     private Map<String, List<String>> notificationAttributesCache = new HashMap<>();
     private static final String ATLAS_ENTITY_NOTIFICATION_PROPERTY = "atlas.notification.entity";
@@ -75,9 +84,12 @@ public class NotificationEntityChangeListener implements EntityChangeListener {
      * @param typeSystem the Atlas type system
      */
     @Inject
-    public NotificationEntityChangeListener(NotificationInterface notificationInterface, TypeSystem typeSystem) {
+    public NotificationEntityChangeListener(NotificationInterface notificationInterface,
+                                            TypeSystem typeSystem,
+                                            @Lazy AtlasInstanceConverter instanceConverter) {
         this.notificationInterface = notificationInterface;
         this.typeSystem = typeSystem;
+        this.instanceConverter = instanceConverter;
     }
 
 
