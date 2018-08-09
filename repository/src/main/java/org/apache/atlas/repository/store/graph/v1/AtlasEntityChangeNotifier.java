@@ -163,7 +163,7 @@ public class AtlasEntityChangeNotifier {
             return;
         }
 
-        List<ITypedReferenceableInstance> typedRefInsts = toITypedReferenceable(entityHeaders);
+        List<ITypedReferenceableInstance> typedRefInsts = toITypedReferenceable(entityHeaders, operation);
 
         for (EntityChangeListener listener : entityChangeListeners) {
             try {
@@ -185,7 +185,7 @@ public class AtlasEntityChangeNotifier {
         }
     }
 
-    private List<ITypedReferenceableInstance> toITypedReferenceable(List<AtlasEntityHeader> entityHeaders) throws AtlasBaseException {
+    private List<ITypedReferenceableInstance> toITypedReferenceable(List<AtlasEntityHeader> entityHeaders, EntityOperation operation) throws AtlasBaseException {
         List<ITypedReferenceableInstance> ret = new ArrayList<>(entityHeaders.size());
 
         // delete notifications need only entity-guid. In case of hard-delete, getITypedReferenceable() call below will
@@ -274,9 +274,6 @@ public class AtlasEntityChangeNotifier {
         }
 
         AtlasVertex atlasVertex = AtlasGraphUtilsV1.findByGuid(entityId);
-        if(atlasVertex == null) {
-            return;
-        }
 
         if (atlasVertex == null) {
             LOG.warn("updateFullTextMapping(): no entity exists with guid {}", entityId);
