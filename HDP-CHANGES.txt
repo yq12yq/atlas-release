@@ -1,5 +1,12 @@
 2.6.4
 
+ATLAS-2581: V2 Hive hook notifications - incorrect location for sd after moving table to a different database 
+ATLAS-2169: delete request fails when hard-delete is configured 
+ATLAS-2443: include unique attributes in entity-delete notifications 
+ATLAS-2491: Hive hook should use v2 notifications
+ATLAS-2439: updated Sqoop hook to use V2 notifications 
+ATLAS-2421: updated Atlas notificaiton module to support V2 data structures; updated HBase hook to use V2 notifications 
+ATLAS-2145: Build failure in atlas-dashboardv2 due to js-beautify issue 
 ATLAS-2284: added jersey-multipart jar to Hive hook packaging
 ATLAS-2275: fix for incorrect serialization of date type trait attributes in entity notification
 ATLAS-2277: search for classification '*' doesn't honor excludeDeletedEntities=true
