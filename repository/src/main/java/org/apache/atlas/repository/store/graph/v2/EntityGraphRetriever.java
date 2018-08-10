@@ -104,6 +104,7 @@ import static org.apache.atlas.repository.graph.GraphHelper.getAllTraitNames;
 import static org.apache.atlas.repository.graph.GraphHelper.getAssociatedEntityVertex;
 import static org.apache.atlas.repository.graph.GraphHelper.getBlockedClassificationIds;
 import static org.apache.atlas.repository.graph.GraphHelper.getArrayElementsProperty;
+import static org.apache.atlas.repository.graph.GraphHelper.getClassificationEntityStatus;
 import static org.apache.atlas.repository.graph.GraphHelper.getClassificationVertices;
 import static org.apache.atlas.repository.graph.GraphHelper.getGuid;
 import static org.apache.atlas.repository.graph.GraphHelper.getIncomingEdgesByLabel;
@@ -289,6 +290,7 @@ public final class EntityGraphRetriever {
         AtlasClassification ret = new AtlasClassification(getTypeName(classificationVertex));
 
         ret.setEntityGuid(AtlasGraphUtilsV2.getProperty(classificationVertex, CLASSIFICATION_ENTITY_GUID, String.class));
+        ret.setEntityStatus(getClassificationEntityStatus(classificationVertex));
         ret.setPropagate(isPropagationEnabled(classificationVertex));
 
         String strValidityPeriods = AtlasGraphUtilsV2.getProperty(classificationVertex, CLASSIFICATION_VALIDITY_PERIODS_KEY, String.class);
