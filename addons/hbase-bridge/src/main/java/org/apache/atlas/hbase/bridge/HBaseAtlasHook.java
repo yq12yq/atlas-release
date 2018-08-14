@@ -18,7 +18,6 @@
 
 package org.apache.atlas.hbase.bridge;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.atlas.AtlasConstants;
 import org.apache.atlas.hbase.model.HBaseOperationContext;
 import org.apache.atlas.hbase.model.HBaseDataTypes;
@@ -26,7 +25,6 @@ import org.apache.atlas.hook.AtlasHook;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
-import org.apache.atlas.model.notification.HookNotification;
 import org.apache.atlas.model.notification.HookNotification.EntityCreateRequestV2;
 import org.apache.atlas.model.notification.HookNotification.EntityDeleteRequestV2;
 import org.apache.atlas.model.notification.HookNotification.EntityUpdateRequestV2;
@@ -41,43 +39,21 @@ import org.apache.hadoop.hbase.coprocessor.MasterCoprocessorEnvironment;
 import org.apache.hadoop.hbase.coprocessor.ObserverContext;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.util.ShutdownHookManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 // This will register Hbase entities into Atlas
 public class HBaseAtlasHook extends AtlasHook {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseAtlasHook.class);
 
-    public static final  String CONF_PREFIX      = "atlas.hook.hbase.";
-    public static final  String HOOK_NUM_RETRIES = CONF_PREFIX + "numRetries";
-    public static final  String QUEUE_SIZE       = CONF_PREFIX + "queueSize";
-    public static final  String CONF_SYNC        = CONF_PREFIX + "synchronous";
-    private static final String MIN_THREADS      = CONF_PREFIX + "minThreads";
-    private static final String MAX_THREADS      = CONF_PREFIX + "maxThreads";
-    private static final String KEEP_ALIVE_TIME  = CONF_PREFIX + "keepAliveTime";
-
-    private static final int  minThreadsDefault    = 5;
-    private static final int  maxThreadsDefault    = 5;
-    private static final int  queueSizeDefault     = 10000;
-    private static final long keepAliveTimeDefault = 10;
-    // wait time determines how long we wait before we exit the jvm on shutdown. Pending requests after that will not be sent.
-    private static final int  WAIT_TIME            = 3;
-    private static boolean         sync;
-    private static ExecutorService executor;
 
     public static final String HBASE_CLUSTER_NAME   = "atlas.cluster.name";
     public static final String DEFAULT_CLUSTER_NAME = "primary";
@@ -156,43 +132,6 @@ public class HBaseAtlasHook extends AtlasHook {
         }
     }
 
-    static {
-        try {
-            // initialize the async facility to process hook calls. We don't
-            // want to do this inline since it adds plenty of overhead for the query.
-            int  minThreads    = atlasProperties.getInt(MIN_THREADS, minThreadsDefault);
-            int  maxThreads    = atlasProperties.getInt(MAX_THREADS, maxThreadsDefault);
-            int  queueSize     = atlasProperties.getInt(QUEUE_SIZE, queueSizeDefault);
-            long keepAliveTime = atlasProperties.getLong(KEEP_ALIVE_TIME, keepAliveTimeDefault);
-
-            sync = atlasProperties.getBoolean(CONF_SYNC, false);
-            executor = new ThreadPoolExecutor(minThreads, maxThreads, keepAliveTime, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<Runnable>(queueSize),
-                    new ThreadFactoryBuilder().setNameFormat("Atlas Logger %d").build());
-
-            ShutdownHookManager.get().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        LOG.info("==> Shutdown of Atlas HBase Hook");
-                        executor.shutdown();
-                        executor.awaitTermination(WAIT_TIME, TimeUnit.SECONDS);
-                        executor = null;
-                    } catch (InterruptedException ie) {
-                        LOG.info("Interrupt received in shutdown.", ie);
-                    } finally {
-                        LOG.info("<== Shutdown of Atlas HBase Hook");
-                    }
-                    // shutdown client
-                }
-            }, AtlasConstants.ATLAS_SHUTDOWN_HOOK_PRIORITY);
-        } catch (Exception e) {
-            LOG.error("Caught exception initializing the Atlas HBase hook.", e);
-        }
-
-        LOG.info("Created Atlas Hook for HBase");
-    }
-
     public static HBaseAtlasHook getInstance() {
         HBaseAtlasHook ret = me;
 
@@ -219,11 +158,6 @@ public class HBaseAtlasHook extends AtlasHook {
 
     public HBaseAtlasHook(String clusterName) {
         this.clusterName = clusterName;
-    }
-
-    @Override
-    protected String getNumberOfRetriesPropertyKey() {
-        return HOOK_NUM_RETRIES;
     }
 
 
@@ -587,214 +521,56 @@ public class HBaseAtlasHook extends AtlasHook {
         return ret;
     }
 
-    private void notifyAsPrivilegedAction(final HBaseOperationContext hbaseOperationContext) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("==> HBaseAtlasHook.notifyAsPrivilegedAction({})", hbaseOperationContext);
-        }
-
-        final List<HookNotification> messages = hbaseOperationContext.getMessages();
-
-        try {
-            PrivilegedExceptionAction<Object> privilegedNotify = new PrivilegedExceptionAction<Object>() {
-                @Override
-                public Object run() {
-                    notifyEntities(messages);
-                    return hbaseOperationContext;
-                }
-            };
-
-            //Notify as 'hbase' service user in doAs mode
-            UserGroupInformation realUser         = hbaseOperationContext.getUgi().getRealUser();
-            String               numberOfMessages = Integer.toString(messages.size());
-            String               operation        = hbaseOperationContext.getOperation().toString();
-            String               user             = hbaseOperationContext.getUgi().getShortUserName();
-
-            if (realUser != null) {
-                LOG.info("Sending notification for event {} as service user {} #messages {}", operation, realUser.getShortUserName(), numberOfMessages);
-
-                realUser.doAs(privilegedNotify);
-            } else {
-                LOG.info("Sending notification for event {} as service user {} #messages {}", operation, user, numberOfMessages);
-
-                hbaseOperationContext.getUgi().doAs(privilegedNotify);
-            }
-        } catch (Throwable e) {
-            LOG.error("Error during notify {} ", hbaseOperationContext.getOperation(), e);
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("<== HBaseAtlasHook.notifyAsPrivilegedAction()");
-        }
-    }
-
-    /**
-     * Notify atlas of the entity through message. The entity can be a
-     * complex entity with reference to other entities.
-     * De-duping of entities is done on server side depending on the
-     * unique attribute on the entities.
-     *
-     * @param messages hook notification messages
-     */
-    protected void notifyEntities(List<HookNotification> messages) {
-        final int maxRetries = atlasProperties.getInt(HOOK_NUM_RETRIES, 3);
-        notifyEntities(messages, maxRetries);
-    }
-
     public void sendHBaseNameSpaceOperation(final NamespaceDescriptor namespaceDescriptor, final String nameSpace, final OPERATION operation, ObserverContext<MasterCoprocessorEnvironment> ctx) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.sendHBaseNameSpaceOperation()");
         }
+
         try {
             final UserGroupInformation ugi  = getUGI(ctx);
             final User user                 = getActiveUser(ctx);
             final String userName           = (user != null) ? user.getShortName() : null;
-            HBaseOperationContext      hbaseOperationContext = null;
-            if (executor == null) {
-                hbaseOperationContext = handleHBaseNameSpaceOperation(namespaceDescriptor, nameSpace, operation, ugi, userName);
-                if (hbaseOperationContext != null) {
-                    notifyAsPrivilegedAction(hbaseOperationContext);
-                }
-            } else {
-                executor.submit(new Runnable() {
-                    HBaseOperationContext hbaseOperationContext = null;
+            HBaseOperationContext hbaseOperationContext = handleHBaseNameSpaceOperation(namespaceDescriptor, nameSpace, operation, ugi, userName);
 
-                    @Override
-                    public void run() {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("==> HBaseAtlasHook.sendHBaseNameSpaceOperation():executor.submit()");
-                        }
-                        if (ugi != null) {
-                            try {
-                                ugi.doAs(new PrivilegedExceptionAction<Object>() {
-                                    @Override
-                                    public Object run() {
-                                        hbaseOperationContext = handleHBaseNameSpaceOperation(namespaceDescriptor, nameSpace, operation, ugi, userName);
-                                        return hbaseOperationContext;
-                                    }
-                                });
-                                notifyAsPrivilegedAction(hbaseOperationContext);
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("<== HBaseAtlasHook.sendHBaseNameSpaceOperation(){}",  hbaseOperationContext);
-                                }
-                            } catch (Throwable e) {
-                                LOG.error("<== HBaseAtlasHook.sendHBaseNameSpaceOperation(): Atlas hook failed due to error ", e);
-                            }
-                        } else {
-                            LOG.error("<== HBaseAtlasHook.sendHBaseNameSpaceOperation(): Atlas hook failed, UserGroupInformation cannot be NULL!");
-                        }
-                    }
-                });
-            }
+            sendNotification(hbaseOperationContext);
         } catch (Throwable t) {
-            LOG.error("<== HBaseAtlasHook.sendHBaseNameSpaceOperation(): Submitting to thread pool failed due to error ", t);
+            LOG.error("HBaseAtlasHook.sendHBaseNameSpaceOperation(): failed to send notification", t);
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("<== HBaseAtlasHook.sendHBaseNameSpaceOperation()");
         }
     }
 
-    public void sendHBaseTableOperation(final TableDescriptor tableDescriptor, final TableName tableName, final OPERATION operation, ObserverContext<MasterCoprocessorEnvironment> ctx) {
+    public void sendHBaseTableOperation(TableDescriptor tableDescriptor, final TableName tableName, final OPERATION operation, ObserverContext<MasterCoprocessorEnvironment> ctx) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.sendHBaseTableOperation()");
         }
+
         try {
             final UserGroupInformation ugi  = getUGI(ctx);
             final User user                 = getActiveUser(ctx);
-            final String username           = (user != null) ? user.getShortName() : null;
-            HBaseOperationContext      hbaseOperationContext = null;
-            if (executor == null) {
-                hbaseOperationContext = handleHBaseTableOperation(tableDescriptor, tableName, operation,ugi,username);
-                if (hbaseOperationContext != null) {
-                    notifyAsPrivilegedAction(hbaseOperationContext);
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("<== HBaseAtlasHook.sendHBaseTableOperation(){}",  hbaseOperationContext);
-                }
-            } else {
-                executor.submit(new Runnable() {
-                    HBaseOperationContext hbaseOperationContext = null;
+            final String userName           = (user != null) ? user.getShortName() : null;
+            HBaseOperationContext hbaseOperationContext = handleHBaseTableOperation(tableDescriptor, tableName, operation, ugi, userName);
 
-                    @Override
-                    public void run() {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("==> HBaseAtlasHook.sendHBaseTableOperation():executor.submit()");
-                        }
-                        if (ugi != null) {
-                            try {
-                                ugi.doAs(new PrivilegedExceptionAction<Object>() {
-                                    @Override
-                                    public Object run() {
-                                        hbaseOperationContext = handleHBaseTableOperation(tableDescriptor, tableName, operation, ugi, username);
-                                        return hbaseOperationContext;
-                                    }
-                                });
-                                notifyAsPrivilegedAction(hbaseOperationContext);
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("<== HBaseAtlasHook.sendHBaseTableOperation(){}",  hbaseOperationContext);
-                                }
-                            } catch (Throwable e) {
-                                LOG.error("<== HBaseAtlasHook.sendHBaseTableOperation(): Atlas hook failed due to error ", e);
-                            }
-                        } else {
-                            LOG.error("<== HBaseAtlasHook.sendHBasecolumnFamilyOperation(): Atlas hook failed, UserGroupInformation cannot be NULL!");
-                        }
-                    }
-                });
-            }
+            sendNotification(hbaseOperationContext);
         } catch (Throwable t) {
-            LOG.error("<== HBaseAtlasHook.sendHBaseTableOperation(): Submitting to thread pool failed due to error ", t);
+            LOG.error("<== HBaseAtlasHook.sendHBaseTableOperation(): failed to send notification", t);
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("<== HBaseAtlasHook.sendHBaseTableOperation()");
         }
     }
 
-    public void sendHBaseColumnFamilyOperation(final ColumnFamilyDescriptor columnFamilyDescriptor, final TableName tableName, final String columnFamily, final OPERATION operation,
-                                               ObserverContext<MasterCoprocessorEnvironment> ctx) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("==> HBaseAtlasHook.sendHBaseColumnFamilyOperation()");
-        }
-        try {
-            final UserGroupInformation ugi  = getUGI(ctx);
-            final User user                 = getActiveUser(ctx);
-            final String username           = (user != null) ? user.getShortName() : null;
-            HBaseOperationContext      hbaseOperationContext = null;
-            if (executor == null) {
-                hbaseOperationContext = handleHBaseColumnFamilyOperation(columnFamilyDescriptor, tableName, columnFamily, operation,ugi,username);
-                if (hbaseOperationContext != null) {
-                    notifyAsPrivilegedAction(hbaseOperationContext);
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("<== HBaseAtlasHook.sendHBaseColumnFamilyOperation(){}",  hbaseOperationContext);
-                }
-            } else {
-                executor.submit(new Runnable() {
-                    HBaseOperationContext hbaseOperationContext = null;
+    private void sendNotification(HBaseOperationContext hbaseOperationContext) {
+        UserGroupInformation ugi = hbaseOperationContext.getUgi();
 
-                    @Override
-                    public void run() {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("==> HBaseAtlasHook.sendHBaseColumnFamilyOperation():executor.submit()");
-                        }
-                        if (ugi != null) {
-                            try {
-                                ugi.doAs(new PrivilegedExceptionAction<Object>() {
-                                    @Override
-                                    public Object run() {
-                                        hbaseOperationContext = handleHBaseColumnFamilyOperation(columnFamilyDescriptor, tableName, columnFamily, operation, ugi, username);
-                                        return hbaseOperationContext;
-                                    }
-                                });
-                                notifyAsPrivilegedAction(hbaseOperationContext);
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("<== HBaseAtlasHook.sendHBaseColumnFamilyOperation(){}",  hbaseOperationContext);
-                                }
-                            } catch (Throwable e) {
-                                LOG.error("<== HBaseAtlasHook.sendHBaseColumnFamilyOperation(): Atlas hook failed due to error ", e);
-                            }
-                        } else {
-                            LOG.error("<== HBaseAtlasHook.sendHBaseColumnFamilyOperation(): Atlas hook failed, UserGroupInformation cannot be NULL!");
-                        }
-
-                    }
-                });
-            }
-        } catch (Throwable t) {
-            LOG.error("<== HBaseAtlasHook.sendHBaseColumnFamilyOperation(): Submitting to thread pool failed due to error ", t);
+        if (ugi != null && ugi.getRealUser() != null) {
+            ugi = ugi.getRealUser();
         }
+
+        notifyEntities(hbaseOperationContext.getMessages(), ugi);
     }
 
     private HBaseOperationContext handleHBaseNameSpaceOperation(NamespaceDescriptor namespaceDescriptor, String nameSpace, OPERATION operation, UserGroupInformation ugi, String userName) {
