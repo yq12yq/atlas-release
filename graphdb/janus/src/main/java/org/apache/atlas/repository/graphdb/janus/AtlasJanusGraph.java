@@ -37,9 +37,8 @@ import org.apache.atlas.repository.graphdb.janus.query.AtlasJanusGraphQuery;
 import org.apache.atlas.repository.graphdb.utils.IteratorToIterableAdapter;
 import org.apache.atlas.type.AtlasType;
 import org.apache.commons.configuration.Configuration;
-import org.apache.tinkerpop.gremlin.groovy.CompilerCustomizerProvider;
-import org.apache.tinkerpop.gremlin.groovy.DefaultImportCustomizerProvider;
 import org.apache.tinkerpop.gremlin.groovy.jsr223.GremlinGroovyScriptEngine;
+import org.apache.tinkerpop.gremlin.jsr223.DefaultImportCustomizer;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.process.traversal.step.util.ImmutablePath;
@@ -268,17 +267,12 @@ public class AtlasJanusGraph implements AtlasGraph<AtlasJanusVertex, AtlasJanusE
 
     @Override
     public GremlinGroovyScriptEngine getGremlinScriptEngine() {
-        Set<String> extraImports       = new HashSet<String>();
-        Set<String> extraStaticImports = new HashSet<String>();
-
-        extraImports.add(java.util.function.Function.class.getName());
-        extraStaticImports.add(P.class.getName() + ".*");
-        extraStaticImports.add(__.class.getName() + ".*");
-
-        CompilerCustomizerProvider provider     = new DefaultImportCustomizerProvider(extraImports, extraStaticImports);
-        GremlinGroovyScriptEngine  scriptEngine = new GremlinGroovyScriptEngine(provider);
-
-        return scriptEngine;
+        DefaultImportCustomizer customizer = DefaultImportCustomizer.build()
+                                                                    .addClassImports(java.util.function.Function.class)
+                                                                    .addMethodImports(P.class.getMethods())
+                                                                    .addMethodImports(__.class.getMethods())
+                                                                    .create();
+        return new GremlinGroovyScriptEngine(customizer);
     }
 
     @Override

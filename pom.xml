@@ -558,7 +558,7 @@
         <hive.version>3.0.0.3.0.0.0-SNAPSHOT</hive.version>
         <calcite.version>1.14.0.3.0.0.0-SNAPSHOT</calcite.version>
         <scala.version>2.11.12</scala.version>
-        <janus.version>0.2.0</janus.version>
+        <janus.version>0.3.0</janus.version>
 
         <json.version>3.2.11</json.version>
         <log4j.version>1.2.17</log4j.version>
