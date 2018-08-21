@@ -640,6 +640,7 @@
         <testng.version>6.9.4</testng.version>
         <joda-time.version>2.10</joda-time.version>
         <jersey-spring.version>1.19.4</jersey-spring.version>
+        <libpam4j.version>1.10</libpam4j.version>
     </properties>
 
     <profiles>
@@ -1023,6 +1024,13 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.version}</version>
+            </dependency>
+
+            <!-- PAM -->
+            <dependency>
+                <groupId>org.kohsuke</groupId>
+                <artifactId>libpam4j</artifactId>
+                <version>${libpam4j.version}</version>
             </dependency>
 
             <!-- commons -->
