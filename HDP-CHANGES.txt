@@ -1,0 +1,27 @@
+ATLAS-2438: fix errors found in sitecheck - https://whimsy.apache.org/site/project/atlas
+ATLAS-2523: Add HomeId and allow GUIDs to be specified on creates
+ATLAS-2736: doc updated to replace reference to github with a link to download released artifacts
+ATLAS-2745: AtlasEnumDefStore should remember default value
+ATLAS-2785: Import Hive script should handle table name with database in -t option
+ATLAS-2786: Honor ZK server ensemble provided in configuration
+ATLAS-2788: Add policy permissions for tagsync user.
+ATLAS-2793: updated AtlasClient approach of determining if kerberos authentication is enabled or not
+ATLAS-2794: updated AtlasClient to explicitly specify JacksonJaxbJsonProvider
+ATLAS-2801: Create a separate tar file for atlas-server components excluding atlas hook related components
+ATLAS-2807: Re-evaluate classification propagation during entity delete
+ATLAS-2809: updated authorization model to authorize add/update/remove of relationships
+ATLAS-2812: Upgrade commons-fileupload to 1.3.3
+ATLAS-2815: API, UI updates for faster rendering of entity details
+ATLAS-2816: Allow ignoring relationship in EntityGraphRetriever for FullTextMapperV2
+ATLAS-2817: Handle auto upgrade from janus 0.2.0 to janus  0.3.0
+ATLAS-2817: JanusGraph 0.3.0
+ATLAS-2819: UI: Re-evaluate classification propagation during entity delete
+ATLAS-2821: Update old atlas-simple-authz-policy.json file with relationship permission attributes
+ATLAS-2822: Provide option whether to delete propagated classification on entity delete during add classification
+ATLAS-2825: UI: Provide option whether to delete propagated classification on entity delete during add classification
+ATLAS-2826: fix for failure in authorizing save-search operation.
+ATLAS-2827: Indexed string compaction when length exceeds  33482223
+
+BUG-107810: Add AWS library to atlas packaging in webapp module
+BUG-107991: Dependency upgrade
+BUG-109622: Upgrade libpam4j to 1.10
