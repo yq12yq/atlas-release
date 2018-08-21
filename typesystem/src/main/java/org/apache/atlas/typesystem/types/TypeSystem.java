@@ -356,6 +356,9 @@ public class TypeSystem {
         for (Map.Entry<String, IDataType> typeEntry : typesAdded.entrySet()) {
             IDataType type = typeEntry.getValue();
             //Add/replace the new type in the typesystem
+
+            type.setTypeSystem(this);
+
             typeCache.put(type);
         }
     }
