@@ -74,7 +74,7 @@
 
         <dependency>
             <groupId>org.janusgraph</groupId>
-            <artifactId>janusgraph-core</artifactId>
+            <artifactId>janusgraph-server</artifactId>
             <version>${janus.version}</version>
             <exclusions>
                 <exclusion>
