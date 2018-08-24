@@ -130,7 +130,7 @@ public class AtlasGraphUtilsV2 {
          case ENTITY:
          case STRUCT:
          case CLASSIFICATION:
-             return fromType.getQualifiedAttributeName(attributeName);
+             return fromType.getQualifiedAttributePropertyKey(attributeName);
         default:
             throw new AtlasBaseException(AtlasErrorCode.UNKNOWN_TYPE, fromType.getTypeCategory().name());
         }
@@ -151,15 +151,11 @@ public class AtlasGraphUtilsV2 {
     }
 
     public static String encodePropertyKey(String key) {
-        String ret = AtlasStructType.AtlasAttribute.encodePropertyKey(key);
-
-        return ret;
+        return AtlasAttribute.encodePropertyKey(key);
     }
 
     public static String decodePropertyKey(String key) {
-        String ret = AtlasStructType.AtlasAttribute.decodePropertyKey(key);
-
-        return ret;
+        return AtlasAttribute.decodePropertyKey(key);
     }
 
     /**
@@ -169,20 +165,43 @@ public class AtlasGraphUtilsV2 {
      * @param value
      */
     public static AtlasVertex addProperty(AtlasVertex vertex, String propertyName, Object value) {
+        return addProperty(vertex, propertyName, value, false);
+    }
+
+    public static AtlasVertex addEncodedProperty(AtlasVertex vertex, String propertyName, Object value) {
+        return addProperty(vertex, propertyName, value, true);
+    }
+
+    public static AtlasVertex addProperty(AtlasVertex vertex, String propertyName, Object value, boolean isEncoded) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> addProperty({}, {}, {})", toString(vertex), propertyName, value);
         }
-        propertyName = encodePropertyKey(propertyName);
+
+        if (!isEncoded) {
+            propertyName = encodePropertyKey(propertyName);
+        }
+
         vertex.addProperty(propertyName, value);
+
         return vertex;
     }
 
     public static <T extends AtlasElement> void setProperty(T element, String propertyName, Object value) {
+        setProperty(element, propertyName, value, false);
+    }
+
+    public static <T extends AtlasElement> void setEncodedProperty(T element, String propertyName, Object value) {
+        setProperty(element, propertyName, value, true);
+    }
+
+    public static <T extends AtlasElement> void setProperty(T element, String propertyName, Object value, boolean isEncoded) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> setProperty({}, {}, {})", toString(element), propertyName, value);
         }
 
-        propertyName = encodePropertyKey(propertyName);
+        if (!isEncoded) {
+            propertyName = encodePropertyKey(propertyName);
+        }
 
         Object existingValue = element.getProperty(propertyName, Object.class);
 
@@ -211,7 +230,19 @@ public class AtlasGraphUtilsV2 {
     }
 
     public static <T extends AtlasElement, O> O getProperty(T element, String propertyName, Class<O> returnType) {
-        Object property = element.getProperty(encodePropertyKey(propertyName), returnType);
+        return getProperty(element, propertyName, returnType, false);
+    }
+
+    public static <T extends AtlasElement, O> O getEncodedProperty(T element, String propertyName, Class<O> returnType) {
+        return getProperty(element, propertyName, returnType, true);
+    }
+
+    public static <T extends AtlasElement, O> O getProperty(T element, String propertyName, Class<O> returnType, boolean isEncoded) {
+        if (!isEncoded) {
+            propertyName = encodePropertyKey(propertyName);
+        }
+
+        Object property = element.getProperty(propertyName, returnType);
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("getProperty({}, {}) ==> {}", toString(element), propertyName, returnType.cast(property));
