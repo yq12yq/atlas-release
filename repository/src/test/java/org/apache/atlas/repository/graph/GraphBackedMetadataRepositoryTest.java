@@ -37,6 +37,7 @@ import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.graphdb.AtlasGraphQuery;
 import org.apache.atlas.repository.graphdb.AtlasGraphQuery.ComparisionOperator;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
+import org.apache.atlas.repository.store.graph.v1.AtlasGraphUtilsV1;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.typesystem.IStruct;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
@@ -467,7 +468,7 @@ public class GraphBackedMetadataRepositoryTest {
     String getGUID() {
         AtlasVertex tableVertex = getTableEntityVertex();
 
-        String guid = GraphHelper.getSingleValuedProperty(tableVertex, Constants.GUID_PROPERTY_KEY, String.class);
+        String guid = AtlasGraphUtilsV1.getEncodedProperty(tableVertex, Constants.GUID_PROPERTY_KEY, String.class);
         if (guid == null) {
             Assert.fail();
         }
@@ -540,7 +541,7 @@ public class GraphBackedMetadataRepositoryTest {
     public void testAddTrait() throws Exception {
         final String aGUID = getGUID();
         AtlasVertex AtlasVertex = GraphHelper.getInstance().getVertexForGUID(aGUID);
-        Long modificationTimestampPreUpdate = GraphHelper.getSingleValuedProperty(AtlasVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY, Long.class);
+        Long modificationTimestampPreUpdate = AtlasGraphUtilsV1.getEncodedProperty(AtlasVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY, Long.class);
         Assert.assertNotNull(modificationTimestampPreUpdate);
 
         List<String> traitNames = repositoryService.getTraitNames(aGUID);
@@ -562,7 +563,7 @@ public class GraphBackedMetadataRepositoryTest {
 
         // Verify modification timestamp was updated.
         GraphHelper.getInstance().getVertexForGUID(aGUID);
-        Long modificationTimestampPostUpdate = GraphHelper.getSingleValuedProperty(AtlasVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY, Long.class);
+        Long modificationTimestampPostUpdate = AtlasGraphUtilsV1.getEncodedProperty(AtlasVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY, Long.class);
         Assert.assertNotNull(modificationTimestampPostUpdate);
     }
 
@@ -612,7 +613,7 @@ public class GraphBackedMetadataRepositoryTest {
     public void testDeleteTrait() throws Exception {
         final String aGUID = getGUID();
         AtlasVertex AtlasVertex = GraphHelper.getInstance().getVertexForGUID(aGUID);
-        Long modificationTimestampPreUpdate = GraphHelper.getSingleValuedProperty(AtlasVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY, Long.class);
+        Long modificationTimestampPreUpdate = AtlasGraphUtilsV1.getEncodedProperty(AtlasVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY, Long.class);
         Assert.assertNotNull(modificationTimestampPreUpdate);
 
         List<String> traitNames = repositoryService.getTraitNames(aGUID);
@@ -631,7 +632,7 @@ public class GraphBackedMetadataRepositoryTest {
 
         // Verify modification timestamp was updated.
         GraphHelper.getInstance().getVertexForGUID(aGUID);
-        Long modificationTimestampPostUpdate = GraphHelper.getSingleValuedProperty(AtlasVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY, Long.class);
+        Long modificationTimestampPostUpdate = AtlasGraphUtilsV1.getEncodedProperty(AtlasVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY, Long.class);
         Assert.assertNotNull(modificationTimestampPostUpdate);
         Assert.assertTrue(modificationTimestampPostUpdate > modificationTimestampPreUpdate);
     }
@@ -654,12 +655,12 @@ public class GraphBackedMetadataRepositoryTest {
     public void testGetIdFromVertex() throws Exception {
         AtlasVertex tableVertex = getTableEntityVertex();
 
-        String guid = GraphHelper.getSingleValuedProperty(tableVertex, Constants.GUID_PROPERTY_KEY, String.class);
+        String guid = AtlasGraphUtilsV1.getEncodedProperty(tableVertex, Constants.GUID_PROPERTY_KEY, String.class);
         if (guid == null) {
             Assert.fail();
         }
 
-        Id expected = new Id(guid, GraphHelper.getSingleValuedProperty(tableVertex, Constants.VERSION_PROPERTY_KEY, Integer.class), TestUtils.TABLE_TYPE);
+        Id expected = new Id(guid, AtlasGraphUtilsV1.getEncodedProperty(tableVertex, Constants.VERSION_PROPERTY_KEY, Integer.class), TestUtils.TABLE_TYPE);
         Assert.assertEquals(GraphHelper.getIdFromVertex(TestUtils.TABLE_TYPE, tableVertex), expected);
     }
 
