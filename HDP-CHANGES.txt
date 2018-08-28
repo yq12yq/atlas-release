@@ -9,18 +9,27 @@ ATLAS-2793: updated AtlasClient approach of determining if kerberos authenticati
 ATLAS-2794: updated AtlasClient to explicitly specify JacksonJaxbJsonProvider
 ATLAS-2801: Create a separate tar file for atlas-server components excluding atlas hook related components
 ATLAS-2807: Re-evaluate classification propagation during entity delete
+ATLAS-2808: Add proxy support
 ATLAS-2809: updated authorization model to authorize add/update/remove of relationships
 ATLAS-2812: Upgrade commons-fileupload to 1.3.3
 ATLAS-2815: API, UI updates for faster rendering of entity details
 ATLAS-2816: Allow ignoring relationship in EntityGraphRetriever for FullTextMapperV2
 ATLAS-2817: Handle auto upgrade from janus 0.2.0 to janus  0.3.0
 ATLAS-2817: JanusGraph 0.3.0
+ATLAS-2817: Update Janusgraph artifact id
 ATLAS-2819: UI: Re-evaluate classification propagation during entity delete
 ATLAS-2821: Update old atlas-simple-authz-policy.json file with relationship permission attributes
 ATLAS-2822: Provide option whether to delete propagated classification on entity delete during add classification
+ATLAS-2823: updated hooks to support asynchronous notifications
 ATLAS-2825: UI: Provide option whether to delete propagated classification on entity delete during add classification
 ATLAS-2826: fix for failure in authorizing save-search operation.
 ATLAS-2827: Indexed string compaction when length exceeds  33482223
+ATLAS-2830: Tag Propagation, Entity Delete : Classification update notification not sent to entities down the lineage present after the deleted entity
+ATLAS-2834: Init authorizer when Atlas is in HA mode
+ATLAS-2835: Regression: Classifications propagated from term is not removed during term-entity disassociation
+ATLAS-2836: Remove redundant encoding of vertex property keys ATLAS-2838: Replace GraphHelper.encodeProperty() with AtlasGraphUtilsV2.encodeProperty()
+ATLAS-2840: Regression - Tag Propagation, Deleted Entity : When an entity is deleted, tags propagated to it are removed
+
 
 BUG-107810: Add AWS library to atlas packaging in webapp module
 BUG-107991: Dependency upgrade
