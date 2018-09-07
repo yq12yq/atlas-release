@@ -503,6 +503,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
 
                         break;
                     } catch (Throwable e) {
+                        RequestContextV1.get().resetEntityGuidUpdates();
 
                         if (numRetries == (maxRetries - 1)) {
                             String strMessage = AbstractNotification.getMessageJson(message);
