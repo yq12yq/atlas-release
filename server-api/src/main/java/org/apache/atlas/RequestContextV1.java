@@ -19,13 +19,16 @@
 package org.apache.atlas;
 
 import org.apache.atlas.metrics.Metrics;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.typesystem.types.TypeSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 public class RequestContextV1 {
@@ -36,6 +39,7 @@ public class RequestContextV1 {
     private Set<AtlasObjectId> createdEntityIds = new LinkedHashSet<>();
     private Set<AtlasObjectId> updatedEntityIds = new LinkedHashSet<>();
     private Set<AtlasObjectId> deletedEntityIds = new LinkedHashSet<>();
+    private       List<EntityGuidPair>       entityGuidInRequest = null;
 
     private String user;
     private final long requestTime;
@@ -60,6 +64,18 @@ public class RequestContextV1 {
         return ret;
     }
     public static void clear() {
+        RequestContextV1 instance = CURRENT_CONTEXT.get();
+
+        if (instance != null) {
+            instance.createdEntityIds.clear();
+            instance.updatedEntityIds.clear();
+            instance.deletedEntityIds.clear();
+
+            if (instance.entityGuidInRequest != null) {
+                instance.entityGuidInRequest.clear();
+            }
+        }
+
         CURRENT_CONTEXT.remove();
     }
 
@@ -113,5 +129,36 @@ public class RequestContextV1 {
 
     public static Metrics getMetrics() {
         return get().metrics;
+    }
+
+
+    public void recordEntityGuidUpdate(AtlasEntity entity, String guidInRequest) {
+        if (entityGuidInRequest == null) {
+            entityGuidInRequest = new ArrayList<>();
+        }
+
+        entityGuidInRequest.add(new EntityGuidPair(entity, guidInRequest));
+    }
+
+    public void resetEntityGuidUpdates() {
+        if (entityGuidInRequest != null) {
+            for (EntityGuidPair entityGuidPair : entityGuidInRequest) {
+                entityGuidPair.resetEntityGuid();
+            }
+        }
+    }
+
+    public class EntityGuidPair {
+        private final AtlasEntity entity;
+        private final String      guid;
+
+        public EntityGuidPair(AtlasEntity entity, String guid) {
+            this.entity = entity;
+            this.guid   = guid;
+        }
+
+        public void resetEntityGuid() {
+            entity.setGuid(guid);
+        }
     }
 }
