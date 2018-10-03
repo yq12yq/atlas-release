@@ -54,27 +54,15 @@ define(['require', 'utils/Enums', 'utils/Utils', 'underscore'], function(require
         taxonomiesTermsApiUrl: function(name) {
             return this.baseUrl + '/v1/taxonomies' + '/' + name + '/terms';
         },
-        entitiesApiUrl: function(options) {
+        entitiesApiUrl: function(guid, name) {
             var entitiesUrl = this.baseUrlV2 + '/entity';
-            if (options) {
-                var guid = options.guid,
-                    name = options.name,
-                    minExtInfo = options.minExtInfo;
-                if (guid && name) {
-                    entitiesUrl += '/guid/' + guid + '/classification/' + name;
-                } else if (guid && !name) {
-                    entitiesUrl += '/guid/' + guid;
-                }
-            }
-
-            if (!minExtInfo) {
-                return entitiesUrl;
+            if (guid && name) {
+                return entitiesUrl + '/guid/' + guid + '/classification/' + name;
+            } else if (guid && !name) {
+                return entitiesUrl + '/guid/' + guid;
             } else {
-                return entitiesUrl += '?minExtInfo=' + (minExtInfo);
+                return entitiesUrl;
             }
-        },
-        entityHeaderApiUrl: function(guid) {
-            return this.entitiesApiUrl({ guid: guid }) + "/header"
         },
         entitiesTraitsApiUrl: function(token) {
             if (token) {
@@ -86,9 +74,6 @@ define(['require', 'utils/Enums', 'utils/Utils', 'underscore'], function(require
         },
         entityCollectionaudit: function(guid) {
             return this.baseUrl + '/entities/' + guid + '/audit';
-        },
-        replicationCollectionaudit: function(name) {
-            return this.baseUrl + '/admin/cluster/audit/' + name;
         },
         classicationApiUrl: function(name, guid) {
             var typeUrl = this.typedefsUrl();

@@ -21,16 +21,17 @@ package org.apache.atlas;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.atlas.metrics.Metrics;
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
+import org.apache.atlas.typesystem.persistence.Id;
+import org.apache.atlas.typesystem.types.ClassType;
+import org.apache.atlas.typesystem.types.TypeSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,19 +40,19 @@ public class RequestContext {
     private static final Logger LOG = LoggerFactory.getLogger(RequestContext.class);
 
     private static final ThreadLocal<RequestContext> CURRENT_CONTEXT = new ThreadLocal<>();
-    private static final Set<RequestContext>         ACTIVE_REQUESTS = new HashSet<>();
 
-    private final Set<String>                             createdEntityIds   = new LinkedHashSet<>();
-    private final Set<String>                             updatedEntityIds   = new LinkedHashSet<>();
-    private final Set<String>                             deletedEntityIds   = new LinkedHashSet<>();
-    private final List<ITypedReferenceableInstance>       deletedEntities    = new ArrayList<>();
-    private final Map<String,ITypedReferenceableInstance> entityCacheV1      = new HashMap<>();
-    private final Map<String,AtlasEntity>                 entityCache        = new HashMap<>();
-    private final Map<String,AtlasEntityWithExtInfo>      entityExtInfoCache = new HashMap<>();
-    private final Metrics                                 metrics            = new Metrics();
-    private final long                                    requestTime        = System.currentTimeMillis();
+    private Set<String> createdEntityIds = new LinkedHashSet<>();
+    private Set<String> updatedEntityIds = new LinkedHashSet<>();
+    private Set<String> deletedEntityIds = new LinkedHashSet<>();
+    private List<ITypedReferenceableInstance> deletedEntities = new ArrayList<>();
+    private Map<String,ITypedReferenceableInstance> entityCacheV1 = new HashMap<>();
+    private Map<String,AtlasEntityWithExtInfo> entityCacheV2 = new HashMap<>();
 
     private String user;
+    private long requestTime;
+
+    private TypeSystem typeSystem = TypeSystem.getInstance();
+    private Metrics metrics = new Metrics();
 
     private RequestContext() {
     }
@@ -60,12 +61,10 @@ public class RequestContext {
     //createContext called for every request in the filter
     public static RequestContext get() {
         if (CURRENT_CONTEXT.get() == null) {
-            RequestContext context = new RequestContext();
-
-            CURRENT_CONTEXT.set(context);
-
-            synchronized (ACTIVE_REQUESTS) {
-                ACTIVE_REQUESTS.add(context);
+            synchronized (RequestContext.class) {
+                if (CURRENT_CONTEXT.get() == null) {
+                    createContext();
+                }
             }
         }
 
@@ -75,48 +74,11 @@ public class RequestContext {
         return CURRENT_CONTEXT.get();
     }
 
-    public static void clear() {
-        RequestContext instance = CURRENT_CONTEXT.get();
-
-        if (instance != null) {
-            instance.createdEntityIds.clear();
-            instance.updatedEntityIds.clear();
-            instance.deletedEntityIds.clear();
-            instance.deletedEntities.clear();
-            instance.entityCacheV1.clear();
-            instance.entityCache.clear();
-            instance.entityExtInfoCache.clear();
-
-            synchronized (ACTIVE_REQUESTS) {
-                ACTIVE_REQUESTS.remove(instance);
-            }
-        }
-
-        CURRENT_CONTEXT.remove();
-    }
-
     public static RequestContext createContext() {
-        clear();
-
-        return get();
-    }
-
-    public static int getActiveRequestsCount() {
-        return ACTIVE_REQUESTS.size();
-    }
-
-    public static long earliestActiveRequestTime() {
-        long ret = System.currentTimeMillis();
-
-        synchronized (ACTIVE_REQUESTS) {
-            for (RequestContext context : ACTIVE_REQUESTS) {
-                if (ret > context.getRequestTime()) {
-                    ret = context.getRequestTime();
-                }
-            }
-        }
-
-        return ret;
+        RequestContext context = new RequestContext();
+        context.requestTime = System.currentTimeMillis();
+        CURRENT_CONTEXT.set(context);
+        return context;
     }
 
     /**
@@ -131,16 +93,9 @@ public class RequestContext {
      * Adds the specified instance to the cache
      *
      */
-    public void cache(AtlasEntity entity) {
-        if (entity != null && entity.getGuid() != null) {
-            entityCache.put(entity.getGuid(), entity);
-        }
-    }
-
     public void cache(AtlasEntityWithExtInfo entity) {
         if (entity != null && entity.getEntity() != null && entity.getEntity().getGuid() != null) {
-            entityExtInfoCache.put(entity.getEntity().getGuid(), entity);
-            entityCache.put(entity.getEntity().getGuid(), entity.getEntity());
+            entityCacheV2.put(entity.getEntity().getGuid(), entity);
         }
     }
 
@@ -162,12 +117,24 @@ public class RequestContext {
      * @param guid the guid to find
      * @return Either the instance or null if it is not in the cache.
      */
-    public AtlasEntity getEntity(String guid) {
-        return entityCache.get(guid);
+    public AtlasEntityWithExtInfo getInstanceV2(String guid) {
+        return entityCacheV2.get(guid);
     }
 
-    public AtlasEntityWithExtInfo getEntityWithExtInfo(String guid) {
-        return entityExtInfoCache.get(guid);
+    public static void clear() {
+        RequestContext instance = CURRENT_CONTEXT.get();
+
+        if (instance != null) {
+            if (instance.entityCacheV1 != null) {
+                instance.entityCacheV1.clear();
+            }
+
+            if (instance.entityCacheV2 != null) {
+                instance.entityCacheV2.clear();
+            }
+        }
+
+        CURRENT_CONTEXT.remove();
     }
 
     public String getUser() {
@@ -192,8 +159,10 @@ public class RequestContext {
         this.updatedEntityIds.add(entityId);
     }
 
-    public void recordEntityDelete(ITypedReferenceableInstance entity) throws AtlasException {
-        if (deletedEntityIds.add(entity.getId()._getId())) {
+    public void recordEntityDelete(String entityId, String typeName) throws AtlasException {
+        ClassType type = typeSystem.getDataType(ClassType.class, typeName);
+        ITypedReferenceableInstance entity = type.createInstance(new Id(entityId, 0, typeName));
+        if (deletedEntityIds.add(entityId)) {
             deletedEntities.add(entity);
         }
     }

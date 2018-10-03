@@ -419,7 +419,7 @@ public class AtlasStructDefStoreV1 extends AtlasAbstractDefStoreV1<AtlasStructDe
         if (CollectionUtils.isNotEmpty(attrNames)) {
             for (String attrName : attrNames) {
                 String propertyKey = AtlasGraphUtilsV1.getTypeDefPropertyKey(ret, attrName);
-                String attribJson  = vertex.getProperty(AtlasGraphUtilsV1.encodePropertyKey(propertyKey), String.class);
+                String attribJson  = vertex.getProperty(GraphHelper.encodePropertyKey(propertyKey), String.class);
 
                 attributeDefs.add(toAttributeDefFromJson(structDef, AtlasType.fromJson(attribJson, Map.class),
                                   typeDefStore));
@@ -463,10 +463,6 @@ public class AtlasStructDefStoreV1 extends AtlasAbstractDefStoreV1<AtlasStructDe
         attribInfo.put("isComposite", attribute.isOwnedRef());
         attribInfo.put("reverseAttributeName", attribute.getInverseRefAttributeName());
 
-        if(attributeDef.getOptions() != null) {
-            attribInfo.put("options", AtlasType.toJson(attributeDef.getOptions()));
-        }
-
         final int lower;
         final int upper;
 
@@ -504,10 +500,6 @@ public class AtlasStructDefStoreV1 extends AtlasAbstractDefStoreV1<AtlasStructDe
         ret.setTypeName((String) attribInfo.get("dataType"));
         ret.setIsUnique((Boolean) attribInfo.get("isUnique"));
         ret.setIsIndexable((Boolean) attribInfo.get("isIndexable"));
-
-        if(attribInfo.get("options") != null) {
-            ret.setOptions(AtlasType.fromJson((String) attribInfo.get("options"), Map.class));
-        }
 
         if ((Boolean)attribInfo.get("isComposite")) {
             ret.addConstraint(new AtlasConstraintDef(AtlasConstraintDef.CONSTRAINT_TYPE_OWNED_REF));

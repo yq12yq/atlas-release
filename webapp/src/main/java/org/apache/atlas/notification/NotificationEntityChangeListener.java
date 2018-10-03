@@ -20,14 +20,9 @@ package org.apache.atlas.notification;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
-import org.apache.atlas.RequestContextV1;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.listener.EntityChangeListener;
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.notification.entity.EntityNotification;
 import org.apache.atlas.notification.entity.EntityNotificationImpl;
-import org.apache.atlas.repository.converters.AtlasFormatConverter;
-import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.repository.graph.GraphHelper;
 import org.apache.atlas.typesystem.IReferenceableInstance;
 import org.apache.atlas.typesystem.IStruct;
@@ -40,9 +35,6 @@ import org.apache.atlas.typesystem.types.TypeSystem;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.configuration.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -61,11 +53,8 @@ import java.util.Set;
 @Component
 public class NotificationEntityChangeListener implements EntityChangeListener {
 
-    private static final Logger LOG = LoggerFactory.getLogger(NotificationEntityChangeListener.class);;
-
-    private final        NotificationInterface  notificationInterface;
-    private final        TypeSystem             typeSystem;
-    private final        AtlasInstanceConverter instanceConverter;
+    private final NotificationInterface notificationInterface;
+    private final TypeSystem typeSystem;
 
     private Map<String, List<String>> notificationAttributesCache = new HashMap<>();
     private static final String ATLAS_ENTITY_NOTIFICATION_PROPERTY = "atlas.notification.entity";
@@ -82,12 +71,9 @@ public class NotificationEntityChangeListener implements EntityChangeListener {
      * @param typeSystem the Atlas type system
      */
     @Inject
-    public NotificationEntityChangeListener(NotificationInterface notificationInterface,
-                                            TypeSystem typeSystem,
-                                            @Lazy AtlasInstanceConverter instanceConverter) {
+    public NotificationEntityChangeListener(NotificationInterface notificationInterface, TypeSystem typeSystem) {
         this.notificationInterface = notificationInterface;
         this.typeSystem = typeSystem;
-        this.instanceConverter = instanceConverter;
     }
 
 
@@ -184,36 +170,19 @@ public class NotificationEntityChangeListener implements EntityChangeListener {
                 continue;
             }
 
-            Referenceable referenceable = new Referenceable(entityDefinition);
-            // Special handling is needed for the (hard) DELETE entity case where the vertex is lost
-            // at this point hence we need to convert the cached AtlasEntity
-            if (operationType == EntityNotification.OperationType.ENTITY_DELETE) {
-                String      guid   = entityDefinition.getId()._getId();
-                AtlasEntity entity = RequestContextV1.get().getInstanceV2(guid);
-                if (entity != null) {
-                    try {
-                        referenceable = instanceConverter.getReferenceable(entity, new AtlasFormatConverter.ConverterContext());
-                    } catch (AtlasBaseException e) {
-                        LOG.warn("AtlasEntity to Referenceable conversion failed for guid {}. Reason: {}", guid, e.getMessage());
-                    }
-                } else {
-                    LOG.warn("Cache miss for AtlasEntity: guid={}", guid);
-                }
-            }
-
-            // Common logic for all events
-            Map<String, Object> attributesMap           = referenceable.getValuesMap();
-            List<String>        entityNotificationAttrs = getNotificationAttributes(referenceable.getTypeName());
+            Referenceable       entity                  = new Referenceable(entityDefinition);
+            Map<String, Object> attributesMap           = entity.getValuesMap();
+            List<String>        entityNotificationAttrs = getNotificationAttributes(entity.getTypeName());
 
             if (MapUtils.isNotEmpty(attributesMap) && CollectionUtils.isNotEmpty(entityNotificationAttrs)) {
                 for (String entityAttr : attributesMap.keySet()) {
                     if (!entityNotificationAttrs.contains(entityAttr)) {
-                        referenceable.setNull(entityAttr);
+                        entity.setNull(entityAttr);
                     }
                 }
             }
 
-            EntityNotificationImpl notification = new EntityNotificationImpl(referenceable, operationType, getAllTraits(referenceable, typeSystem));
+            EntityNotificationImpl notification = new EntityNotificationImpl(entity, operationType, getAllTraits(entity, typeSystem));
 
             messages.add(notification);
         }

@@ -102,10 +102,6 @@ public class AtlasClientV2 extends AtlasBaseClient {
         super(baseUrl, cookie);
     }
 
-    public AtlasClientV2(Configuration configuration, String[] baseUrl, String[] basicAuthUserNamePassword) {
-        super(configuration, baseUrl, basicAuthUserNamePassword);
-    }
-
     @VisibleForTesting
     AtlasClientV2(WebResource service, Configuration configuration) {
         super(service, configuration);

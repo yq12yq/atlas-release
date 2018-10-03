@@ -209,7 +209,7 @@ public class SoftDeleteHandlerV1Test extends AtlasDeleteHandlerV1Test {
     @Override
     protected void assertVerticesDeleted(List<AtlasVertex> vertices) {
         for (AtlasVertex vertex : vertices) {
-            assertEquals(AtlasGraphUtilsV1.getEncodedProperty(vertex, Constants.STATE_PROPERTY_KEY, String.class), Id.EntityState.DELETED.name());
+            assertEquals(GraphHelper.getSingleValuedProperty(vertex, Constants.STATE_PROPERTY_KEY, String.class), Id.EntityState.DELETED.name());
         }
     }
 }

@@ -9,15 +9,6 @@ ATLAS-1060 Add composite indexes for exact match performance improvements for al
 ATLAS-1127 Modify creation and modification timestamps to Date instead of Long(sumasai)
 
 ALL CHANGES:
-ATLAS-2581: V2 Hive hook notifications - incorrect location for sd after moving table to a different database
-ATLAS-2524: fix Hive hook for incorrect handling of 'alter view as' operation
-ATLAS-2491: Hive hook using V2 notifications (#2)
-ATLAS-2491: Hive hook should use v2 notifications
-ATLAS-2169: delete request fails when hard-delete is configured
-ATLAS-2443: include unique attributes in entity-delete notifications
-ATLAS-2439: updated Sqoop hook to use V2 notifications (#2)
-ATLAS-2439: updated Sqoop hook to use V2 notifications
-ATLAS-2421: updated Atlas notificaiton module to support V2 data structures; updated HBase hook to use V2 notifications
 ATLAS-1608 :Search UI improvement (kevalbhatt)
 ATLAS-1630: basic search implementation (#2)
 ATLAS-1630: basic search implementation using fulltext with support for filter by type & classification

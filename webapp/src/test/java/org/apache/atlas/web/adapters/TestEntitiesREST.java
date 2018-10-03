@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Guice;
 import org.testng.annotations.Test;
 
 import javax.inject.Inject;
@@ -164,7 +165,7 @@ public class TestEntitiesREST {
     @Test(dependsOnMethods = "testCreateOrUpdateEntities")
     public void testGetEntities() throws Exception {
 
-        final AtlasEntitiesWithExtInfo response = entityREST.getByGuids(createdGuids, false);
+        final AtlasEntitiesWithExtInfo response = entityREST.getByGuids(createdGuids);
         final List<AtlasEntity> entities = response.getEntities();
 
         Assert.assertNotNull(entities);
