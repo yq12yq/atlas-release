@@ -381,7 +381,7 @@ public class AdminResource {
         }
 
         acquireExportImportLock("import");
-        AtlasImportResult result;
+        AtlasImportResult result = null;
 
         try {
             AtlasImportRequest request = AtlasType.fromJson(jsonData, AtlasImportRequest.class);
@@ -390,6 +390,15 @@ public class AdminResource {
             result = importService.run(zipSource, request, Servlets.getUserName(httpServletRequest),
                     Servlets.getHostName(httpServletRequest),
                     AtlasAuthorizationUtils.getRequestIpAddress(httpServletRequest));
+        } catch (AtlasBaseException excp) {
+            if (excp.getAtlasErrorCode().equals(AtlasErrorCode.IMPORT_ATTEMPTING_EMPTY_ZIP)) {
+                LOG.info(excp.getMessage());
+            } else {
+                LOG.error("importData(binary) failed", excp);
+            }
+
+            throw excp;
+
         } catch (Exception excp) {
             LOG.error("importData(binary) failed", excp);
 
@@ -422,6 +431,14 @@ public class AdminResource {
             result = importService.run(request, Servlets.getUserName(httpServletRequest),
                                        Servlets.getHostName(httpServletRequest),
                                        AtlasAuthorizationUtils.getRequestIpAddress(httpServletRequest));
+        } catch (AtlasBaseException excp) {
+            if (excp.getAtlasErrorCode().getErrorCode().equals(AtlasErrorCode.IMPORT_ATTEMPTING_EMPTY_ZIP)) {
+                LOG.info(excp.getMessage());
+            } else {
+                LOG.error("importData(binary) failed", excp);
+            }
+
+            throw excp;
         } catch (Exception excp) {
             LOG.error("importFile() failed", excp);
 
