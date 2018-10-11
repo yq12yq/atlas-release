@@ -23,7 +23,6 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.TestUtils;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
-import org.apache.atlas.repository.store.graph.v1.AtlasGraphUtilsV1;
 import org.apache.atlas.typesystem.IReferenceableInstance;
 import org.apache.atlas.typesystem.IStruct;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
@@ -118,7 +117,7 @@ public class GraphBackedRepositorySoftDeleteTest extends GraphBackedMetadataRepo
     @Override
     protected void assertVerticesDeleted(List<AtlasVertex> vertices) {
         for (AtlasVertex vertex : vertices) {
-            assertEquals(AtlasGraphUtilsV1.getEncodedProperty(vertex, Constants.STATE_PROPERTY_KEY, String.class), Id.EntityState.DELETED.name());
+            assertEquals(GraphHelper.getSingleValuedProperty(vertex, Constants.STATE_PROPERTY_KEY, String.class), Id.EntityState.DELETED.name());
         }
     }
 

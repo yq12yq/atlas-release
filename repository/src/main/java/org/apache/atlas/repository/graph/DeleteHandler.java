@@ -36,7 +36,6 @@ import org.apache.atlas.repository.graph.GraphHelper.VertexInfo;
 import org.apache.atlas.repository.graphdb.AtlasEdge;
 import org.apache.atlas.repository.graphdb.AtlasEdgeDirection;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
-import org.apache.atlas.repository.store.graph.v1.AtlasGraphUtilsV1;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
 import org.apache.atlas.typesystem.exception.NullRequiredAttributeException;
 import org.apache.atlas.typesystem.persistence.Id;
@@ -332,7 +331,7 @@ public abstract class DeleteHandler {
             if (attributeInfo.multiplicity.nullAllowed()) {
                 edge = graphHelper.getEdgeForLabel(outVertex, edgeLabel);
                 if (shouldUpdateReverseAttribute) {
-                    AtlasGraphUtilsV1.setProperty(outVertex, propertyName, null);
+                    GraphHelper.setProperty(outVertex, propertyName, null);
                 }
             } else {
                 // Cannot unset a required attribute.
@@ -379,7 +378,7 @@ public abstract class DeleteHandler {
                             // This prevents dangling edge IDs (i.e. edge IDs for deleted edges)
                             // from the remaining in the list if there are duplicates.
                             elements.removeAll(Collections.singletonList(elementEdge.getId().toString()));
-                            AtlasGraphUtilsV1.setProperty(outVertex, propertyName, elements);
+                            GraphHelper.setProperty(outVertex, propertyName, elements);
                             break;
 
                         }
@@ -395,7 +394,7 @@ public abstract class DeleteHandler {
                 keys = new ArrayList<>(keys);   //Make a copy, else list.remove reflects on titan.getProperty()
                 for (String key : keys) {
                     String keyPropertyName = GraphHelper.getQualifiedNameForMapKey(propertyName, key);
-                    String mapEdgeId = AtlasGraphUtilsV1.getProperty(outVertex, keyPropertyName, String.class);
+                    String mapEdgeId = GraphHelper.getSingleValuedProperty(outVertex, keyPropertyName, String.class);
                     AtlasEdge mapEdge = graphHelper.getEdgeByEdgeId(outVertex, keyPropertyName, mapEdgeId);
                     if(mapEdge != null) {
                         AtlasVertex mapVertex = mapEdge.getInVertex();
@@ -418,8 +417,8 @@ public abstract class DeleteHandler {
                                 }
 
                                 keys.remove(key);
-                                AtlasGraphUtilsV1.setProperty(outVertex, propertyName, keys);
-                                AtlasGraphUtilsV1.setProperty(outVertex, keyPropertyName, null);
+                                GraphHelper.setProperty(outVertex, propertyName, keys);
+                                GraphHelper.setProperty(outVertex, keyPropertyName, null);
                             }
                             break;
                         }
@@ -440,9 +439,9 @@ public abstract class DeleteHandler {
         if (edge != null) {
             deleteEdge(edge, false);
             RequestContext requestContext = RequestContext.get();
-            AtlasGraphUtilsV1.setEncodedProperty(outVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY,
+            GraphHelper.setProperty(outVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY,
                     requestContext.getRequestTime());
-            AtlasGraphUtilsV1.setEncodedProperty(outVertex, Constants.MODIFIED_BY_KEY, requestContext.getUser());
+            GraphHelper.setProperty(outVertex, Constants.MODIFIED_BY_KEY, requestContext.getUser());
             requestContext.recordEntityUpdate(outId);
         }
     }
