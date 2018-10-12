@@ -33,7 +33,6 @@ import org.apache.atlas.repository.graphdb.AtlasEdge;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.graphdb.AtlasGraphQuery;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
-import org.apache.atlas.repository.store.graph.v1.AtlasGraphUtilsV1;
 import org.apache.atlas.typesystem.ITypedReferenceableInstance;
 import org.apache.atlas.typesystem.ITypedStruct;
 import org.apache.atlas.typesystem.exception.EntityExistsException;
@@ -123,7 +122,7 @@ public class GraphBackedMetadataRepository implements MetadataRepository {
         if (aInfo.name.startsWith(Constants.INTERNAL_PROPERTY_KEY_PREFIX)) {
             return aInfo.name;
         }
-        return AtlasGraphUtilsV1.encodePropertyKey(GraphHelper.getQualifiedFieldName(dataType, aInfo.name));
+        return GraphHelper.encodePropertyKey(GraphHelper.getQualifiedFieldName(dataType, aInfo.name));
     }
 
     public String getFieldNameInVertex(IDataType<?> dataType, String attrName) throws AtlasException {
@@ -347,10 +346,10 @@ public class GraphBackedMetadataRepository implements MetadataRepository {
 
 
             // update the traits in entity once adding trait instance is successful
-            AtlasGraphUtilsV1.addEncodedProperty(instanceVertex, Constants.TRAIT_NAMES_PROPERTY_KEY, traitName);
-            AtlasGraphUtilsV1.setEncodedProperty(instanceVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY,
+            GraphHelper.addProperty(instanceVertex, Constants.TRAIT_NAMES_PROPERTY_KEY, traitName);
+            GraphHelper.setProperty(instanceVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY,
                     RequestContext.get().getRequestTime());
-            AtlasGraphUtilsV1.setEncodedProperty(instanceVertex, Constants.MODIFIED_BY_KEY, RequestContext.get().getUser());
+            GraphHelper.setProperty(instanceVertex, Constants.MODIFIED_BY_KEY, RequestContext.get().getUser());
 
         } catch (RepositoryException e) {
             throw e;
@@ -403,11 +402,11 @@ public class GraphBackedMetadataRepository implements MetadataRepository {
 
         // add it back again
         for (String traitName : traitNames) {
-            AtlasGraphUtilsV1.addEncodedProperty(instanceVertex, Constants.TRAIT_NAMES_PROPERTY_KEY, traitName);
+            GraphHelper.addProperty(instanceVertex, Constants.TRAIT_NAMES_PROPERTY_KEY, traitName);
         }
-        AtlasGraphUtilsV1.setEncodedProperty(instanceVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY,
+        GraphHelper.setProperty(instanceVertex, Constants.MODIFICATION_TIMESTAMP_PROPERTY_KEY,
                 RequestContext.get().getRequestTime());
-        AtlasGraphUtilsV1.setEncodedProperty(instanceVertex, Constants.MODIFIED_BY_KEY, RequestContext.get().getUser());
+        GraphHelper.setProperty(instanceVertex, Constants.MODIFIED_BY_KEY, RequestContext.get().getUser());
     }
 
     @Override

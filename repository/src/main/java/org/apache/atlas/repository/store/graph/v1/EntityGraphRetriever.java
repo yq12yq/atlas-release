@@ -425,11 +425,11 @@ public final class EntityGraphRetriever {
     }
 
     private Object mapVertexToAttribute(AtlasVertex entityVertex, AtlasAttribute attribute, AtlasEntityExtInfo entityExtInfo, boolean isMinExtInfo) throws AtlasBaseException {
-        Object    ret              = null;
-        AtlasType attrType         = attribute.getAttributeType();
-        String    qualifiedName    = attribute.getQualifiedName();
-        String    edgeLabel        = EDGE_LABEL_PREFIX + qualifiedName;
-        boolean   isOwnedAttribute = attribute.isOwnedRef();
+        Object    ret                = null;
+        AtlasType attrType           = attribute.getAttributeType();
+        String    vertexPropertyName = attribute.getQualifiedName();
+        String    edgeLabel          = EDGE_LABEL_PREFIX + vertexPropertyName;
+        boolean   isOwnedAttribute   = attribute.isOwnedRef();
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Mapping vertex {} to atlas entity {}.{}", entityVertex, attribute.getDefinedInDef().getName(), attribute.getName());
@@ -437,33 +437,33 @@ public final class EntityGraphRetriever {
 
         switch (attrType.getTypeCategory()) {
             case PRIMITIVE:
-                ret = mapVertexToPrimitive(entityVertex, attribute.getVertexPropertyName(), attribute.getAttributeDef());
+                ret = mapVertexToPrimitive(entityVertex, vertexPropertyName, attribute.getAttributeDef());
                 break;
             case ENUM:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, attribute.getVertexPropertyName(), Object.class);
+                ret = GraphHelper.getProperty(entityVertex, vertexPropertyName);
                 break;
             case STRUCT:
                 ret = mapVertexToStruct(entityVertex, edgeLabel, null, entityExtInfo, isMinExtInfo);
                 break;
             case OBJECT_ID_TYPE:
                 if(attribute.getAttributeDef().isSoftReferenced()) {
-                    ret = mapVertexToObjectIdForSoftRef(entityVertex, attribute.getVertexPropertyName());
+                    ret = mapVertexToObjectIdForSoftRef(entityVertex, vertexPropertyName);
                 } else {
                     ret = mapVertexToObjectId(entityVertex, edgeLabel, null, entityExtInfo, isOwnedAttribute, isMinExtInfo);
                 }
                 break;
             case ARRAY:
                 if(attribute.getAttributeDef().isSoftReferenced()) {
-                    ret = mapVertexToArrayForSoftRef(entityVertex, attribute.getVertexPropertyName());
+                    ret = mapVertexToArrayForSoftRef(entityVertex, vertexPropertyName);
                 } else {
-                    ret = mapVertexToArray(entityVertex, (AtlasArrayType) attrType, qualifiedName, entityExtInfo, isOwnedAttribute, isMinExtInfo);
+                    ret = mapVertexToArray(entityVertex, (AtlasArrayType) attrType, vertexPropertyName, entityExtInfo, isOwnedAttribute, isMinExtInfo);
                 }
                 break;
             case MAP:
                 if(attribute.getAttributeDef().isSoftReferenced()) {
-                    ret = mapVertexToMapForSoftRef(entityVertex, attribute.getVertexPropertyName());
+                    ret = mapVertexToMapForSoftRef(entityVertex, vertexPropertyName);
                 } else {
-                    ret = mapVertexToMap(entityVertex, (AtlasMapType) attrType, qualifiedName, entityExtInfo, isOwnedAttribute, isMinExtInfo);
+                    ret = mapVertexToMap(entityVertex, (AtlasMapType) attrType, vertexPropertyName, entityExtInfo, isOwnedAttribute, isMinExtInfo);
                 }
                 break;
             case CLASSIFICATION:
@@ -522,7 +522,7 @@ public final class EntityGraphRetriever {
     }
 
     private AtlasObjectId mapVertexToObjectIdForSoftRef(AtlasVertex entityVertex, String vertexPropertyName) {
-        String rawValue = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, String.class);
+        String rawValue = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, String.class);
         if(StringUtils.isEmpty(rawValue)) {
             return null;
         }
@@ -635,43 +635,43 @@ public final class EntityGraphRetriever {
     private Object mapVertexToPrimitive(AtlasVertex entityVertex, final String vertexPropertyName, AtlasAttributeDef attrDef) {
         Object ret = null;
 
-        if (AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, Object.class) == null) {
+        if (GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, Object.class) == null) {
             return null;
         }
 
         switch (attrDef.getTypeName().toLowerCase()) {
             case ATLAS_TYPE_STRING:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, String.class);
+                ret = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, String.class);
                 break;
             case ATLAS_TYPE_SHORT:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, Short.class);
+                ret = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, Short.class);
                 break;
             case ATLAS_TYPE_INT:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, Integer.class);
+                ret = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, Integer.class);
                 break;
             case ATLAS_TYPE_BIGINTEGER:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, BigInteger.class);
+                ret = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, BigInteger.class);
                 break;
             case ATLAS_TYPE_BOOLEAN:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, Boolean.class);
+                ret = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, Boolean.class);
                 break;
             case ATLAS_TYPE_BYTE:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, Byte.class);
+                ret = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, Byte.class);
                 break;
             case ATLAS_TYPE_LONG:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, Long.class);
+                ret = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, Long.class);
                 break;
             case ATLAS_TYPE_FLOAT:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, Float.class);
+                ret = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, Float.class);
                 break;
             case ATLAS_TYPE_DOUBLE:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, Double.class);
+                ret = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, Double.class);
                 break;
             case ATLAS_TYPE_BIGDECIMAL:
-                ret = AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, BigDecimal.class);
+                ret = GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, BigDecimal.class);
                 break;
             case ATLAS_TYPE_DATE:
-                ret = new Date(AtlasGraphUtilsV1.getEncodedProperty(entityVertex, vertexPropertyName, Long.class));
+                ret = new Date(GraphHelper.getSingleValuedProperty(entityVertex, vertexPropertyName, Long.class));
                 break;
             default:
                 break;
