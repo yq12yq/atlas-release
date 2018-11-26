@@ -16,8 +16,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
         <groupId>org.apache</groupId>
@@ -28,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.atlas</groupId>
     <artifactId>apache-atlas</artifactId>
-    <version>0.8-incubating-SNAPSHOT</version>
+    <version>0.7.0.2.5.3.162-3</version>
     <description>Metadata Management and Data Governance Platform over Hadoop</description>
     <name>apache-atlas</name>
     <packaging>pom</packaging>
@@ -399,10 +398,10 @@
         <jackson.version>1.8.3</jackson.version>
         <tinkerpop.version>2.6.0</tinkerpop.version>
         <titan.version>0.5.4</titan.version>
-        <hadoop.version>2.7.1</hadoop.version>
-        <hbase.version>1.1.2</hbase.version>
+        <hadoop.version>2.7.3.2.5.3.162-3</hadoop.version>
+        <hbase.version>1.1.2.2.5.3.162-3</hbase.version>
         <solr.version>5.5.1</solr.version>
-        <kafka.version>0.10.0.0</kafka.version>
+        <kafka.version>0.10.0.2.5.3.162-3</kafka.version>
         <!-- scala versions -->
         <scala.version>2.10.4</scala.version>
         <scala.binary.version>2.10</scala.binary.version>

@@ -16,13 +16,12 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>apache-atlas</artifactId>
         <groupId>org.apache.atlas</groupId>
-        <version>0.8-incubating-SNAPSHOT</version>
+        <version>0.7.0.2.5.3.162-3</version>
         <relativePath>../../</relativePath>
     </parent>
     <artifactId>sqoop-bridge</artifactId>
@@ -32,8 +31,8 @@
 
     <properties>
         <!-- maps to 1.4.7-SNAPSHOT version of apache sqoop -->
-        <sqoop.version>1.4.6.2.3.99.0-195</sqoop.version>
-        <hive.version>1.2.1</hive.version>
+        <sqoop.version>1.4.6.2.5.3.162-3</sqoop.version>
+        <hive.version>1.2.1000.2.5.3.162-3</hive.version>
     </properties>
 
     <dependencies>
