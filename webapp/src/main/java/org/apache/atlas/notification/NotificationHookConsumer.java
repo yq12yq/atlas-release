@@ -90,6 +90,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     public static final String CONSUMER_RETRY_INTERVAL           = "atlas.notification.consumer.retry.interval";
     public static final String CONSUMER_MIN_RETRY_INTERVAL       = "atlas.notification.consumer.min.retry.interval";
     public static final String CONSUMER_MAX_RETRY_INTERVAL       = "atlas.notification.consumer.max.retry.interval";
+    public static final String CONSUMER_DISABLED                 = "atlas.notification.consumer.disabled";
 
     public static final int SERVER_READY_WAIT_TIME_MS = 1000;
 
@@ -101,6 +102,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     private final int                    failedMsgCacheSize;
     private final int                    minWaitDuration;
     private final int                    maxWaitDuration;
+    private final boolean                consumerDisabled;
 
     private NotificationInterface notificationInterface;
     private ExecutorService       executors;
@@ -128,10 +130,17 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
         consumerRetryInterval = applicationProperties.getInt(CONSUMER_RETRY_INTERVAL, 500);
         minWaitDuration       = applicationProperties.getInt(CONSUMER_MIN_RETRY_INTERVAL, consumerRetryInterval); // 500 ms  by default
         maxWaitDuration       = applicationProperties.getInt(CONSUMER_MAX_RETRY_INTERVAL, minWaitDuration * 60);  //  30 sec by default
+
+        consumerDisabled 							  = applicationProperties.getBoolean(CONSUMER_DISABLED, false);
     }
 
     @Override
     public void start() throws AtlasException {
+        if (consumerDisabled) {
+            LOG.info("No hook messages will be processed. {} = {}", CONSUMER_DISABLED, consumerDisabled);
+            return;
+        }
+
         startInternal(applicationProperties, null);
     }
 
@@ -171,6 +180,10 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     public void stop() {
         //Allow for completion of outstanding work
         try {
+            if (consumerDisabled) {
+                return;
+            }
+
             stopConsumerThreads();
             if (executors != null) {
                 executors.shutdown();
@@ -210,6 +223,10 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
      */
     @Override
     public void instanceIsActive() {
+        if (consumerDisabled) {
+            return;
+        }
+
         LOG.info("Reacting to active state: initializing Kafka consumers");
 
         startConsumers(executors);
@@ -223,6 +240,10 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
      */
     @Override
     public void instanceIsPassive() {
+        if (consumerDisabled) {
+            return;
+        }
+
         LOG.info("Reacting to passive state: shutting down Kafka consumers.");
 
         stop();
